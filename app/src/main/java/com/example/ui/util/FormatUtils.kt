@@ -1,5 +1,6 @@
 package com.example.ui.util
 
+import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -68,7 +69,7 @@ object FormatUtils {
         }
     }
 
-    fun openFileExternally(context: Context, filePath: String, mimeType: String = "video/mp4") {
+    fun openFileExternally(context: Context, filePath: String, mimeType: String = "video/*") {
         try {
             val file = File(filePath)
             if (!file.exists()) return
@@ -84,9 +85,14 @@ object FormatUtils {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(viewIntent)
+            context.startActivity(Intent.createChooser(viewIntent, "Open in Gallery / Player"))
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    fun openDeviceGallery(context: Context, filePath: String) {
+        val mimeType = if (filePath.endsWith(".mp3", ignoreCase = true)) "audio/*" else "video/*"
+        openFileExternally(context, filePath, mimeType)
     }
 }

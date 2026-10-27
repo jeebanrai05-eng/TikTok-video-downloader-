@@ -2,7 +2,11 @@ package com.example.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,9 +24,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.DownloadDone
-import androidx.compose.material.icons.filled.FileOpen
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.PermMedia
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Speed
@@ -67,22 +71,33 @@ fun ActiveDownloadCard(
     val context = LocalContext.current
     val animatedProgress by animateFloatAsState(
         targetValue = download.progress,
-        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
         label = "DownloadProgress"
+    )
+
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 0.90f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "borderPulse"
     )
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(22.dp))
             .border(
                 1.5.dp,
-                if (download.isCompleted) SuccessGreen.copy(alpha = 0.6f) else NeonCyan.copy(alpha = 0.5f),
-                RoundedCornerShape(20.dp)
+                if (download.isCompleted) SuccessGreen.copy(alpha = 0.8f) else NeonCyan.copy(alpha = pulseAlpha),
+                RoundedCornerShape(22.dp)
             )
             .testTag("active_download_card"),
         color = ObsidianSurface,
-        tonalElevation = 6.dp
+        tonalElevation = 8.dp
     ) {
         Column(
             modifier = Modifier
@@ -95,10 +110,10 @@ fun ActiveDownloadCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(38.dp)
                             .background(
                                 if (download.isCompleted) SuccessGreen.copy(alpha = 0.15f) else NeonCyan.copy(alpha = 0.15f),
                                 CircleShape
@@ -106,23 +121,23 @@ fun ActiveDownloadCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = if (download.isCompleted) Icons.Default.Check else Icons.Default.Speed,
+                            imageVector = if (download.isCompleted) Icons.Default.CheckCircle else Icons.Default.Speed,
                             contentDescription = null,
                             tint = if (download.isCompleted) SuccessGreen else NeonCyan,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (download.isCompleted) "Download Completed" else "Downloading Without Watermark...",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White
+                            text = if (download.isCompleted) "Saved to Device Storage!" else "Ultra Speed Download Active...",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.ExtraBold),
+                            color = if (download.isCompleted) SuccessGreen else Color.White
                         )
                         Text(
                             text = "${download.quality.badge} • ${download.title}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.65f),
+                            color = Color.White.copy(alpha = 0.7f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -164,7 +179,7 @@ fun ActiveDownloadCard(
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp)),
                 color = if (download.isCompleted) SuccessGreen else NeonCyan,
-                trackColor = Color(0xFF242738),
+                trackColor = Color(0xFF202434),
             )
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -178,7 +193,7 @@ fun ActiveDownloadCard(
                 // Percentage
                 Text(
                     text = "${(animatedProgress * 100).toInt()}%",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
                     color = if (download.isCompleted) SuccessGreen else NeonCyan
                 )
 
@@ -186,7 +201,7 @@ fun ActiveDownloadCard(
                 if (!download.isCompleted && download.speedBytesPerSec > 0) {
                     Text(
                         text = "⚡ ${FormatUtils.formatSpeed(download.speedBytesPerSec)}",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = HdrGold
                     )
                 }
@@ -200,17 +215,63 @@ fun ActiveDownloadCard(
                 Text(
                     text = transferredText,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = Color.White.copy(alpha = 0.75f)
                 )
             }
 
-            // Completed Actions
+            // Completed Actions & Storage Location Pill
             if (download.isCompleted && download.localFilePath != null) {
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Storage location indicator
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(SuccessGreen.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Folder,
+                        contentDescription = null,
+                        tint = SuccessGreen,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Saved in Device Gallery & Movies/TikSave",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                        color = SuccessGreen,
+                        fontSize = 11.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // Open in Phone's native Gallery
+                    Button(
+                        onClick = {
+                            FormatUtils.openDeviceGallery(context, download.localFilePath)
+                        },
+                        modifier = Modifier
+                            .weight(1.2f)
+                            .testTag("open_in_gallery_button"),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = SuccessGreen,
+                            contentColor = Color.Black
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.PermMedia, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Gallery", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+
+                    // In-app play
                     Button(
                         onClick = { onPlay(download.localFilePath) },
                         modifier = Modifier
@@ -223,10 +284,11 @@ fun ActiveDownloadCard(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Play Video", fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Watch", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
 
+                    // Share to other apps
                     OutlinedButton(
                         onClick = {
                             FormatUtils.shareFile(
@@ -241,9 +303,9 @@ fun ActiveDownloadCard(
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Share")
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Share", fontSize = 12.sp)
                     }
                 }
             }

@@ -73,6 +73,7 @@ import com.example.ui.theme.NeonMagenta
 import com.example.ui.theme.ObsidianCardBorder
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceVariant
+import com.example.ui.theme.SuccessGreen
 import com.example.ui.util.FormatUtils
 
 enum class LibraryFilter {
@@ -329,6 +330,7 @@ private fun LibraryDownloadCard(
     onToggleFavorite: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -458,6 +460,17 @@ private fun LibraryDownloadCard(
                         imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "Favorite",
                         tint = if (item.isFavorite) NeonMagenta else Color.Gray,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                IconButton(
+                    onClick = { FormatUtils.openDeviceGallery(context, item.localFilePath) },
+                    modifier = Modifier.size(34.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FolderOpen,
+                        contentDescription = "Open in Device Gallery",
+                        tint = SuccessGreen,
                         modifier = Modifier.size(18.dp)
                     )
                 }

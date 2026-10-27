@@ -4,6 +4,7 @@ import android.net.Uri
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import com.example.ui.util.FormatUtils
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -172,14 +174,29 @@ fun VideoPlayerDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                Text(
-                    text = "High quality playback • Watermark removed",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = NeonCyan,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "High quality • No Watermark",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = NeonCyan
+                    )
+
+                    androidx.compose.material3.TextButton(
+                        onClick = { FormatUtils.openDeviceGallery(context, mediaUrlOrPath) }
+                    ) {
+                        Text(
+                            text = "Open in Gallery ↗",
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
+                }
             }
         }
     }

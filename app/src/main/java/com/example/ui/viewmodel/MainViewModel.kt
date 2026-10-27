@@ -213,7 +213,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
 
-            result.onSuccess { localFile ->
+            result.onSuccess { downloadResult ->
+                val localFile = downloadResult.file
                 _activeDownload.value = _activeDownload.value?.copy(
                     progress = 1.0f,
                     localFilePath = localFile.absolutePath,
@@ -221,7 +222,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     speedBytesPerSec = 0L
                 )
                 repository.saveDownloadRecord(metadata, quality, localFile)
-                _toastEvents.emit("Downloaded successfully to TikSave folder!")
+                _toastEvents.emit("✅ Saved to Phone Gallery & Device Storage (${localFile.name})")
             }.onFailure { error ->
                 _activeDownload.value = _activeDownload.value?.copy(
                     errorMessage = error.localizedMessage ?: "Download failed"
