@@ -1,0 +1,6 @@
+{
+  "name": "TikSave",
+  "description": "Ultra HDR TikTok video downloader without watermark with high-speed engine, audio extraction, and library manager.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
