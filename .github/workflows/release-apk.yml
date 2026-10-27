@@ -1,0 +1,156 @@
+name: Build & Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Publish as a GitHub Release'
+        required: true
+        type: boolean
+        default: true
+      tag_name:
+        description: 'Release Tag (e.g., v1.0.0)'
+        required: false
+        default: 'v1.0.0'
+      release_title:
+        description: 'Release Title'
+        required: false
+        default: 'TikSave Ultra HDR v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build & Package Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Prepare Signing Keys
+        shell: bash
+        run: |
+          # Prepare debug.keystore
+          if [ -f "debug.keystore.base64" ]; then
+            echo "Decoding debug.keystore from base64..."
+            base64 -d debug.keystore.base64 > debug.keystore
+          else
+            echo "Generating fallback debug.keystore..."
+            keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+          # Prepare release keystore
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "Using custom release keystore from repository secret..."
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > my-upload-key.jks
+          else
+            echo "Generating automated release upload keystore..."
+            keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=TikSave,O=TikSave,C=US"
+          fi
+
+      - name: Build Debug and Release APKs
+        shell: bash
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD || 'android' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'android' }}
+        run: |
+          gradle :app:assembleRelease :app:assembleDebug --stacktrace
+
+      - name: Prepare APK Artifacts
+        shell: bash
+        run: |
+          mkdir -p build-apks
+          # Find and copy release APK
+          RELEASE_APK=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          if [ -n "$RELEASE_APK" ]; then
+            cp "$RELEASE_APK" build-apks/TikSave-Release.apk
+            echo "Release APK copied: TikSave-Release.apk"
+          fi
+
+          # Find and copy debug APK
+          DEBUG_APK=$(find app/build/outputs/apk/debug -name "*.apk" | head -n 1)
+          if [ -n "$DEBUG_APK" ]; then
+            cp "$DEBUG_APK" build-apks/TikSave-Debug.apk
+            echo "Debug APK copied: TikSave-Debug.apk"
+          fi
+
+          ls -lh build-apks/
+
+      - name: Upload APKs to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: TikSave-APK-Builds
+          path: build-apks/*.apk
+          retention-days: 30
+
+      - name: Determine Release Tag
+        id: release_info
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag_name }}"
+            TITLE="${{ github.event.inputs.release_title }}"
+            PUBLISH="${{ github.event.inputs.create_release }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            TITLE="TikSave Ultra HDR ${TAG}"
+            PUBLISH="true"
+          else
+            TAG="v1.0.0-snapshot-${GITHUB_SHA::7}"
+            TITLE="TikSave Snapshot (${GITHUB_SHA::7})"
+            PUBLISH="false"
+          fi
+
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "publish=$PUBLISH" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        if: steps.release_info.outputs.publish == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag_name }}
+          name: ${{ steps.release_info.outputs.title }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## TikSave — TikTok Video Without Watermark Downloader
+
+            ### What's New
+            - **No Watermark High-Speed Engine**: Direct link extraction from TikTok without watermark.
+            - **HDR+ Ultra Quality**: Highest bitrate 60FPS original stream downloader.
+            - **Original MP3 Audio Extraction**: Save crystal clear sound tracks.
+            - **In-App Vertical Video Player**: Instant playback preview.
+            - **Offline Library**: Room database persistence and quick file sharing.
+
+            ### Downloads
+            - **[TikSave-Release.apk](TikSave-Release.apk)** (Recommended)
+            - **[TikSave-Debug.apk](TikSave-Debug.apk)** (Development Build)
+          files: |
+            build-apks/TikSave-Release.apk
+            build-apks/TikSave-Debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
