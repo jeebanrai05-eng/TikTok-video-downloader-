@@ -12,6 +12,9 @@ import com.example.data.model.DownloadQuality
 import com.example.data.model.ExtractionState
 import com.example.data.model.VideoMetadata
 import com.example.data.repository.DownloadRepository
+import com.example.data.update.AppUpdateInfo
+import com.example.data.update.UpdateManager
+import com.example.ui.util.FormatUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +35,7 @@ enum class AppTab {
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = DownloadRepository(application)
+    val updateManager = UpdateManager(application)
 
     private val _urlInput = MutableStateFlow("")
     val urlInput: StateFlow<String> = _urlInput.asStateFlow()
@@ -45,6 +49,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _activeDownload = MutableStateFlow<ActiveDownload?>(null)
     val activeDownload: StateFlow<ActiveDownload?> = _activeDownload.asStateFlow()
 
+    private val _isDownloadModalVisible = MutableStateFlow(false)
+    val isDownloadModalVisible: StateFlow<Boolean> = _isDownloadModalVisible.asStateFlow()
+
+    private val _isDownloading = MutableStateFlow(false)
+    val isDownloading: StateFlow<Boolean> = _isDownloading.asStateFlow()
+
     private val _selectedQuality = MutableStateFlow(DownloadQuality.HDR_ULTRA)
     val selectedQuality: StateFlow<DownloadQuality> = _selectedQuality.asStateFlow()
 
@@ -53,6 +63,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _previewingMedia = MutableStateFlow<Pair<String, String>?>(null) // (urlOrPath, title)
     val previewingMedia: StateFlow<Pair<String, String>?> = _previewingMedia.asStateFlow()
+
+    private val _updateInfo = MutableStateFlow<AppUpdateInfo?>(null)
+    val updateInfo: StateFlow<AppUpdateInfo?> = _updateInfo.asStateFlow()
+
+    private val _isDownloadingUpdate = MutableStateFlow(false)
+    val isDownloadingUpdate: StateFlow<Boolean> = _isDownloadingUpdate.asStateFlow()
+
+    private val _updateDownloadProgress = MutableStateFlow(0f)
+    val updateDownloadProgress: StateFlow<Float> = _updateDownloadProgress.asStateFlow()
 
     private val _toastEvents = MutableSharedFlow<String>()
     val toastEvents: SharedFlow<String> = _toastEvents.asSharedFlow()
@@ -68,6 +87,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         checkClipboardForTikTokLink()
+        // Check for updates silently on startup
+        checkForAppUpdates(silent = true)
     }
 
     fun setTab(tab: AppTab) {
@@ -98,7 +119,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         } catch (_: Exception) {
-            // Ignore clipboard security exceptions if restricted
         }
     }
 
@@ -160,7 +180,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun startDownload(metadata: VideoMetadata, quality: DownloadQuality) {
+        // Prevent concurrent duplicate download clicks
+        if (_isDownloading.value) {
+            viewModelScope.launch { _toastEvents.emit("Download is already running in background") }
+            _isDownloadModalVisible.value = true
+            return
+        }
+
         currentDownloadJob?.cancel()
+        _isDownloading.value = true
 
         val downloadUrl = when (quality) {
             DownloadQuality.HDR_ULTRA -> metadata.ultraHdrUrl
@@ -170,6 +198,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         if (downloadUrl.isBlank()) {
+            _isDownloading.value = false
             viewModelScope.launch { _toastEvents.emit("Selected stream is unavailable for this video") }
             return
         }
@@ -198,48 +227,68 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             etaSeconds = 0
         )
 
-        currentDownloadJob = viewModelScope.launch {
-            val result = repository.downloadManager.download(
-                url = downloadUrl,
-                targetFilename = filename,
-                quality = quality
-            ) { progress, downloaded, total, speed, eta ->
-                _activeDownload.value = _activeDownload.value?.copy(
-                    progress = progress,
-                    bytesDownloaded = downloaded,
-                    totalBytes = total,
-                    speedBytesPerSec = speed,
-                    etaSeconds = eta
-                )
-            }
+        // Show modern high-tech download modal
+        _isDownloadModalVisible.value = true
 
-            result.onSuccess { downloadResult ->
-                val localFile = downloadResult.file
-                _activeDownload.value = _activeDownload.value?.copy(
-                    progress = 1.0f,
-                    localFilePath = localFile.absolutePath,
-                    isCompleted = true,
-                    speedBytesPerSec = 0L
-                )
-                repository.saveDownloadRecord(metadata, quality, localFile)
-                _toastEvents.emit("✅ Saved to Phone Gallery & Device Storage (${localFile.name})")
-            }.onFailure { error ->
-                _activeDownload.value = _activeDownload.value?.copy(
-                    errorMessage = error.localizedMessage ?: "Download failed"
-                )
-                _toastEvents.emit("Download error: ${error.localizedMessage}")
+        currentDownloadJob = viewModelScope.launch {
+            try {
+                val result = repository.downloadManager.download(
+                    url = downloadUrl,
+                    targetFilename = filename,
+                    quality = quality
+                ) { progress, downloaded, total, speed, eta ->
+                    _activeDownload.value = _activeDownload.value?.copy(
+                        progress = progress,
+                        bytesDownloaded = downloaded,
+                        totalBytes = total,
+                        speedBytesPerSec = speed,
+                        etaSeconds = eta
+                    )
+                }
+
+                result.onSuccess { downloadResult ->
+                    val localFile = downloadResult.file
+                    _activeDownload.value = _activeDownload.value?.copy(
+                        progress = 1.0f,
+                        localFilePath = localFile.absolutePath,
+                        isCompleted = true,
+                        speedBytesPerSec = 0L
+                    )
+                    repository.saveDownloadRecord(metadata, quality, localFile)
+                    _toastEvents.emit("✅ Saved single file to Gallery & Device Storage (${localFile.name})")
+                }.onFailure { error ->
+                    _activeDownload.value = _activeDownload.value?.copy(
+                        errorMessage = error.localizedMessage ?: "Download failed"
+                    )
+                    _toastEvents.emit("Download error: ${error.localizedMessage}")
+                }
+            } finally {
+                _isDownloading.value = false
             }
         }
     }
 
+    fun showDownloadModal() {
+        if (_activeDownload.value != null) {
+            _isDownloadModalVisible.value = true
+        }
+    }
+
+    fun hideDownloadModal() {
+        _isDownloadModalVisible.value = false
+    }
+
     fun cancelActiveDownload() {
         currentDownloadJob?.cancel()
+        _isDownloading.value = false
         _activeDownload.value = null
+        _isDownloadModalVisible.value = false
         viewModelScope.launch { _toastEvents.emit("Download cancelled") }
     }
 
     fun dismissActiveDownload() {
         _activeDownload.value = null
+        _isDownloadModalVisible.value = false
     }
 
     fun previewMedia(urlOrPath: String, title: String) {
@@ -268,5 +317,52 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             repository.clearHistory()
             _toastEvents.emit("Download library cleared")
         }
+    }
+
+    // Self-Update methods
+    fun checkForAppUpdates(silent: Boolean = false) {
+        viewModelScope.launch {
+            val result = updateManager.checkForUpdates(currentVersion = "1.0")
+            result.onSuccess { info ->
+                if (info.isUpdateAvailable) {
+                    _updateInfo.value = info
+                } else if (!silent) {
+                    _toastEvents.emit("TikSave is up to date (${info.latestVersion})")
+                }
+            }.onFailure {
+                if (!silent) {
+                    _toastEvents.emit("Could not connect to GitHub Release server")
+                }
+            }
+        }
+    }
+
+    fun installAppUpdate() {
+        val info = _updateInfo.value ?: return
+        if (info.apkDownloadUrl.isBlank()) {
+            // Open GitHub releases in browser if direct apk url not parsed
+            FormatUtils.openFileExternally(getApplication<Application>(), "https://github.com/ukserver150/TikSave/releases", "text/html")
+            _updateInfo.value = null
+            return
+        }
+
+        _isDownloadingUpdate.value = true
+        _updateDownloadProgress.value = 0f
+
+        viewModelScope.launch {
+            val result = updateManager.downloadAndInstallApk(info.apkDownloadUrl) { progress ->
+                _updateDownloadProgress.value = progress
+            }
+            _isDownloadingUpdate.value = false
+            result.onSuccess {
+                _updateInfo.value = null
+            }.onFailure { err ->
+                _toastEvents.emit("Update error: ${err.localizedMessage}")
+            }
+        }
+    }
+
+    fun dismissUpdateDialog() {
+        _updateInfo.value = null
     }
 }

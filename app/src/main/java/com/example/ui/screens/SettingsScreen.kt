@@ -56,9 +56,12 @@ import com.example.ui.theme.ObsidianCardBorder
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceVariant
 
+import androidx.compose.material.icons.filled.SystemUpdate
+
 @Composable
 fun SettingsScreen(
     onClearCache: () -> Unit,
+    onCheckForUpdates: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var hdrBoostEnabled by remember { mutableStateOf(true) }
@@ -254,7 +257,7 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "TikSave Ultra HDR v2.4",
+                                text = "TikSave Ultra HDR v1.0.0",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                 color = Color.White
                             )
@@ -264,6 +267,21 @@ fun SettingsScreen(
                                 color = Color.White.copy(alpha = 0.6f)
                             )
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = onCheckForUpdates,
+                        colors = ButtonDefaults.buttonColors(containerColor = NeonCyan, contentColor = Color.Black),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("check_for_updates_button")
+                    ) {
+                        Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Check for Updates (GitHub Release)", fontWeight = FontWeight.Bold)
                     }
                 }
             }

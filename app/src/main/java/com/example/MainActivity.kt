@@ -58,6 +58,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ui.components.ModernDownloadModal
+import com.example.ui.components.UpdateDialog
 import com.example.ui.components.VideoPlayerDialog
 import com.example.ui.screens.DownloaderScreen
 import com.example.ui.screens.LibraryScreen
@@ -122,9 +124,13 @@ fun TikSaveApp(viewModel: MainViewModel) {
     val clipboardLink by viewModel.clipboardDetectedUrl.collectAsStateWithLifecycle()
     val extractionState by viewModel.extractionState.collectAsStateWithLifecycle()
     val activeDownload by viewModel.activeDownload.collectAsStateWithLifecycle()
+    val isDownloadModalVisible by viewModel.isDownloadModalVisible.collectAsStateWithLifecycle()
     val selectedQuality by viewModel.selectedQuality.collectAsStateWithLifecycle()
     val allDownloads by viewModel.allDownloads.collectAsStateWithLifecycle()
     val previewingMedia by viewModel.previewingMedia.collectAsStateWithLifecycle()
+    val updateInfo by viewModel.updateInfo.collectAsStateWithLifecycle()
+    val isDownloadingUpdate by viewModel.isDownloadingUpdate.collectAsStateWithLifecycle()
+    val updateDownloadProgress by viewModel.updateDownloadProgress.collectAsStateWithLifecycle()
 
     // Handle back button when in sub-screens
     BackHandler(enabled = currentTab != AppTab.DOWNLOADER) {
@@ -310,10 +316,24 @@ fun TikSaveApp(viewModel: MainViewModel) {
                 AppTab.SETTINGS -> SettingsScreen(
                     onClearCache = {
                         Toast.makeText(context, "Stream cache cleaned successfully", Toast.LENGTH_SHORT).show()
+                    },
+                    onCheckForUpdates = {
+                        viewModel.checkForAppUpdates(silent = false)
                     }
                 )
             }
         }
+    }
+
+    // Modern High-Tech Download Overlay Modal
+    if (isDownloadModalVisible && activeDownload != null) {
+        ModernDownloadModal(
+            download = activeDownload!!,
+            onCancel = viewModel::cancelActiveDownload,
+            onMinimize = viewModel::hideDownloadModal,
+            onPlay = { path -> viewModel.previewMedia(path, activeDownload!!.title) },
+            onDismiss = viewModel::dismissActiveDownload
+        )
     }
 
     // Video preview dialog overlay
@@ -322,6 +342,17 @@ fun TikSaveApp(viewModel: MainViewModel) {
             mediaUrlOrPath = mediaPath,
             title = title,
             onDismiss = viewModel::dismissPreview
+        )
+    }
+
+    // Self Update Dialog
+    updateInfo?.let { info ->
+        UpdateDialog(
+            updateInfo = info,
+            isDownloading = isDownloadingUpdate,
+            downloadProgress = updateDownloadProgress,
+            onInstallUpdate = viewModel::installAppUpdate,
+            onDismiss = viewModel::dismissUpdateDialog
         )
     }
 }

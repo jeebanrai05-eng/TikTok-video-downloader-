@@ -15,13 +15,13 @@ on:
         type: boolean
         default: true
       tag_name:
-        description: 'Release Tag (e.g., v1.0.0)'
+        description: 'Release Tag (e.g. v1.0.1)'
         required: false
-        default: 'v1.0.0'
+        default: 'v1.0.1'
       release_title:
         description: 'Release Title'
         required: false
-        default: 'TikSave Ultra HDR v1.0.0'
+        default: 'TikSave Ultra HDR v1.0.1'
 
 permissions:
   contents: write
@@ -60,21 +60,22 @@ jobs:
             keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
 
-          # Prepare release keystore
-          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            echo "Using custom release keystore from repository secret..."
-            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > my-upload-key.jks
+          # Prepare release keystore using repository secrets
+          B64_KEY="${{ secrets.RELEASE_KEYSTORE_BASE64 || secrets.KEYSTORE_BASE64 }}"
+          if [ -n "$B64_KEY" ]; then
+            echo "Decoding custom release keystore from GitHub Secret..."
+            echo "$B64_KEY" | base64 -d > my-upload-key.jks
           else
-            echo "Generating automated release upload keystore..."
-            keytool -genkey -v -keystore my-upload-key.jks -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=TikSave,O=TikSave,C=US"
+            echo "Generating fallback upload keystore..."
+            keytool -genkey -v -keystore my-upload-key.jks -storepass "${{ secrets.RELEASE_STORE_PASSWORD || secrets.STORE_PASSWORD || 'tiksave2026pass' }}" -alias "${{ secrets.RELEASE_KEY_ALIAS || 'upload' }}" -keypass "${{ secrets.RELEASE_KEY_PASSWORD || secrets.KEY_PASSWORD || 'tiksave2026pass' }}" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=TikSave,O=TikSave,C=US"
           fi
 
       - name: Build Debug and Release APKs
         shell: bash
         env:
           KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
-          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD || 'android' }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'android' }}
+          STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD || secrets.STORE_PASSWORD || 'tiksave2026pass' }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD || secrets.KEY_PASSWORD || 'tiksave2026pass' }}
         run: |
           gradle :app:assembleRelease :app:assembleDebug --stacktrace
 
@@ -86,14 +87,14 @@ jobs:
           RELEASE_APK=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
           if [ -n "$RELEASE_APK" ]; then
             cp "$RELEASE_APK" build-apks/TikSave-Release.apk
-            echo "Release APK copied: TikSave-Release.apk"
+            echo "Release APK ready: TikSave-Release.apk"
           fi
 
           # Find and copy debug APK
           DEBUG_APK=$(find app/build/outputs/apk/debug -name "*.apk" | head -n 1)
           if [ -n "$DEBUG_APK" ]; then
             cp "$DEBUG_APK" build-apks/TikSave-Debug.apk
-            echo "Debug APK copied: TikSave-Debug.apk"
+            echo "Debug APK ready: TikSave-Debug.apk"
           fi
 
           ls -lh build-apks/
@@ -118,7 +119,7 @@ jobs:
             TITLE="TikSave Ultra HDR ${TAG}"
             PUBLISH="true"
           else
-            TAG="v1.0.0-snapshot-${GITHUB_SHA::7}"
+            TAG="v1.0.1-snapshot-${GITHUB_SHA::7}"
             TITLE="TikSave Snapshot (${GITHUB_SHA::7})"
             PUBLISH="false"
           fi
@@ -137,18 +138,17 @@ jobs:
           prerelease: false
           generate_release_notes: true
           body: |
-            ## TikSave — TikTok Video Without Watermark Downloader
+            ## TikSave — TikTok Video Without Watermark Downloader (v1.0.1)
 
-            ### What's New
-            - **No Watermark High-Speed Engine**: Direct link extraction from TikTok without watermark.
-            - **HDR+ Ultra Quality**: Highest bitrate 60FPS original stream downloader.
-            - **Original MP3 Audio Extraction**: Save crystal clear sound tracks.
-            - **In-App Vertical Video Player**: Instant playback preview.
-            - **Offline Library**: Room database persistence and quick file sharing.
+            ### Highlights
+            - **Single File Storage**: Fixed double download bug — now saves exactly 1 clean copy directly to Gallery and Device Storage.
+            - **Modern High-Tech Modal**: Live circular speedometer, real-time MB/s telemetry, and step progress.
+            - **Self Update**: Check for updates and install APK directly inside the app.
+            - **Ultra Speed 128KB CDN Engine**: High throughput buffer and connection pooling.
 
             ### Downloads
-            - **[TikSave-Release.apk](TikSave-Release.apk)** (Recommended)
-            - **[TikSave-Debug.apk](TikSave-Debug.apk)** (Development Build)
+            - **[TikSave-Release.apk](TikSave-Release.apk)** (Production Release)
+            - **[TikSave-Debug.apk](TikSave-Debug.apk)** (Testing Build)
           files: |
             build-apks/TikSave-Release.apk
             build-apks/TikSave-Debug.apk
