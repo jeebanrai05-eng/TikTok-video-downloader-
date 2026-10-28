@@ -144,16 +144,21 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 3. Static File Serving from /public
+  // 3. Static File Serving from /public or root
   let reqPath = pathname === '/' ? '/index.html' : pathname;
   let safePath = path.normalize(reqPath).replace(/^(\.\.[\/\\])+/, '');
   let filePath = path.join(PUBLIC_DIR, safePath);
 
-  fs.stat(filePath, (err, stats) => {
-    if (err || !stats.isFile()) {
-      // Fallback to index.html for SPA
-      filePath = path.join(PUBLIC_DIR, 'index.html');
+  if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+    const rootPath = path.join(__dirname, safePath);
+    if (fs.existsSync(rootPath) && fs.statSync(rootPath).isFile()) {
+      filePath = rootPath;
+    } else {
+      filePath = fs.existsSync(path.join(__dirname, 'index.html')) ? path.join(__dirname, 'index.html') : path.join(PUBLIC_DIR, 'index.html');
     }
+  }
+
+  fs.stat(filePath, (err, stats) => {
 
     const ext = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';

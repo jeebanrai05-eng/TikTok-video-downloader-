@@ -553,31 +553,45 @@ function openDownloadModal(meta, filename, totalBytes, targetUrl) {
   }, 120);
 }
 
-// Direct File Save to Browser Storage
-function saveFileToDevice(url, filename) {
-  // Try via proxy endpoint /api/download first to force Content-Disposition attachment header
-  const directProxy = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
-
-  const a = document.createElement('a');
-  a.href = directProxy;
-  a.download = filename;
-  a.target = '_blank';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-
-  // Fallback direct link after small delay in case proxy was skipped
-  setTimeout(() => {
-    try {
-      const fallbackA = document.createElement('a');
-      fallbackA.href = url;
-      fallbackA.download = filename;
-      fallbackA.target = '_blank';
-      fallbackA.click();
-    } catch (e) {
-      console.warn("Direct download fallback failed:", e);
+// Direct File Save to Browser Storage (Single file, no duplicate)
+async function saveFileToDevice(url, filename) {
+  // 1. Try Blob download first for seamless in-browser saving with custom filename
+  try {
+    const res = await fetch(url, { mode: 'cors' });
+    if (res.ok) {
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        if (document.body.contains(a)) document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      }, 1200);
+      return;
     }
-  }, 400);
+  } catch (e) {
+    console.info("Blob download unavailable or blocked by CORS, using direct stream save:", e);
+  }
+
+  // 2. Single clean trigger (Never duplicate)
+  const isStaticHost = window.location.hostname.includes('github.io') || window.location.protocol === 'file:';
+  const downloadHref = isStaticHost ? url : `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+
+  const singleAnchor = document.createElement('a');
+  singleAnchor.href = downloadHref;
+  singleAnchor.download = filename;
+  singleAnchor.target = '_blank';
+  singleAnchor.rel = 'noopener noreferrer';
+  document.body.appendChild(singleAnchor);
+  singleAnchor.click();
+  setTimeout(() => {
+    if (document.body.contains(singleAnchor)) {
+      document.body.removeChild(singleAnchor);
+    }
+  }, 1200);
 }
 
 function cancelDownload() {
