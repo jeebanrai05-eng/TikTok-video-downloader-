@@ -62,8 +62,10 @@ import androidx.compose.material.icons.filled.SystemUpdate
 fun SettingsScreen(
     onClearCache: () -> Unit,
     onCheckForUpdates: () -> Unit,
+    isCheckingForUpdates: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    var ultra8k120FpsEnabled by remember { mutableStateOf(true) }
     var hdrBoostEnabled by remember { mutableStateOf(true) }
     var highSpeedTurboEnabled by remember { mutableStateOf(true) }
     var autoClipboardEnabled by remember { mutableStateOf(true) }
@@ -83,7 +85,7 @@ fun SettingsScreen(
                 color = Color.White
             )
             Text(
-                text = "Configure high-speed processing and quality limits",
+                text = "Configure 8K 120FPS stream processing and quality limits",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.6f)
             )
@@ -100,10 +102,21 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "HDR & STREAM PROCESSING",
+                        text = "8K 120FPS & STREAM PROCESSING",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = HdrGold,
+                        color = Color(0xFF00E5FF),
                         letterSpacing = 1.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    SettingToggleRow(
+                        icon = Icons.Default.Bolt,
+                        iconTint = Color(0xFF00E5FF),
+                        title = "8K 120FPS Extreme Stream Boost",
+                        subtitle = "Hardware-accelerated 120FPS ultra-smooth decode pipeline for maximum fidelity",
+                        checked = ultra8k120FpsEnabled,
+                        onCheckedChange = { ultra8k120FpsEnabled = it }
                     )
 
                     Spacer(modifier = Modifier.height(14.dp))
@@ -257,12 +270,12 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "TikSave Ultra HDR v1.0.0",
+                                text = "TikSave 8K 120FPS Ultra v1.0.2",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                 color = Color.White
                             )
                             Text(
-                                text = "Engine build: 2026.10-release • HD & 4K No-Watermark",
+                                text = "Engine build: v1.0.2 • 8K 120FPS Extreme & HDR+ Ultra",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.White.copy(alpha = 0.6f)
                             )
@@ -273,15 +286,29 @@ fun SettingsScreen(
 
                     Button(
                         onClick = onCheckForUpdates,
-                        colors = ButtonDefaults.buttonColors(containerColor = NeonCyan, contentColor = Color.Black),
+                        enabled = !isCheckingForUpdates,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF00E5FF),
+                            contentColor = Color.Black
+                        ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("check_for_updates_button")
                     ) {
-                        Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Check for Updates (GitHub Release)", fontWeight = FontWeight.Bold)
+                        if (isCheckingForUpdates) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = Color.Black,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Checking for Updates...", fontWeight = FontWeight.Bold)
+                        } else {
+                            Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Check for Updates", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }

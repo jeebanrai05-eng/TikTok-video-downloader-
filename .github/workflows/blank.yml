@@ -15,13 +15,13 @@ on:
         type: boolean
         default: true
       tag_name:
-        description: 'Release Tag (e.g. v1.0.1)'
+        description: 'Release Tag (e.g. v1.0.2)'
         required: false
-        default: 'v1.0.1'
+        default: 'v1.0.2'
       release_title:
         description: 'Release Title'
         required: false
-        default: 'TikSave Ultra HDR v1.0.1'
+        default: 'TikSave 8K 120FPS Ultra v1.0.2'
 
 permissions:
   contents: write
@@ -114,10 +114,10 @@ jobs:
             PUBLISH="${{ github.event.inputs.create_release }}"
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
-            TITLE="TikSave Ultra HDR ${TAG}"
+            TITLE="TikSave 8K 120FPS Ultra ${TAG}"
             PUBLISH="true"
           else
-            TAG="v1.0.1-snapshot-${GITHUB_SHA::7}"
+            TAG="v1.0.2-snapshot-${GITHUB_SHA::7}"
             TITLE="TikSave Snapshot (${GITHUB_SHA::7})"
             PUBLISH="false"
           fi
@@ -136,7 +136,14 @@ jobs:
           prerelease: false
           generate_release_notes: true
           body: |
-            ## TikSave — TikTok Video Without Watermark Downloader (v1.0.1)
+            ## TikSave — TikTok Video Without Watermark Downloader (v1.0.2)
+
+            ### Highlights
+            - **8K Ultra & 120FPS Extreme Support**: Super smooth video processing engine with extreme resolution & fidelity.
+            - **Single File Storage**: Fixed double download bug — now saves exactly 1 clean copy directly to Gallery and Device Storage.
+            - **Animated Self Update UI**: Modern loading radar, download progress bar, and installation launcher inside the app.
+            - **Real-Time Push Notification**: Instant alerts for new app releases and feature updates.
+            - **Ultra Speed CDN Engine**: High-throughput 64KB buffers with connection pooling.
 
             ### Downloads
             - **[TikSave-Release.apk](TikSave-Release.apk)** (Production Release)

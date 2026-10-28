@@ -47,6 +47,7 @@ data class TikWmMusicInfo(
 )
 
 enum class DownloadQuality(val label: String, val badge: String, val description: String) {
+    ULTRA_8K_120FPS("8K Ultra 120FPS", "8K / 120FPS", "Extreme bitrate 8K 120FPS ultra-smooth stream with zero watermark"),
     HDR_ULTRA("HDR+ Ultra", "4K / 1080p Ultra", "Original bitrate stream with enhanced HDR fidelity & zero watermark"),
     HD_STANDARD("HD Fast", "1080p / 720p", "High-speed clean video without TikTok watermark"),
     AUDIO_ONLY("Audio MP3", "320 kbps", "Extract studio quality background audio soundtrack"),
@@ -65,6 +66,8 @@ data class VideoMetadata(
     val likeCount: Long,
     val commentCount: Long,
     val shareCount: Long,
+    val ultra8kUrl: String,
+    val ultra8kSize: Long,
     val ultraHdrUrl: String,
     val ultraHdrSize: Long,
     val standardHdUrl: String,

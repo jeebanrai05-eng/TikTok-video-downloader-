@@ -55,7 +55,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isDownloading = MutableStateFlow(false)
     val isDownloading: StateFlow<Boolean> = _isDownloading.asStateFlow()
 
-    private val _selectedQuality = MutableStateFlow(DownloadQuality.HDR_ULTRA)
+    private val _selectedQuality = MutableStateFlow(DownloadQuality.ULTRA_8K_120FPS)
     val selectedQuality: StateFlow<DownloadQuality> = _selectedQuality.asStateFlow()
 
     private val _currentTab = MutableStateFlow(AppTab.DOWNLOADER)
@@ -67,8 +67,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _updateInfo = MutableStateFlow<AppUpdateInfo?>(null)
     val updateInfo: StateFlow<AppUpdateInfo?> = _updateInfo.asStateFlow()
 
+    private val _isCheckingForUpdates = MutableStateFlow(false)
+    val isCheckingForUpdates: StateFlow<Boolean> = _isCheckingForUpdates.asStateFlow()
+
     private val _isDownloadingUpdate = MutableStateFlow(false)
     val isDownloadingUpdate: StateFlow<Boolean> = _isDownloadingUpdate.asStateFlow()
+
+    private val _isInstallingUpdate = MutableStateFlow(false)
+    val isInstallingUpdate: StateFlow<Boolean> = _isInstallingUpdate.asStateFlow()
 
     private val _updateDownloadProgress = MutableStateFlow(0f)
     val updateDownloadProgress: StateFlow<Float> = _updateDownloadProgress.asStateFlow()
@@ -191,6 +197,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isDownloading.value = true
 
         val downloadUrl = when (quality) {
+            DownloadQuality.ULTRA_8K_120FPS -> metadata.ultra8kUrl
             DownloadQuality.HDR_ULTRA -> metadata.ultraHdrUrl
             DownloadQuality.HD_STANDARD -> metadata.standardHdUrl
             DownloadQuality.AUDIO_ONLY -> metadata.audioUrl
@@ -219,6 +226,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             progress = 0f,
             bytesDownloaded = 0L,
             totalBytes = when (quality) {
+                DownloadQuality.ULTRA_8K_120FPS -> metadata.ultra8kSize
                 DownloadQuality.HDR_ULTRA -> metadata.ultraHdrSize
                 DownloadQuality.HD_STANDARD -> metadata.standardHdSize
                 else -> 0L
@@ -322,16 +330,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Self-Update methods
     fun checkForAppUpdates(silent: Boolean = false) {
         viewModelScope.launch {
-            val result = updateManager.checkForUpdates(currentVersion = "1.0")
+            if (!silent) {
+                _isCheckingForUpdates.value = true
+            }
+            val result = updateManager.checkForUpdates(currentVersion = "1.0.2")
+            if (!silent) {
+                _isCheckingForUpdates.value = false
+            }
             result.onSuccess { info ->
                 if (info.isUpdateAvailable) {
                     _updateInfo.value = info
+                    // Trigger push notification to alert the user
+                    updateManager.sendUpdateNotification(info)
                 } else if (!silent) {
                     _toastEvents.emit("TikSave is up to date (${info.latestVersion})")
                 }
             }.onFailure {
                 if (!silent) {
-                    _toastEvents.emit("Could not connect to GitHub Release server")
+                    _toastEvents.emit("Could not connect to update server")
                 }
             }
         }
@@ -340,7 +356,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun installAppUpdate() {
         val info = _updateInfo.value ?: return
         if (info.apkDownloadUrl.isBlank()) {
-            // Open GitHub releases in browser if direct apk url not parsed
             FormatUtils.openFileExternally(getApplication<Application>(), "https://github.com/ukserver150/TikSave/releases", "text/html")
             _updateInfo.value = null
             return
@@ -348,6 +363,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         _isDownloadingUpdate.value = true
         _updateDownloadProgress.value = 0f
+        _isInstallingUpdate.value = false
 
         viewModelScope.launch {
             val result = updateManager.downloadAndInstallApk(info.apkDownloadUrl) { progress ->
@@ -355,14 +371,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
             _isDownloadingUpdate.value = false
             result.onSuccess {
-                _updateInfo.value = null
+                _isInstallingUpdate.value = true
+                _toastEvents.emit("Starting package installer...")
             }.onFailure { err ->
+                _isInstallingUpdate.value = false
                 _toastEvents.emit("Update error: ${err.localizedMessage}")
             }
         }
     }
 
     fun dismissUpdateDialog() {
-        _updateInfo.value = null
+        if (!_isDownloadingUpdate.value) {
+            _updateInfo.value = null
+            _isCheckingForUpdates.value = false
+            _isInstallingUpdate.value = false
+        }
     }
 }

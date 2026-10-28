@@ -273,6 +273,15 @@ fun ResultVideoCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 QualityOptionRow(
+                    quality = DownloadQuality.ULTRA_8K_120FPS,
+                    selected = selectedQuality == DownloadQuality.ULTRA_8K_120FPS,
+                    fileSize = metadata.ultra8kSize,
+                    badgeText = "8K 120FPS ULTRA",
+                    badgeColor = Color(0xFF00E5FF),
+                    onClick = { onQualitySelected(DownloadQuality.ULTRA_8K_120FPS) }
+                )
+
+                QualityOptionRow(
                     quality = DownloadQuality.HDR_ULTRA,
                     selected = selectedQuality == DownloadQuality.HDR_ULTRA,
                     fileSize = metadata.ultraHdrSize,
@@ -310,7 +319,12 @@ fun ResultVideoCard(
                     .height(52.dp)
                     .testTag("start_download_button"),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (selectedQuality == DownloadQuality.HDR_ULTRA) HdrGold else NeonCyan,
+                    containerColor = when (selectedQuality) {
+                        DownloadQuality.ULTRA_8K_120FPS -> Color(0xFF00E5FF)
+                        DownloadQuality.HDR_ULTRA -> HdrGold
+                        DownloadQuality.AUDIO_ONLY -> NeonMagenta
+                        else -> NeonCyan
+                    },
                     contentColor = Color.Black
                 ),
                 shape = RoundedCornerShape(14.dp)

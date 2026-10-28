@@ -1,13 +1,19 @@
 package com.example
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -129,8 +135,22 @@ fun TikSaveApp(viewModel: MainViewModel) {
     val allDownloads by viewModel.allDownloads.collectAsStateWithLifecycle()
     val previewingMedia by viewModel.previewingMedia.collectAsStateWithLifecycle()
     val updateInfo by viewModel.updateInfo.collectAsStateWithLifecycle()
+    val isCheckingForUpdates by viewModel.isCheckingForUpdates.collectAsStateWithLifecycle()
     val isDownloadingUpdate by viewModel.isDownloadingUpdate.collectAsStateWithLifecycle()
+    val isInstallingUpdate by viewModel.isInstallingUpdate.collectAsStateWithLifecycle()
     val updateDownloadProgress by viewModel.updateDownloadProgress.collectAsStateWithLifecycle()
+
+    val notificationLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { /* Handled gracefully */ }
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
 
     // Handle back button when in sub-screens
     BackHandler(enabled = currentTab != AppTab.DOWNLOADER) {
@@ -178,14 +198,14 @@ fun TikSaveApp(viewModel: MainViewModel) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(HdrGold.copy(alpha = 0.2f))
-                                .border(1.dp, HdrGold.copy(alpha = 0.7f), RoundedCornerShape(6.dp))
+                                .background(Color(0xFF00E5FF).copy(alpha = 0.2f))
+                                .border(1.dp, Color(0xFF00E5FF).copy(alpha = 0.7f), RoundedCornerShape(6.dp))
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = "HDR ULTRA",
+                                text = "8K 120FPS ULTRA",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = HdrGold,
+                                color = Color(0xFF00E5FF),
                                 fontSize = 9.sp
                             )
                         }
@@ -319,7 +339,8 @@ fun TikSaveApp(viewModel: MainViewModel) {
                     },
                     onCheckForUpdates = {
                         viewModel.checkForAppUpdates(silent = false)
-                    }
+                    },
+                    isCheckingForUpdates = isCheckingForUpdates
                 )
             }
         }
@@ -345,11 +366,13 @@ fun TikSaveApp(viewModel: MainViewModel) {
         )
     }
 
-    // Self Update Dialog
-    updateInfo?.let { info ->
+    // Self Update Dialog (Loading radar, downloading progress, and installing animations)
+    if (updateInfo != null || isCheckingForUpdates) {
         UpdateDialog(
-            updateInfo = info,
+            updateInfo = updateInfo,
+            isChecking = isCheckingForUpdates,
             isDownloading = isDownloadingUpdate,
+            isInstalling = isInstallingUpdate,
             downloadProgress = updateDownloadProgress,
             onInstallUpdate = viewModel::installAppUpdate,
             onDismiss = viewModel::dismissUpdateDialog

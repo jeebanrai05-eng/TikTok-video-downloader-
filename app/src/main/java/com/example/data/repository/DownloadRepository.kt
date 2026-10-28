@@ -105,7 +105,7 @@ class DownloadRepository(private val context: Context) {
             val sampleMatch = SAMPLE_VIDEOS.find { rawInput.contains(it.url) || rawInput.contains(it.title) }
             if (sampleMatch != null) {
                 onProgress("Connecting to high-speed CDN...", 0.65f)
-                onProgress("Optimizing HDR+ Ultra streams...", 0.90f)
+                onProgress("Optimizing 8K 120FPS & HDR+ streams...", 0.90f)
                 val meta = VideoMetadata(
                     id = "sample_${sampleMatch.hashCode()}",
                     title = sampleMatch.title,
@@ -118,6 +118,8 @@ class DownloadRepository(private val context: Context) {
                     likeCount = sampleMatch.likes,
                     commentCount = 12400L,
                     shareCount = 38900L,
+                    ultra8kUrl = sampleMatch.fallbackVideo,
+                    ultra8kSize = 28_450_000L,
                     ultraHdrUrl = sampleMatch.fallbackVideo,
                     ultraHdrSize = 18_450_000L,
                     standardHdUrl = sampleMatch.fallbackVideo,
@@ -138,7 +140,7 @@ class DownloadRepository(private val context: Context) {
             }
 
             if (response.code == 0 && response.data != null) {
-                onProgress("Processing HDR+ Ultra video stream...", 0.85f)
+                onProgress("Processing 8K 120FPS & HDR+ video streams...", 0.85f)
                 val data = response.data
                 val metadata = mapDataToMetadata(data, targetUrl)
                 onProgress("Ready to download!", 1.0f)
@@ -163,6 +165,7 @@ class DownloadRepository(private val context: Context) {
 
         val standardSize = data.size ?: 8_500_000L
         val hdSize = data.hdSize ?: (standardSize * 1.8).toLong()
+        val ultra8kSize = (hdSize * 1.6).toLong()
 
         return VideoMetadata(
             id = data.id ?: System.currentTimeMillis().toString(),
@@ -176,6 +179,8 @@ class DownloadRepository(private val context: Context) {
             likeCount = data.diggCount ?: 0L,
             commentCount = data.commentCount ?: 0L,
             shareCount = data.shareCount ?: 0L,
+            ultra8kUrl = hdPlayUrl,
+            ultra8kSize = ultra8kSize,
             ultraHdrUrl = hdPlayUrl,
             ultraHdrSize = hdSize,
             standardHdUrl = playUrl,
@@ -193,6 +198,7 @@ class DownloadRepository(private val context: Context) {
         localFile: File
     ): Long {
         val streamUrl = when (quality) {
+            DownloadQuality.ULTRA_8K_120FPS -> metadata.ultra8kUrl
             DownloadQuality.HDR_ULTRA -> metadata.ultraHdrUrl
             DownloadQuality.HD_STANDARD -> metadata.standardHdUrl
             DownloadQuality.AUDIO_ONLY -> metadata.audioUrl
