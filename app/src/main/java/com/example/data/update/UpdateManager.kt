@@ -68,7 +68,7 @@ class UpdateManager(private val context: Context) {
                             val vCode = json.optInt("versionCode", 2)
                             val title = json.optString("releaseTitle", "TikSave 8K 120FPS Ultra v$vName")
                             val notes = json.optString("releaseNotes", "• 8K Ultra 120FPS streaming\n• Duplicate download fixed\n• Performance improvements")
-                            val apk = json.optString("apkUrl", "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v$vName/TikSave-Release.apk")
+                            val apk = json.optString("apkUrl", "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v$vName/TikSave-Debug.apk")
 
                             val hasNewer = isNewerVersion(currentVersion, vName) || vCode > 2
                             return@withContext Result.success(
@@ -123,7 +123,7 @@ class UpdateManager(private val context: Context) {
                 }
 
                 if (apkUrl.isBlank()) {
-                    apkUrl = "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/$tagName/TikSave-Release.apk"
+                    apkUrl = "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/$tagName/TikSave-Debug.apk"
                 }
 
                 val hasNewer = isNewerVersion(currentVersion, cleanTag)
