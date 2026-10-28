@@ -356,7 +356,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun installAppUpdate() {
         val info = _updateInfo.value ?: return
         if (info.apkDownloadUrl.isBlank()) {
-            FormatUtils.openFileExternally(getApplication<Application>(), "https://github.com/ukserver150/TikSave/releases", "text/html")
+            FormatUtils.openFileExternally(getApplication<Application>(), "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases", "text/html")
             _updateInfo.value = null
             return
         }

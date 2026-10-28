@@ -44,9 +44,9 @@ class UpdateManager(private val context: Context) {
     companion object {
         const val UPDATE_CHANNEL_ID = "tiksave_updates"
         const val UPDATE_NOTIFICATION_ID = 9001
-        private const val RAW_VERSION_MAIN = "https://raw.githubusercontent.com/ukserver150/TikSave/main/version.json"
-        private const val RAW_VERSION_MASTER = "https://raw.githubusercontent.com/ukserver150/TikSave/master/version.json"
-        private const val GITHUB_API_LATEST = "https://api.github.com/repos/ukserver150/TikSave/releases/latest"
+        private const val RAW_VERSION_MAIN = "https://raw.githubusercontent.com/jeebanrai05-eng/TikTok-video-downloader-/main/version.json"
+        private const val RAW_VERSION_MASTER = "https://raw.githubusercontent.com/jeebanrai05-eng/TikTok-video-downloader-/master/version.json"
+        private const val GITHUB_API_LATEST = "https://api.github.com/repos/jeebanrai05-eng/TikTok-video-downloader-/releases/latest"
     }
 
     suspend fun checkForUpdates(currentVersion: String = "1.0.2"): Result<AppUpdateInfo> = withContext(Dispatchers.IO) {
@@ -68,7 +68,7 @@ class UpdateManager(private val context: Context) {
                             val vCode = json.optInt("versionCode", 2)
                             val title = json.optString("releaseTitle", "TikSave 8K 120FPS Ultra v$vName")
                             val notes = json.optString("releaseNotes", "• 8K Ultra 120FPS streaming\n• Duplicate download fixed\n• Performance improvements")
-                            val apk = json.optString("apkUrl", "https://github.com/ukserver150/TikSave/releases/download/v$vName/TikSave-Release.apk")
+                            val apk = json.optString("apkUrl", "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v$vName/TikSave-Release.apk")
 
                             val hasNewer = isNewerVersion(currentVersion, vName) || vCode > 2
                             return@withContext Result.success(
@@ -123,7 +123,7 @@ class UpdateManager(private val context: Context) {
                 }
 
                 if (apkUrl.isBlank()) {
-                    apkUrl = "https://github.com/ukserver150/TikSave/releases/download/$tagName/TikSave-Release.apk"
+                    apkUrl = "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/$tagName/TikSave-Release.apk"
                 }
 
                 val hasNewer = isNewerVersion(currentVersion, cleanTag)
@@ -143,7 +143,7 @@ class UpdateManager(private val context: Context) {
                         latestVersion = "v1.0.2",
                         releaseTitle = "TikSave 8K 120FPS Ultra v1.0.2",
                         releaseNotes = "• 8K Ultra 120FPS Extreme stream mode\n• Fixed double video download bug\n• Modern animated update manager\n• Direct device storage & Gallery sync",
-                        apkDownloadUrl = "https://github.com/ukserver150/TikSave/releases",
+                        apkDownloadUrl = "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases",
                         isUpdateAvailable = false
                     )
                 )

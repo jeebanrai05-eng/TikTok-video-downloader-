@@ -110,35 +110,55 @@ jobs:
         id: release_info
         shell: bash
         run: |
+          # Extract version from version.json or fallback
+          VER_NAME="1.0.2"
+          if [ -f "version.json" ]; then
+            PARSED_VER=$(grep -o '"versionName"[[:space:]]*:[[:space:]]*"[^"]*"' version.json | head -n 1 | cut -d'"' -f4)
+            if [ -n "$PARSED_VER" ]; then
+              VER_NAME="$PARSED_VER"
+            fi
+          fi
+
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             TAG="${{ github.event.inputs.tag_name }}"
+            if [ -z "$TAG" ]; then
+              TAG="v${VER_NAME}"
+            fi
             TITLE="${{ github.event.inputs.release_title }}"
+            if [ -z "$TITLE" ]; then
+              TITLE="TikSave 8K 120FPS Ultra ${TAG}"
+            fi
             PUBLISH="${{ github.event.inputs.create_release }}"
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
             TITLE="TikSave 8K 120FPS Ultra ${TAG}"
             PUBLISH="true"
           else
-            TAG="v1.0.2-snapshot-${GITHUB_SHA::7}"
-            TITLE="TikSave Snapshot (${GITHUB_SHA::7})"
-            PUBLISH="false"
+            # Pushed to main or master: automatically publish release
+            TAG="v${VER_NAME}"
+            TITLE="TikSave 8K 120FPS Ultra ${TAG}"
+            PUBLISH="true"
           fi
 
           echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG" >> $GITHUB_OUTPUT
           echo "title=$TITLE" >> $GITHUB_OUTPUT
           echo "publish=$PUBLISH" >> $GITHUB_OUTPUT
+          echo "Release config: tag=$TAG, title=$TITLE, publish=$PUBLISH"
 
       - name: Create GitHub Release
         if: steps.release_info.outputs.publish == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.release_info.outputs.tag_name }}
-          name: ${{ steps.release_info.outputs.title }}
+          tag_name: ${{ steps.release_info.outputs.tag_name || steps.release_info.outputs.tag || 'v1.0.2' }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.release_info.outputs.title || 'TikSave 8K 120FPS Ultra v1.0.2' }}
           draft: false
           prerelease: false
+          make_latest: true
           generate_release_notes: true
           body: |
-            ## TikSave — TikTok Video Without Watermark Downloader (v1.0.2)
+            ## TikSave — TikTok Video Without Watermark Downloader (${{ steps.release_info.outputs.tag_name || steps.release_info.outputs.tag || 'v1.0.2' }})
 
             ### Highlights
             - **8K Ultra & 120FPS Extreme Support**: Super smooth video processing engine with extreme resolution & fidelity.
@@ -155,3 +175,4 @@ jobs:
             build-apks/TikSave-Debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
