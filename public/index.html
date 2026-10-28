@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TikSave - Ultra HDR TikTok Downloader | No Watermark</title>
+  <meta name="description" content="Download TikTok videos without watermark in pristine 8K 120FPS, HDR+ Ultra, 1080p HD, and MP3 audio at lightning speeds.">
+  <meta name="theme-color" content="#090a0f">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="TikSave - Ultra HDR TikTok Downloader">
+  <meta property="og:description" content="Download TikTok videos without watermark in high speed original quality.">
+  <meta property="og:image" content="/assets/hero_speed_download_1793123031118.jpg">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/jpeg" href="/assets/ic_tiksave_icon_1793123016545.jpg">
+  
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+  <!-- Top Sticky Navigation Bar -->
+  <header class="top-header">
+    <div class="header-inner">
+      <div class="brand-wrapper" onclick="switchTab('downloader')">
+        <div class="brand-icon">
+          <img src="/assets/ic_tiksave_icon_1793123016545.jpg" alt="TikSave Logo" onerror="this.src='https://picsum.photos/seed/tiklogo/100/100'">
+        </div>
+        <div class="brand-info">
+          <h1>TikSave <span class="brand-badge">NO WATERMARK</span></h1>
+          <div class="brand-sub">Ultra HDR • 8K 120FPS Stream Engine</div>
+        </div>
+      </div>
+
+      <div class="header-status">
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          <span>100 MB/s CDN</span>
+        </div>
+        <a href="https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/latest" target="_blank" class="btn-apk-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>APK v1.0.2</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-container">
+
+    <!-- Top Tab Navigation (Desktop / Tablet) -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" id="tab-btn-downloader" onclick="switchTab('downloader')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Downloader
+      </button>
+      <button class="nav-tab" id="tab-btn-batch" onclick="switchTab('batch')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        Batch Downloader
+      </button>
+      <button class="nav-tab" id="tab-btn-library" onclick="switchTab('library')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Saved Library (<span id="lib-count-badge">0</span>)
+      </button>
+      <button class="nav-tab" id="tab-btn-settings" onclick="switchTab('settings')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings & APK
+      </button>
+    </nav>
+
+    <!-- ==================== VIEW 1: SINGLE DOWNLOADER ==================== -->
+    <section id="view-downloader">
+
+      <!-- Hero Speed Banner -->
+      <div class="hero-banner">
+        <img src="/assets/hero_speed_download_1793123031118.jpg" alt="Speed Download Engine" class="hero-bg-img" onerror="this.style.display='none'">
+        <div class="hero-overlay">
+          <div class="hero-top-row">
+            <div class="badge-hdr">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm-8 11H9.5v-2h-2v2H6V9h1.5v2.5h2V9H11v6zm7-1c0 .55-.45 1-1 1h-4V9h4c.55 0 1 .45 1 1v5zm-1.5-3.5h-2v3h2v-3z"/></svg>
+              <span>HDR+ ULTRA ENGINE</span>
+            </div>
+            <div class="badge-turbo">
+              <span class="status-dot"></span>
+              <span>100 MB/s Turbo CDN</span>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="hero-title">No Watermark TikTok Downloader</h2>
+            <div class="hero-features">
+              <div class="hero-feat-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Zero Logo</span>
+              </div>
+              <div class="hero-feat-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--neon-magenta)" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>8K / 120FPS Ultra</span>
+              </div>
+              <div class="hero-feat-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--hdr-gold)" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <span>MP3 Audio HQ</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auto-detect Clipboard Banner -->
+      <div id="clipboard-banner" class="clipboard-banner">
+        <div class="clipboard-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+        </div>
+        <div class="clipboard-text">
+          <div class="clipboard-label">TikTok link detected in clipboard</div>
+          <div class="clipboard-url" id="clipboard-url-text">https://vt.tiktok.com/...</div>
+        </div>
+        <button class="btn-use-clip" onclick="useClipboardDetectedLink()">Use Link</button>
+        <button class="btn-close-clip" onclick="dismissClipboardBanner()">✕</button>
+      </div>
+
+      <!-- URL Input Card -->
+      <div class="input-card">
+        <div class="input-label-row">
+          <span class="input-title">Paste TikTok Link</span>
+          <span style="font-size: 11px; color: var(--text-tertiary);">Supports vt.tiktok.com, tiktok.com/@user/video/...</span>
+        </div>
+
+        <div class="input-box">
+          <div class="input-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </div>
+          <input 
+            type="url" 
+            id="url-input" 
+            class="url-input" 
+            placeholder="Paste TikTok video link here..." 
+            autocomplete="off" 
+            spellcheck="false"
+            oninput="handleInputStateChange()"
+            onkeydown="if(event.key==='Enter') startExtraction()"
+          >
+          <div class="input-actions">
+            <button class="btn-icon-clear" id="btn-clear-input" onclick="clearInput()" title="Clear">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <button class="btn-paste" onclick="pasteFromClipboard()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+              <span>Paste</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quality Select Chips -->
+        <div class="quality-chips-section">
+          <div class="quality-header-label">Default Download Stream Quality:</div>
+          <div class="quality-chips-list">
+            <div class="quality-chip active chip-8k" onclick="selectQuality('8k', this)">
+              <span class="chip-badge" style="color: #00e5ff;">8K / 120FPS</span>
+              <span class="chip-name">8K Ultra Max</span>
+            </div>
+            <div class="quality-chip chip-hdr" onclick="selectQuality('hdr', this)">
+              <span class="chip-badge" style="color: var(--hdr-gold);">4K / 1080p Ultra</span>
+              <span class="chip-name">HDR+ Ultra</span>
+            </div>
+            <div class="quality-chip" onclick="selectQuality('hd', this)">
+              <span class="chip-badge" style="color: var(--neon-cyan);">1080p / 720p</span>
+              <span class="chip-name">HD Standard</span>
+            </div>
+            <div class="quality-chip chip-mp3" onclick="selectQuality('mp3', this)">
+              <span class="chip-badge" style="color: var(--neon-magenta);">320 kbps</span>
+              <span class="chip-name">Audio MP3</span>
+            </div>
+            <div class="quality-chip" onclick="selectQuality('cover', this)">
+              <span class="chip-badge" style="color: #aaa;">JPG Poster</span>
+              <span class="chip-name">HD Cover</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Primary CTA Extract Button -->
+        <button class="btn-cta-extract" id="btn-extract-main" onclick="startExtraction()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>Download Video (No Watermark)</span>
+        </button>
+
+        <!-- Sample Videos for Quick Testing -->
+        <div class="samples-card">
+          <div class="samples-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>Or test immediately with trending samples:</span>
+          </div>
+          <div class="samples-list">
+            <button class="sample-btn" onclick="loadSampleVideo(0)">
+              <span>⚡ Neon Odyssey (8K 60FPS)</span>
+            </button>
+            <button class="sample-btn" onclick="loadSampleVideo(1)">
+              <span>🌅 Sunset Coastline (4K)</span>
+            </button>
+            <button class="sample-btn" onclick="loadSampleVideo(2)">
+              <span>🎵 Tokyo Lo-Fi Beats (HQ Audio)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Extracting / Analyzing Progress Card -->
+      <div id="extracting-box" class="extracting-box">
+        <div class="extracting-header">
+          <div class="spinner-ring"></div>
+          <div>
+            <div class="extracting-title">Extracting Clean Stream...</div>
+            <div class="extracting-stage" id="extracting-stage-label">Analyzing TikTok link structure...</div>
+          </div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="extracting-progress-bar"></div>
+        </div>
+      </div>
+
+      <!-- Error Notification Card -->
+      <div id="error-card" class="error-card">
+        <div class="error-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="error-text" id="error-card-msg">Could not extract video. Please check the URL.</div>
+      </div>
+
+      <!-- Result Video Card -->
+      <div id="result-card" class="result-card">
+        <!-- Author Profile Row -->
+        <div class="author-row">
+          <div class="author-left">
+            <img id="res-author-avatar" src="" alt="Author" class="author-avatar" onerror="this.src='https://picsum.photos/seed/creator/100/100'">
+            <div class="author-meta">
+              <h3 id="res-author-nickname">Creator Name</h3>
+              <div class="author-username" id="res-author-username">@username</div>
+            </div>
+          </div>
+          <div class="badge-nowatermark">NO WATERMARK</div>
+        </div>
+
+        <!-- Thumbnail / Video Preview Player Trigger -->
+        <div class="media-preview-container" onclick="openVideoPlayerModal()">
+          <img id="res-video-cover" src="" alt="Thumbnail" class="media-thumbnail">
+          <div class="media-dark-gradient"></div>
+          <button class="btn-play-preview" title="Watch In-App Preview">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </button>
+          <div class="preview-duration" id="res-video-duration">00:15</div>
+          <div class="preview-hdr-tag">HDR+ ULTRA</div>
+        </div>
+
+        <!-- Video Caption Title -->
+        <div class="video-caption" id="res-video-title">TikTok video title goes here...</div>
+
+        <!-- Audio Music Info -->
+        <div class="music-row" id="res-music-row">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          <span id="res-music-title">Original Sound - Trending Beats</span>
+        </div>
+
+        <!-- Video Statistics -->
+        <div class="stats-row">
+          <div class="stat-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span id="res-stat-views">0</span>
+          </div>
+          <div class="stat-item stat-likes">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <span id="res-stat-likes">0</span>
+          </div>
+          <div class="stat-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span id="res-stat-comments">0</span>
+          </div>
+          <div class="stat-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            <span id="res-stat-shares">0</span>
+          </div>
+        </div>
+
+        <!-- Stream Quality Selection Option Rows -->
+        <div class="stream-options-title">Select Download Stream</div>
+        <div class="stream-options-list">
+          <div class="stream-row active" id="stream-row-8k" onclick="selectStreamRow('8k')">
+            <div class="stream-left">
+              <div class="stream-radio"></div>
+              <div>
+                <div class="stream-name">8K Ultra 120FPS Stream</div>
+                <div class="stream-desc">Extreme bitrate smooth 120FPS zero watermark stream</div>
+              </div>
+            </div>
+            <div class="stream-right">
+              <span class="stream-size" id="size-8k">~28 MB</span>
+              <span class="stream-badge badge-8k-pill">8K 120FPS</span>
+            </div>
+          </div>
+
+          <div class="stream-row" id="stream-row-hdr" onclick="selectStreamRow('hdr')">
+            <div class="stream-left">
+              <div class="stream-radio"></div>
+              <div>
+                <div class="stream-name">HDR+ Ultra (Best Quality)</div>
+                <div class="stream-desc">Enhanced 4K / 1080p clean video with deep colors</div>
+              </div>
+            </div>
+            <div class="stream-right">
+              <span class="stream-size" id="size-hdr">~18 MB</span>
+              <span class="stream-badge badge-hdr-pill">BEST QUALITY</span>
+            </div>
+          </div>
+
+          <div class="stream-row" id="stream-row-hd" onclick="selectStreamRow('hd')">
+            <div class="stream-left">
+              <div class="stream-radio"></div>
+              <div>
+                <div class="stream-name">HD Fast Stream (Standard)</div>
+                <div class="stream-desc">Original clean video without TikTok watermark</div>
+              </div>
+            </div>
+            <div class="stream-right">
+              <span class="stream-size" id="size-hd">~9 MB</span>
+              <span class="stream-badge badge-hd-pill">FAST SPEED</span>
+            </div>
+          </div>
+
+          <div class="stream-row" id="stream-row-mp3" onclick="selectStreamRow('mp3')">
+            <div class="stream-left">
+              <div class="stream-radio"></div>
+              <div>
+                <div class="stream-name">Audio Soundtrack (MP3)</div>
+                <div class="stream-desc">Crystal clear 320 kbps background audio extraction</div>
+              </div>
+            </div>
+            <div class="stream-right">
+              <span class="stream-size" id="size-mp3">~3.5 MB</span>
+              <span class="stream-badge badge-mp3-pill">MP3 ONLY</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Download Buttons -->
+        <div class="download-action-grid">
+          <button class="btn-primary-download" id="btn-download-selected" onclick="triggerDownload()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span id="btn-download-label">Download 8K 120FPS (No Watermark)</span>
+          </button>
+
+          <div class="btn-row-secondary">
+            <button class="btn-sec-action" onclick="openVideoPlayerModal()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Watch Preview</span>
+            </button>
+            <button class="btn-sec-action" onclick="copyDirectStreamLink()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copy Link</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== VIEW 2: BATCH DOWNLOADER ==================== -->
+    <section id="view-batch" class="batch-container">
+      <h2 style="font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px;">Batch Video Downloader</h2>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">
+        Paste multiple TikTok links (one per line) to analyze and download in bulk at maximum CDN speeds.
+      </p>
+
+      <textarea id="batch-textarea" class="batch-textarea" placeholder="https://www.tiktok.com/@user/video/12345678&#10;https://vt.tiktok.com/ABCDEFG/&#10;https://www.tiktok.com/@user2/video/87654321"></textarea>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 18px;">
+        <button class="btn-cta-extract" style="margin-top: 0; flex: 2;" onclick="startBatchProcessing()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Extract All Links</span>
+        </button>
+        <button class="btn-sec-action" style="flex: 1;" onclick="clearBatch()">Clear</button>
+      </div>
+
+      <div id="batch-list-container"></div>
+    </section>
+
+    <!-- ==================== VIEW 3: SAVED LIBRARY ==================== -->
+    <section id="view-library" class="library-container">
+      <div class="library-header">
+        <div>
+          <h2 style="font-size: 20px; font-weight: 800; color: #fff;">Saved Downloads</h2>
+          <div style="font-size: 12px; color: var(--text-secondary);">Locally stored history of downloaded videos</div>
+        </div>
+        <button class="btn-sec-action" style="padding: 6px 14px; height: 36px; font-size: 12px;" onclick="clearHistory()">Clear All</button>
+      </div>
+
+      <div id="library-grid" class="library-grid">
+        <!-- Rendered via JS -->
+      </div>
+      <div id="library-empty" style="text-align: center; padding: 40px 20px; color: var(--text-tertiary); display: none;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <div style="font-size: 15px; font-weight: 600; color: #fff;">No Saved Videos Yet</div>
+        <div style="font-size: 13px;">Extract and download a video to see it stored in your library!</div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 4: SETTINGS & APK ==================== -->
+    <section id="view-settings" class="settings-container">
+      <div class="settings-card">
+        <h3 style="font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 14px;">Engine Preferences</h3>
+        
+        <div class="settings-row">
+          <div class="settings-info">
+            <h4>8K 120FPS Stream Processing</h4>
+            <p>Unlock extreme bitrate smooth streams when available on server CDN</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="setting-8k" checked onchange="savePreferences()">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-info">
+            <h4>HDR+ Video Color Boost</h4>
+            <p>Preserve vibrant wide gamut dynamic range without compression artifacts</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="setting-hdr" checked onchange="savePreferences()">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-info">
+            <h4>Turbo Multi-Thread CDN</h4>
+            <p>Accelerate downloads with parallel chunks up to 100 MB/s</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="setting-turbo" checked onchange="savePreferences()">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-info">
+            <h4>Auto Clipboard Detection</h4>
+            <p>Automatically detect TikTok links when you focus or return to the app</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="setting-clip" checked onchange="savePreferences()">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Android APK Promo Card -->
+      <div class="apk-card">
+        <div class="apk-left">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span class="brand-badge" style="background: rgba(0,242,254,0.2); color: var(--neon-cyan); border-color: var(--neon-cyan);">OFFICIAL RELEASE</span>
+            <span style="font-size: 11px; color: var(--text-secondary);">Android 8.0 - 15+</span>
+          </div>
+          <h3>TikSave for Android v1.0.2</h3>
+          <p>Get the full native Android app with background downloads, gallery auto-sync, home screen widgets, and zero ads.</p>
+          <div class="apk-tags">
+            <span class="apk-tag">Direct APK</span>
+            <span class="apk-tag">Self Update</span>
+            <span class="apk-tag">100% Free</span>
+          </div>
+        </div>
+        <a href="https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.0.2/app-release.apk" class="btn-apk-download" target="_blank">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Download APK</span>
+        </a>
+      </div>
+
+      <!-- App Info -->
+      <div style="text-align: center; margin-top: 24px; font-size: 12px; color: var(--text-tertiary);">
+        TikSave Web & Android App • Version 1.0.2 (Build 3)<br>
+        Developed for ultra-fast, watermark-free TikTok media preservation.
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Modern Download Progress Modal (Matches ModernDownloadModal.kt) -->
+  <div id="modal-download" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-dl-header">
+        <div style="font-size: 15px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <span class="status-dot"></span>
+          <span id="modal-dl-status-title">Downloading Stream...</span>
+        </div>
+        <button onclick="closeDownloadModal()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 18px;">✕</button>
+      </div>
+
+      <div class="modal-dl-body">
+        <!-- Circular Progress Bar -->
+        <div class="progress-circle-wrap">
+          <svg class="progress-circle-svg">
+            <circle class="progress-circle-bg" cx="65" cy="65" r="55"></circle>
+            <circle class="progress-circle-bar" id="progress-circle-bar" cx="65" cy="65" r="55"></circle>
+          </svg>
+          <div class="progress-circle-text" id="modal-dl-pct">0%</div>
+        </div>
+
+        <div class="modal-dl-title" id="modal-dl-video-title">TikTok Video</div>
+        <div class="modal-dl-speed" id="modal-dl-speed">18.4 MB/s • High Speed Turbo CDN</div>
+        <div class="modal-dl-bytes" id="modal-dl-bytes">0 MB / 18.4 MB</div>
+
+        <div id="modal-dl-actions" style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+          <button class="btn-sec-action" id="modal-dl-cancel-btn" style="flex: 1;" onclick="cancelDownload()">Cancel</button>
+          <button class="btn-primary-download" id="modal-dl-play-btn" style="flex: 1; height: 44px; font-size: 13px; display: none;" onclick="openVideoPlayerModal()">
+            <span>Play Video</span>
+          </button>
+          <button class="btn-sec-action" id="modal-dl-done-btn" style="flex: 1; height: 44px; display: none;" onclick="closeDownloadModal()">
+            <span>Done</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- In-App Video Preview Player Modal (Matches VideoPlayerDialog.kt) -->
+  <div id="modal-player" class="modal-backdrop">
+    <div class="modal-content video-player-modal">
+      <div class="modal-dl-header">
+        <div style="font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%;" id="player-modal-title">
+          Watch In-App Preview
+        </div>
+        <button onclick="closeVideoPlayerModal()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 18px;">✕</button>
+      </div>
+      <div class="video-player-container">
+        <video id="preview-video-element" controls playsinline preload="metadata">
+          Your browser does not support HTML5 video.
+        </video>
+      </div>
+      <div style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; background: var(--surface-variant);">
+        <span style="font-size: 12px; color: var(--neon-cyan); font-weight: 600;">Clean Video (No Watermark)</span>
+        <button class="btn-primary-download" style="width: auto; height: 36px; padding: 0 16px; font-size: 12px;" onclick="triggerDownload()">
+          Download
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation Bar for Mobile Phones (Native App Feel) -->
+  <nav class="bottom-nav">
+    <button class="bnav-item active" id="bnav-downloader" onclick="switchTab('downloader')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span>Downloader</span>
+    </button>
+    <button class="bnav-item" id="bnav-batch" onclick="switchTab('batch')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      <span>Batch</span>
+    </button>
+    <button class="bnav-item" id="bnav-library" onclick="switchTab('library')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      <span>Library</span>
+    </button>
+    <button class="bnav-item" id="bnav-settings" onclick="switchTab('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <script src="/app.js"></script>
+</body>
+</html>

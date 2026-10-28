@@ -1,0 +1,19 @@
+{
+  "name": "tiksave-web",
+  "version": "1.0.2",
+  "description": "Ultra HDR TikTok Video Downloader without Watermark - Web App & Android Companion",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "tiktok",
+    "downloader",
+    "no-watermark",
+    "hdr",
+    "tiksave"
+  ],
+  "author": "jeebanrai05-eng",
+  "license": "MIT"
+}
