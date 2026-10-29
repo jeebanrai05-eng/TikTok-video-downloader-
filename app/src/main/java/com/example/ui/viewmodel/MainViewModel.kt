@@ -26,8 +26,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+import android.content.Intent
+import android.net.Uri
+import com.example.data.model.TrendingPoliticsItem
+import com.example.data.repository.TrendingPoliticsRepository
+import kotlinx.coroutines.flow.combine
+
 enum class AppTab {
     DOWNLOADER,
+    TRENDING,
     LIBRARY,
     SETTINGS
 }
