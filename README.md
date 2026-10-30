@@ -1,18 +1,17 @@
 # TikSave - Ultra HDR TikTok Video Downloader
 
-[![OpenRepos](https://openrepos.org/badge.svg)](https://openrepos.org)
-[![Subdomain](https://img.shields.io/badge/OpenRepos-tiksave.openrepos.org-00C853?style=flat-square)](https://tiksave.openrepos.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/badge/Release-v1.0.2-ff0050.svg)](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-00C853?style=flat-square)](https://jeebanrai05-eng.github.io/TikTok-video-downloader-/)
 
 TikSave is a high-speed, modern TikTok video downloader and web application. Download TikTok videos without watermarks in pristine 8K 120FPS, HDR+ Ultra, 1080p Full HD, or extract high-fidelity MP3 audio streams.
 
 ---
 
-## 🌐 Live Web & Subdomain
+## 🌐 Live Web & Privacy Policy
 
-- **Custom Domain (OpenRepos):** [https://tiksave.openrepos.org](https://tiksave.openrepos.org) *(Pending PR merge & DNS activation)*
-- **GitHub Pages Fallback:** [https://jeebanrai05-eng.github.io/TikTok-video-downloader-/](https://jeebanrai05-eng.github.io/TikTok-video-downloader-/)
+- **Official Web App:** [https://jeebanrai05-eng.github.io/TikTok-video-downloader-/](https://jeebanrai05-eng.github.io/TikTok-video-downloader-/)
+- **Privacy Policy:** [https://jeebanrai05-eng.github.io/TikTok-video-downloader-/privacy.html](https://jeebanrai05-eng.github.io/TikTok-video-downloader-/privacy.html)
 
 ---
 
