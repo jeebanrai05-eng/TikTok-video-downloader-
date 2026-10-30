@@ -30,16 +30,6 @@ Download the official Android application directly to your phone:
 
 ---
 
-## ⚙️ OpenRepos Subdomain Registration Details
-
-- **Subdomain:** `tiksave`
-- **Domain:** `openrepos.org`
-- **Repository:** `https://github.com/jeebanrai05-eng/TikTok-video-downloader-`
-- **Hosting Target:** `jeebanrai05-eng.github.io`
-- **License:** MIT License (Open Source)
-
----
-
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE) - see the LICENSE file for details.
