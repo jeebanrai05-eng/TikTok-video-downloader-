@@ -12,6 +12,7 @@ TikSave is a high-speed, modern TikTok video downloader and web application. Dow
 
 - **Official Web App:** [https://jeebanrai05-eng.github.io/TikTok-video-downloader-/](https://jeebanrai05-eng.github.io/TikTok-video-downloader-/)
 - **Privacy Policy:** [https://jeebanrai05-eng.github.io/TikTok-video-downloader-/privacy.html](https://jeebanrai05-eng.github.io/TikTok-video-downloader-/privacy.html)
+- **Terms of Service:** [https://jeebanrai05-eng.github.io/TikTok-video-downloader-/terms.html](https://jeebanrai05-eng.github.io/TikTok-video-downloader-/terms.html)
 
 ---
 
