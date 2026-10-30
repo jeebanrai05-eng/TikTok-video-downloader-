@@ -96,6 +96,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val favoriteDownloads: StateFlow<List<DownloadItem>> = repository.favoriteDownloads
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    // Trending Nepal Politics state
+    private val _trendingCategory = MutableStateFlow("सबै (All)")
+    val trendingCategory: StateFlow<String> = _trendingCategory.asStateFlow()
+
+    private val _trendingSearchQuery = MutableStateFlow("")
+    val trendingSearchQuery: StateFlow<String> = _trendingSearchQuery.asStateFlow()
+
+    val trendingVideos: StateFlow<List<TrendingPoliticsItem>> = combine(
+        _trendingCategory,
+        _trendingSearchQuery
+    ) { cat, query ->
+        TrendingPoliticsRepository.getItemsForCategory(cat, query)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TrendingPoliticsRepository.TRENDING_POLITICS_VIDEOS)
+
     private var currentDownloadJob: Job? = null
 
     init {
@@ -392,6 +406,84 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _updateInfo.value = null
             _isCheckingForUpdates.value = false
             _isInstallingUpdate.value = false
+        }
+    }
+
+    // Trending Nepal Politics actions
+    fun setTrendingCategory(category: String) {
+        _trendingCategory.value = category
+    }
+
+    fun setTrendingSearchQuery(query: String) {
+        _trendingSearchQuery.value = query
+    }
+
+    fun copyFacebookPost(item: TrendingPoliticsItem) {
+        val clipboard = getApplication<Application>().getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+        val clip = ClipData.newPlainText("Facebook Post", item.fullFacebookPostContent)
+        clipboard?.setPrimaryClip(clip)
+        viewModelScope.launch {
+            _toastEvents.emit("📋 Facebook Title & Hashtags copied to clipboard!")
+        }
+    }
+
+    fun downloadTrendingVideo(item: TrendingPoliticsItem) {
+        val metadata = VideoMetadata(
+            id = item.id,
+            title = item.title,
+            authorNickname = item.authorName,
+            authorUsername = item.authorHandle,
+            authorAvatar = item.coverUrl,
+            coverUrl = item.coverUrl,
+            durationSeconds = 60,
+            playCount = 1000000L,
+            likeCount = 200000L,
+            commentCount = 15000L,
+            shareCount = 25000L,
+            ultra8kUrl = item.videoUrl,
+            ultra8kSize = 25000000L,
+            ultraHdrUrl = item.videoUrl,
+            ultraHdrSize = 18000000L,
+            standardHdUrl = item.videoUrl,
+            standardHdSize = 12000000L,
+            audioUrl = item.videoUrl,
+            musicTitle = "Original Political Audio - Nepal",
+            musicAuthor = item.authorName,
+            originalTikTokUrl = "https://www.tiktok.com/${item.authorHandle}"
+        )
+        startDownload(metadata, DownloadQuality.HDR_ULTRA)
+    }
+
+    fun downloadAndShareToFacebook(context: Context, item: TrendingPoliticsItem) {
+        copyFacebookPost(item)
+        downloadTrendingVideo(item)
+
+        try {
+            val fbIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, item.fullFacebookPostContent)
+                setPackage("com.facebook.katana")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(fbIntent)
+        } catch (_: Exception) {
+            try {
+                val shareIntent = Intent.createChooser(
+                    Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, item.fullFacebookPostContent)
+                    },
+                    "Post to Facebook"
+                ).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(shareIntent)
+            } catch (_: Exception) {
+                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.facebook.com/")).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(browserIntent)
+            }
         }
     }
 }

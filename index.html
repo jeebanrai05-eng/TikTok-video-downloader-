@@ -15,6 +15,9 @@
   <!-- Favicon -->
   <link rel="icon" type="image/jpeg" href="./assets/ic_tiksave_icon_1793123016545.jpg">
   
+  <!-- TikTok Developer URL Prefix Site Verification Tag -->
+  <meta name="tiktok-developers-site-verification" content="">
+
   <link rel="stylesheet" href="./app.css">
 </head>
 <body>
@@ -53,6 +56,10 @@
       <button class="nav-tab active" id="tab-btn-downloader" onclick="switchTab('downloader')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         Downloader
+      </button>
+      <button class="nav-tab" id="tab-btn-trending" onclick="switchTab('trending')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+        🔥 Trending Nepal
       </button>
       <button class="nav-tab" id="tab-btn-batch" onclick="switchTab('batch')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
@@ -362,7 +369,54 @@
 
     </section>
 
-    <!-- ==================== VIEW 2: BATCH DOWNLOADER ==================== -->
+    <!-- ==================== VIEW 2: TRENDING NEPAL POLITICS ==================== -->
+    <section id="view-trending" class="trending-container" style="display: none;">
+      <!-- Hero Banner -->
+      <div class="trending-hero">
+        <div class="trending-hero-badge">
+          <span class="badge-fire">🔥 100% NEPAL POLITICS</span>
+          <span class="badge-fb-ready">1-Click Facebook Ready</span>
+        </div>
+        <h2 class="trending-hero-title">नेपाल राजनीति भाइरल TikTok भिडियोहरू</h2>
+        <p class="trending-hero-sub">
+          हर्क साम्पाङ, बालेन शाह, रवि लामिछाने र संसद बहसका चर्चित भिडियोहरू डाउनलोड गरी शीर्षक र ह्यासट्याग सहित सोझै फेसबुकमा पोष्ट गर्नुहोस्।
+        </p>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="trending-filters-wrapper">
+        <div class="trending-search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="trending-search-input" placeholder="हर्क साम्पाङ, बालेन, रवि, संसद बहस खोज्नुहोस्..." oninput="handleTrendingSearch(this.value)">
+        </div>
+
+        <div class="trending-categories-scroll">
+          <button class="cat-pill active" onclick="filterTrendingCategory('सबै')">सबै (All)</button>
+          <button class="cat-pill" onclick="filterTrendingCategory('हर्क साम्पाङ')">हर्क साम्पाङ</button>
+          <button class="cat-pill" onclick="filterTrendingCategory('बालेन शाह')">बालेन शाह</button>
+          <button class="cat-pill" onclick="filterTrendingCategory('रवि लामिछाने')">रवि लामिछाने</button>
+          <button class="cat-pill" onclick="filterTrendingCategory('संसद बहस')">संसद बहस</button>
+          <button class="cat-pill" onclick="filterTrendingCategory('अन्य राजनीति')">अन्य राजनीति</button>
+        </div>
+      </div>
+
+      <!-- Feed Header -->
+      <div class="trending-feed-header">
+        <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; color: #fff;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#ff5722"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+          <span>भाइरल राजनीति भिडियोहरू</span>
+          <span id="trending-count-badge" class="badge-count">8</span>
+        </div>
+        <div style="font-size: 12px; color: var(--neon-cyan);">Ready to Post on Facebook 🚀</div>
+      </div>
+
+      <!-- Trending Cards Grid -->
+      <div id="trending-cards-grid" class="trending-cards-grid">
+        <!-- Rendered via app.js -->
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 3: BATCH DOWNLOADER ==================== -->
     <section id="view-batch" class="batch-container">
       <h2 style="font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px;">Batch Video Downloader</h2>
       <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">
@@ -473,8 +527,29 @@
         </a>
       </div>
 
-      <!-- App Info -->
+      <!-- Privacy Policy Link Card -->
+      <div class="settings-card" style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 14px; padding: 16px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; color: #818cf8;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div>
+            <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 2px;">गोपनीयता नीति (Privacy Policy)</h4>
+            <p style="font-size: 11px; color: var(--text-secondary); margin: 0;">100% on-device processing, zero telemetry & TikTok Developer compliant</p>
+          </div>
+        </div>
+        <a href="./privacy.html" class="btn-sec-action" style="padding: 8px 14px; font-size: 12px; font-weight: 600; text-decoration: none; border-radius: 8px; white-space: nowrap;">
+          View Policy →
+        </a>
+      </div>
+
+      <!-- App Info & Links -->
       <div style="text-align: center; margin-top: 24px; font-size: 12px; color: var(--text-tertiary);">
+        <p style="margin-bottom: 8px;">
+          <a href="./privacy.html" style="color: var(--neon-cyan); text-decoration: none; font-weight: 600; margin: 0 8px;">🔒 Privacy Policy</a> • 
+          <a href="https://github.com/jeebanrai05-eng/TikTok-video-downloader-" target="_blank" style="color: var(--text-secondary); text-decoration: none; margin: 0 8px;">GitHub Repo</a> • 
+          <a href="mailto:jeebannraiii@gmail.com" style="color: var(--text-secondary); text-decoration: none; margin: 0 8px;">Contact Developer</a>
+        </p>
         TikSave Web & Android App • Version 1.0.2 (Build 3)<br>
         Developed for ultra-fast, watermark-free TikTok media preservation.
       </div>
@@ -545,11 +620,86 @@
     </div>
   </div>
 
+  <!-- Facebook Ready-To-Post Modal (Matches TrendingScreen.kt) -->
+  <div id="modal-fb-post" class="modal-backdrop">
+    <div class="modal-content fb-post-modal">
+      <div class="modal-dl-header" style="border-bottom: 1px solid rgba(24, 119, 242, 0.3);">
+        <div style="font-size: 15px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <span style="background: #1877f2; border-radius: 6px; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900;">f</span>
+          <span>Facebook Ready Post</span>
+          <span class="badge-fire" style="font-size: 10px; padding: 2px 8px;">1-Click</span>
+        </div>
+        <button onclick="closeFacebookModal()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 18px;">✕</button>
+      </div>
+
+      <div class="fb-modal-body">
+        <!-- Video Header Preview -->
+        <div class="fb-modal-video-card">
+          <img id="fb-modal-cover" src="" alt="Thumbnail" class="fb-thumb">
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 4px;">
+              <span id="fb-modal-category" class="cat-pill active" style="font-size: 10px; padding: 2px 8px;">हर्क साम्पाङ</span>
+              <span id="fb-modal-rank" class="badge-fire" style="font-size: 10px; padding: 2px 6px;">#1 Trending</span>
+            </div>
+            <div id="fb-modal-video-title" style="font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">भिडियो शीर्षक</div>
+            <div id="fb-modal-author" style="font-size: 11px; color: var(--text-tertiary);">@creator</div>
+          </div>
+        </div>
+
+        <!-- Editable Title Field -->
+        <div class="fb-field-group">
+          <div class="fb-field-label">
+            <span>शीर्षक (Post Title)</span>
+            <button class="btn-copy-small" onclick="copyFieldText('fb-input-title')">Copy</button>
+          </div>
+          <input type="text" id="fb-input-title" class="fb-input-text" value="">
+        </div>
+
+        <!-- Editable Body Field -->
+        <div class="fb-field-group">
+          <div class="fb-field-label">
+            <span>विवरण (Post Caption / Body)</span>
+            <button class="btn-copy-small" onclick="copyFieldText('fb-input-body')">Copy</button>
+          </div>
+          <textarea id="fb-input-body" class="fb-textarea" rows="3"></textarea>
+        </div>
+
+        <!-- Viral Hashtags Field -->
+        <div class="fb-field-group">
+          <div class="fb-field-label">
+            <span>भाइरल ह्यासट्यागहरू (Viral Hashtags)</span>
+            <button class="btn-copy-small" onclick="copyFieldText('fb-input-tags')">Copy Tags</button>
+          </div>
+          <textarea id="fb-input-tags" class="fb-textarea fb-tags-box" rows="2"></textarea>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="fb-actions-row">
+          <button class="btn-fb-share" onclick="postToFacebookFromModal()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            <span>Facebook मा Upload गर्नुहोस्</span>
+          </button>
+          <button class="btn-primary-download" style="flex: 1; height: 46px; font-size: 13px;" onclick="downloadFromFbModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Download Video</span>
+          </button>
+        </div>
+        <button class="btn-sec-action" style="width: 100%; height: 42px; margin-top: 8px; font-size: 13px;" onclick="copyFullPost()">
+          📋 Copy Entire Post (Title + Body + #Tags)
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Bottom Navigation Bar for Mobile Phones (Native App Feel) -->
   <nav class="bottom-nav">
     <button class="bnav-item active" id="bnav-downloader" onclick="switchTab('downloader')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       <span>Downloader</span>
+    </button>
+    <button class="bnav-item" id="bnav-trending" onclick="switchTab('trending')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+      <span>Trending</span>
     </button>
     <button class="bnav-item" id="bnav-batch" onclick="switchTab('batch')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>

@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Privacy Policy • TokDownloader</title>
+  <meta name="description" content="Official Privacy Policy for TokDownloader. Clean, transparent, zero-telemetry utility architecture.">
+  <meta name="theme-color" content="#090d16">
+
+  <!-- Modern Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-base: #060911;
+      --bg-surface: #0b111e;
+      --bg-card: rgba(15, 23, 42, 0.65);
+      --bg-card-hover: rgba(30, 41, 59, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-active: rgba(99, 102, 241, 0.4);
+      --primary: #6366f1;
+      --primary-glow: #818cf8;
+      --accent-cyan: #38bdf8;
+      --accent-green: #10b981;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --pill-bg: rgba(99, 102, 241, 0.12);
+      --pill-border: rgba(99, 102, 241, 0.25);
+      --grid-line: rgba(255, 255, 255, 0.035);
+      --hero-inner-bg: #090e1a;
+      --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    [data-theme="light"] {
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: rgba(255, 255, 255, 0.85);
+      --bg-card-hover: rgba(241, 245, 249, 0.95);
+      --border-color: rgba(15, 23, 42, 0.08);
+      --border-active: rgba(79, 70, 229, 0.4);
+      --primary: #4f46e5;
+      --primary-glow: #6366f1;
+      --accent-cyan: #0284c7;
+      --accent-green: #059669;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      --pill-bg: rgba(79, 70, 229, 0.08);
+      --pill-border: rgba(79, 70, 229, 0.2);
+      --grid-line: rgba(0, 0, 0, 0.04);
+      --hero-inner-bg: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      line-height: 1.7;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* KubeCell-inspired Precision Grid Mesh */
+    .bg-grid-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image: 
+        linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(ellipse at 50% 20%, rgba(0,0,0,0.9) 0%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at 50% 20%, rgba(0,0,0,0.9) 0%, transparent 80%);
+    }
+
+    .ambient-glow {
+      position: fixed;
+      top: -150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, rgba(56, 189, 248, 0.08) 50%, transparent 70%);
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Precision Navigation Header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 60;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      transition: all 0.3s ease;
+    }
+
+    .header-container {
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 19px;
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-name {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
+
+    .brand-tag {
+      font-size: 0.72rem;
+      color: var(--primary-glow);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .nav-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Minimalist High-End Buttons */
+    .btn-tool {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s var(--ease-smooth);
+    }
+
+    .btn-tool:hover {
+      border-color: var(--border-active);
+      background: var(--bg-card-hover);
+      transform: translateY(-1px);
+    }
+
+    .icon-svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.4s ease;
+    }
+
+    .btn-tool:hover .icon-svg {
+      transform: rotate(15deg);
+    }
+
+    /* Main Container */
+    main {
+      position: relative;
+      z-index: 10;
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 36px 20px 80px;
+    }
+
+    /* ============================================================
+       STAR / BEAM RUNNING LIGHT EFFECT (Around the Hero Card)
+       ============================================================ */
+    .hero-beam-wrapper {
+      position: relative;
+      border-radius: 24px;
+      padding: 2px; /* Container boundary for the running beam */
+      overflow: hidden;
+      margin-bottom: 34px;
+      box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Rotating Conic Light (The Running Star Beam) */
+    .hero-beam-wrapper::before {
+      content: "";
+      position: absolute;
+      top: -150%;
+      left: -150%;
+      width: 400%;
+      height: 400%;
+      background: conic-gradient(
+        from 0deg,
+        transparent 0%,
+        transparent 75%,
+        rgba(99, 102, 241, 0.3) 85%,
+        var(--primary-glow) 92%,
+        var(--accent-cyan) 97%,
+        #ffffff 100%
+      );
+      animation: rotateStarBeam 5s linear infinite;
+    }
+
+    @keyframes rotateStarBeam {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Inner Hero Body */
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      border-radius: 22px;
+      background: var(--hero-inner-bg);
+      padding: 44px 36px;
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+    }
+
+    /* Top KubeCell-Style Status Pill */
+    .live-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      background: var(--pill-bg);
+      border: 1px solid var(--pill-border);
+      color: var(--primary-glow);
+      margin-bottom: 20px;
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 10px var(--accent-green);
+      animation: blink 2s infinite ease-in-out;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .hero-title {
+      font-size: clamp(2rem, 4.5vw, 3.1rem);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.15;
+      margin-bottom: 14px;
+      color: var(--text-main);
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, var(--primary-glow) 0%, var(--accent-cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 680px;
+      margin-bottom: 28px;
+    }
+
+    /* Architecture Metric Grid (Inspired by KubeCell Stats) */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .stat-num span {
+      color: var(--accent-cyan);
+      font-size: 1.1rem;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+
+    /* Sticky Search & Quick-Tags */
+    .controls-panel {
+      position: sticky;
+      top: 68px;
+      z-index: 45;
+      padding: 12px 0;
+      background: rgba(6, 9, 17, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      margin-bottom: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    [data-theme="light"] .controls-panel {
+      background: rgba(248, 250, 252, 0.75);
+    }
+
+    .search-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 14px 18px 14px 46px;
+      border-radius: 14px;
+      color: var(--text-main);
+      font-size: 0.92rem;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.25s var(--ease-smooth);
+    }
+
+    .search-input:focus {
+      border-color: var(--primary-glow);
+      box-shadow: 0 0 20px -3px rgba(99, 102, 241, 0.3);
+      background: var(--bg-card-hover);
+    }
+
+    .search-icon-svg {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      pointer-events: none;
+      width: 18px;
+      height: 18px;
+    }
+
+    .nav-tags-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 4px;
+    }
+
+    .nav-tags-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .nav-tag-chip {
+      white-space: nowrap;
+      padding: 6px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .nav-tag-chip:hover, .nav-tag-chip.active {
+      color: #fff;
+      background: var(--primary);
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    /* Section Cards */
+    .content-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 30px 28px;
+      margin-bottom: 22px;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      transition: border-color 0.3s ease, transform 0.25s var(--ease-smooth);
+    }
+
+    .content-card:hover {
+      border-color: var(--border-active);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .header-number {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: var(--pill-bg);
+      border: 1px solid var(--pill-border);
+      color: var(--primary-glow);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .card-heading {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
+
+    p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    strong {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--pill-bg);
+      color: var(--primary-glow);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.85em;
+      border: 1px solid var(--pill-border);
+    }
+
+    .callout-strip {
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, transparent 100%);
+      border-left: 3px solid var(--primary);
+      padding: 14px 18px;
+      border-radius: 0 10px 10px 0;
+      margin: 18px 0;
+      font-size: 0.92rem;
+    }
+
+    /* Structured Points */
+    .specs-list {
+      list-style: none;
+      display: grid;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .specs-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 0.94rem;
+      color: var(--text-muted);
+    }
+
+    .badge-check-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--accent-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    /* Permissions Grid */
+    .perm-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .perm-box {
+      background: rgba(11, 17, 30, 0.5);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      transition: all 0.25s ease;
+    }
+
+    [data-theme="light"] .perm-box {
+      background: rgba(241, 245, 249, 0.7);
+    }
+
+    .perm-box:hover {
+      border-color: var(--primary-glow);
+      transform: translateY(-2px);
+    }
+
+    .perm-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--primary-glow);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .perm-text {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Contact Details Card */
+    .contact-layout {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .contact-unit {
+      background: rgba(11, 17, 30, 0.5);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    [data-theme="light"] .contact-unit {
+      background: rgba(241, 245, 249, 0.7);
+    }
+
+    .unit-tag {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+      font-weight: 700;
+    }
+
+    .unit-val {
+      color: var(--text-main);
+      font-size: 0.92rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .unit-val:hover {
+      color: var(--primary-glow);
+    }
+
+    /* Footer */
+    footer {
+      position: relative;
+      z-index: 10;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+      padding: 32px 20px;
+      text-align: center;
+    }
+
+    .footer-wrap {
+      max-width: 1060px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 18px;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--primary-glow);
+    }
+
+    .copy-text {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 680px) {
+      .hero-content {
+        padding: 30px 20px;
+      }
+      .content-card {
+        padding: 22px 18px;
+      }
+      .stats-bar {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Precision Ambient Grid & Glow -->
+  <div class="bg-grid-layer"></div>
+  <div class="ambient-glow"></div>
+
+  <!-- Header Bar -->
+  <header>
+    <div class="header-container">
+      <a href="#" class="brand">
+        <div class="brand-mark">⚡</div>
+        <div class="brand-text">
+          <span class="brand-name">TokDownloader</span>
+          <span class="brand-tag">Privacy Policy</span>
+        </div>
+      </a>
+
+      <div class="nav-tools">
+        <!-- Modern Theme Toggle with Minimalist SVGs -->
+        <button class="btn-tool" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="icon-svg" id="sunIcon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path>
+          </svg>
+          <svg class="icon-svg" id="moonIcon" style="display: none;" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20.9 13.1A8.5 8.5 0 0 1 10.9 3.1 8.5 8.5 0 1 0 20.9 13.1Z"></path>
+          </svg>
+        </button>
+
+        <!-- Print Action -->
+        <button class="btn-tool" onclick="window.print()" aria-label="Print document" title="Print document">
+          <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 9V3h12v6"></path>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <path d="M6 14h12v7H6z"></path>
+            <path d="M18 12h.01"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main>
+
+    <!-- ============================================================
+         HERO SECTION WITH RUNNING STAR/BEAM BORDER EFFECT
+         ============================================================ -->
+    <div class="hero-beam-wrapper">
+      <div class="hero-content">
+        <div class="live-status-pill">
+          <span class="pulse-dot"></span>
+          <span>Verified Safe & Private</span>
+        </div>
+
+        <h1 class="hero-title">
+          Built for zero profiling, <br>
+          <span>100% on-device privacy.</span>
+        </h1>
+
+        <p class="hero-desc">
+          Official Privacy Policy for TokDownloader. Clean, permission-minimized utility architecture with zero tracking and full data ownership.
+        </p>
+
+        <!-- KubeCell-Style Architecture Metric Grid -->
+        <div class="stats-bar">
+          <div class="stat-item">
+            <div class="stat-num">0</div>
+            <div class="stat-label">User accounts or logins</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">0</div>
+            <div class="stat-label">Trackers or analytical SDKs</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">100<span>%</span></div>
+            <div class="stat-label">On-device local storage</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">TLS<span>1.3</span></div>
+            <div class="stat-label">End-to-end stream encryption</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search & Fast Filter Jump -->
+    <div class="controls-panel">
+      <div class="search-wrapper">
+        <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input 
+          type="text" 
+          id="querySearch" 
+          class="search-input" 
+          placeholder="Filter privacy terms (e.g. storage, permissions, telemetry, clipboard)..." 
+          oninput="handleFilter()"
+        >
+      </div>
+
+      <div class="nav-tags-scroll">
+        <a href="#overview" class="nav-tag-chip active">1. Overview</a>
+        <a href="#data-collection" class="nav-tag-chip">2. Data Collection</a>
+        <a href="#permissions" class="nav-tag-chip">3. Permissions</a>
+        <a href="#storage" class="nav-tag-chip">4. Local Storage</a>
+        <a href="#third-party" class="nav-tag-chip">5. Third-Party Endpoints</a>
+        <a href="#disclaimer" class="nav-tag-chip">6. Fair Use & Legal</a>
+        <a href="#children" class="nav-tag-chip">7. Child Protection</a>
+        <a href="#contact" class="nav-tag-chip">8. Inquiries</a>
+      </div>
+    </div>
+
+    <!-- Section 1: Introduction -->
+    <article class="content-card" id="overview">
+      <div class="card-header">
+        <div class="header-number">01</div>
+        <h2 class="card-heading">Introduction & Overview</h2>
+      </div>
+      <p>
+        Welcome to <strong>TokDownloader</strong> ("the Utility", "we", "our"). We are committed to maintaining a strictly private, transparent environment for researchers, video editors, and digital archivists.
+      </p>
+      <div class="callout-strip">
+        <strong>Core Philosophy:</strong> TokDownloader is designed on a <strong>Zero-Data-Retention</strong> framework. We do not require sign-ins, we do not log passwords, and we never collect, monetize, or harvest personal user information.
+      </div>
+      <p>
+        This Privacy Policy explains how local storage and outbound HTTPS requests are handled securely while maintaining total privacy.
+      </p>
+    </article>
+
+    <!-- Section 2: Data Collection -->
+    <article class="content-card" id="data-collection">
+      <div class="card-header">
+        <div class="header-number">02</div>
+        <h2 class="card-heading">Information Handling & Usage</h2>
+      </div>
+      <p>
+        TokDownloader runs directly on-device without telemetry or behavioral profiling:
+      </p>
+      <ul class="specs-list">
+        <li class="specs-item">
+          <div class="badge-check-icon">✓</div>
+          <div><strong>No Account Creation:</strong> No email, telephone number, or user authentication is ever required to operate the application.</div>
+        </li>
+        <li class="specs-item">
+          <div class="badge-check-icon">✓</div>
+          <div><strong>No Personal Data Harvesting:</strong> We do not track GPS coordinates, device identifiers, contact lists, or background analytics.</div>
+        </li>
+        <li class="specs-item">
+          <div class="badge-check-icon">✓</div>
+          <div><strong>Sandboxed Clipboard Access:</strong> The system clipboard is read strictly when you tap the "Paste Link" action, limited solely to the download URL field.</div>
+        </li>
+        <li class="specs-item">
+          <div class="badge-check-icon">✓</div>
+          <div><strong>No Social Account Linking:</strong> Downloading public videos never requires binding your personal social media credentials.</div>
+        </li>
+      </ul>
+    </article>
+
+    <!-- Section 3: Android Device Permissions -->
+    <article class="content-card" id="permissions">
+      <div class="card-header">
+        <div class="header-number">03</div>
+        <h2 class="card-heading">Android Permissions Explained</h2>
+      </div>
+      <p>
+        In accordance with the <strong>Principle of Least Privilege</strong>, only the fundamental Android permissions necessary for media retrieval and updates are declared:
+      </p>
+
+      <div class="perm-grid">
+        <div class="perm-box">
+          <span class="perm-code">android.permission.INTERNET</span>
+          <div class="perm-text">Authorizes encrypted outbound HTTPS connections to retrieve public media streams directly to your device.</div>
+        </div>
+
+        <div class="perm-box">
+          <span class="perm-code">android.permission.ACCESS_NETWORK_STATE</span>
+          <div class="perm-text">Monitors connectivity status to allow saving mobile data via Wi-Fi-only download toggles.</div>
+        </div>
+
+        <div class="perm-box">
+          <span class="perm-code">WRITE_EXTERNAL_STORAGE (maxSdkVersion 28)</span>
+          <div class="perm-text">Used solely for legacy Android 9 and older devices. Modern releases rely entirely on Scoped Storage.</div>
+        </div>
+
+        <div class="perm-box">
+          <span class="perm-code">REQUEST_INSTALL_PACKAGES</span>
+          <div class="perm-text">Permits launching the verified Android Package Manager when you choose to install an official release update.</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Section 4: Local Storage -->
+    <article class="content-card" id="storage">
+      <div class="card-header">
+        <div class="header-number">04</div>
+        <h2 class="card-heading">Media Storage & Security</h2>
+      </div>
+      <p>
+        Every MP4 video or MP3 audio file downloaded is saved locally to your device's standard directories (e.g., <code>/Movies/TokDownloader</code> or <code>/Music/TokDownloader</code>):
+      </p>
+      <ul class="specs-list">
+        <li class="specs-item">
+          <div class="badge-check-icon">✓</div>
+          <div><strong>User Sovereignty:</strong> You maintain total control over all media files. You can browse, play, share, or delete them anytime using your file manager.</div>
+        </li>
+        <li class="specs-item">
+          <div class="badge-check-icon">✓</div>
+          <div><strong>Zero Cloud Mirroring:</strong> We operate no external cloud servers or proxy mirrors that upload or store your downloaded content.</div>
+        </li>
+        <li class="specs-item">
+          <div class="badge-check-icon">✓</div>
+          <div><strong>Encrypted In-Transit:</strong> All resolutions and binary transfers operate through modern TLS 1.3 / HTTPS encryption.</div>
+        </li>
+      </ul>
+    </article>
+
+    <!-- Section 5: Third-Party Endpoints -->
+    <article class="content-card" id="third-party">
+      <div class="card-header">
+        <div class="header-number">05</div>
+        <h2 class="card-heading">Third-Party Endpoints & Sharing</h2>
+      </div>
+      <p>
+        TokDownloader interfaces with remote endpoints strictly for functional execution:
+      </p>
+      <ul class="specs-list">
+        <li class="specs-item">
+          <div class="badge-check-icon">✓</div>
+          <div><strong>Public Content Delivery Networks (CDNs):</strong> Direct streaming links query public delivery networks without transmitting personal authentication cookies.</div>
+        </li>
+        <li class="specs-item">
+          <div class="badge-check-icon">✓</div>
+          <div><strong>Release Verification:</strong> The app periodically checks verified version releases via standard read-only requests. No identifying metadata is transmitted.</div>
+        </li>
+        <li class="specs-item">
+          <div class="badge-check-icon">✓</div>
+          <div><strong>System Sharing Intents:</strong> Actions like "Copy Caption" or "Share to App" execute through native Android Intent protocols without tracking SDKs.</div>
+        </li>
+      </ul>
+    </article>
+
+    <!-- Section 6: Copyright & Disclaimer -->
+    <article class="content-card" id="disclaimer">
+      <div class="card-header">
+        <div class="header-number">06</div>
+        <h2 class="card-heading">Copyright & Fair Use Disclaimer</h2>
+      </div>
+      <div class="callout-strip">
+        <strong>Notice:</strong> TokDownloader is an independent utility application developed strictly for personal, academic, and backup purposes.
+      </div>
+      <ul class="specs-list">
+        <li class="specs-item">
+          <div class="badge-check-icon">✓</div>
+          <div><strong>No Official Affiliation:</strong> TokDownloader is NOT affiliated with, sponsored by, authorized by, or endorsed by TikTok, ByteDance Ltd., Meta Platforms, Inc., or any associated entities.</div>
+        </li>
+        <li class="specs-item">
+          <div class="badge-check-icon">✓</div>
+          <div><strong>Intellectual Property:</strong> All trademarks, logos, audio tracks, and video copyrights belong exclusively to their respective owners and creators.</div>
+        </li>
+        <li class="specs-item">
+          <div class="badge-check-icon">✓</div>
+          <div><strong>User Responsibility:</strong> Users are solely accountable for honoring intellectual property laws. Do not republish or commercially exploit copyrighted media without explicit creator authorization.</div>
+        </li>
+      </ul>
+    </article>
+
+    <!-- Section 7: Child Protection -->
+    <article class="content-card" id="children">
+      <div class="card-header">
+        <div class="header-number">07</div>
+        <h2 class="card-heading">Child Privacy Compliance (COPPA)</h2>
+      </div>
+      <p>
+        TokDownloader is a general-purpose utility and is not structured for children under 13 years of age. We do not intentionally collect, store, or solicit personal information from minors. Given our zero-data architecture, no identifiable profiles exist across our infrastructure.
+      </p>
+    </article>
+
+    <!-- Section 8: Inquiries & Developer Contact -->
+    <article class="content-card" id="contact">
+      <div class="card-header">
+        <div class="header-number">08</div>
+        <h2 class="card-heading">Contact & Security Inquiries</h2>
+      </div>
+      <p>
+        For technical questions, privacy concerns, or security audits, contact the developer directly:
+      </p>
+
+      <div class="contact-layout">
+        <div class="contact-unit">
+          <span class="unit-tag">Lead Developer</span>
+          <span class="unit-val">Jeeban Rai</span>
+        </div>
+
+        <div class="contact-unit">
+          <span class="unit-tag">Official Email</span>
+          <a class="unit-val" href="mailto:jeebannraiii@gmail.com">jeebannraiii@gmail.com</a>
+        </div>
+
+        <div class="contact-unit">
+          <span class="unit-tag">Architecture</span>
+          <span class="unit-val">100% Client-Side Sandbox</span>
+        </div>
+
+        <div class="contact-unit">
+          <span class="unit-tag">Security Status</span>
+          <span class="unit-val" style="color: var(--accent-green);">Zero Log Storage</span>
+        </div>
+      </div>
+    </article>
+
+  </main>
+
+  <!-- Clean Precision Footer -->
+  <footer>
+    <div class="footer-wrap">
+      <div class="footer-links">
+        <a href="#overview">Overview</a>
+        <a href="#data-collection">Data Policy</a>
+        <a href="#permissions">Permissions</a>
+        <a href="#storage">Storage</a>
+        <a href="#disclaimer">Fair Use</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <div class="copy-text">
+        © 2026 TokDownloader • Minimalist & Transparent • All Rights Reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Precision JavaScript -->
+  <script>
+    // Modern Theme Switcher
+    function toggleTheme() {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      const sunIcon = document.getElementById('sunIcon');
+      const moonIcon = document.getElementById('moonIcon');
+
+      if (!isLight) {
+        document.documentElement.setAttribute('data-theme', 'light');
+        sunIcon.style.display = 'none';
+        moonIcon.style.display = 'block';
+        localStorage.setItem('tok_theme_mode', 'light');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        sunIcon.style.display = 'block';
+        moonIcon.style.display = 'none';
+        localStorage.setItem('tok_theme_mode', 'dark');
+      }
+    }
+
+    // Persist Saved Theme State
+    (function () {
+      const saved = localStorage.getItem('tok_theme_mode');
+      if (saved === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        const sun = document.getElementById('sunIcon');
+        const moon = document.getElementById('moonIcon');
+        if (sun && moon) {
+          sun.style.display = 'none';
+          moon.style.display = 'block';
+        }
+      }
+    })();
+
+    // Realtime Search Filter
+    function handleFilter() {
+      const q = document.getElementById('querySearch').value.toLowerCase().trim();
+      const sections = document.querySelectorAll('.content-card');
+
+      sections.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        if (!q || text.includes(q)) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    // Intersection Observer for Active Nav Tag
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          document.querySelectorAll('.nav-tag-chip').forEach(tag => {
+            tag.classList.toggle('active', tag.getAttribute('href') === `#${id}`);
+          });
+        }
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+
+    document.querySelectorAll('.content-card').forEach(card => observer.observe(card));
+  </script>
+</body>
+</html>

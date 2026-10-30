@@ -33,9 +33,11 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.VideoLibrary
+import androidx.compose.material.icons.outlined.Whatshot
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -70,6 +72,7 @@ import com.example.ui.components.VideoPlayerDialog
 import com.example.ui.screens.DownloaderScreen
 import com.example.ui.screens.LibraryScreen
 import com.example.ui.screens.SettingsScreen
+import com.example.ui.screens.TrendingScreen
 import com.example.ui.theme.HdrGold
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.NeonCyan
@@ -139,6 +142,9 @@ fun TikSaveApp(viewModel: MainViewModel) {
     val isDownloadingUpdate by viewModel.isDownloadingUpdate.collectAsStateWithLifecycle()
     val isInstallingUpdate by viewModel.isInstallingUpdate.collectAsStateWithLifecycle()
     val updateDownloadProgress by viewModel.updateDownloadProgress.collectAsStateWithLifecycle()
+    val trendingVideos by viewModel.trendingVideos.collectAsStateWithLifecycle()
+    val trendingCategory by viewModel.trendingCategory.collectAsStateWithLifecycle()
+    val trendingSearchQuery by viewModel.trendingSearchQuery.collectAsStateWithLifecycle()
 
     val notificationLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -246,6 +252,26 @@ fun TikSaveApp(viewModel: MainViewModel) {
                 )
 
                 NavigationBarItem(
+                    selected = currentTab == AppTab.TRENDING,
+                    onClick = { viewModel.setTab(AppTab.TRENDING) },
+                    icon = {
+                        Icon(
+                            imageVector = if (currentTab == AppTab.TRENDING) Icons.Filled.Whatshot else Icons.Outlined.Whatshot,
+                            contentDescription = "Trending Politics"
+                        )
+                    },
+                    label = { Text("Trending") },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color.Black,
+                        selectedTextColor = Color(0xFFFF5722),
+                        indicatorColor = Color(0xFFFF5722),
+                        unselectedIconColor = Color.White.copy(alpha = 0.6f),
+                        unselectedTextColor = Color.White.copy(alpha = 0.6f)
+                    ),
+                    modifier = Modifier.testTag("nav_tab_trending")
+                )
+
+                NavigationBarItem(
                     selected = currentTab == AppTab.LIBRARY,
                     onClick = { viewModel.setTab(AppTab.LIBRARY) },
                     icon = {
@@ -322,6 +348,18 @@ fun TikSaveApp(viewModel: MainViewModel) {
                     activeDownload = activeDownload,
                     onCancelDownload = viewModel::cancelActiveDownload,
                     onDismissActiveDownload = viewModel::dismissActiveDownload
+                )
+
+                AppTab.TRENDING -> TrendingScreen(
+                    videos = trendingVideos,
+                    selectedCategory = trendingCategory,
+                    onCategorySelected = viewModel::setTrendingCategory,
+                    searchQuery = trendingSearchQuery,
+                    onSearchQueryChange = viewModel::setTrendingSearchQuery,
+                    onPreviewVideo = viewModel::previewMedia,
+                    onDownloadVideo = viewModel::downloadTrendingVideo,
+                    onCopyFacebookPost = viewModel::copyFacebookPost,
+                    onDirectPostFacebook = { item -> viewModel.downloadAndShareToFacebook(context, item) }
                 )
 
                 AppTab.LIBRARY -> LibraryScreen(
