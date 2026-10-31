@@ -51,8 +51,10 @@ jobs:
       - name: Prepare Signing Keys
         shell: bash
         run: |
-          # Prepare debug.keystore
-          if [ -f "debug.keystore.base64" ]; then
+          # 1. Prepare stable debug.keystore
+          if [ -f "debug.keystore" ]; then
+            echo "Using existing repository debug.keystore..."
+          elif [ -f "debug.keystore.base64" ]; then
             echo "Decoding debug.keystore from base64..."
             base64 -d debug.keystore.base64 > debug.keystore
           else
@@ -60,11 +62,19 @@ jobs:
             keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
 
-          # Prepare release keystore using repository secrets
+          # 2. Prepare permanent release upload keystore (guarantees matching signatures)
           B64_KEY="${{ secrets.RELEASE_KEYSTORE_BASE64 || secrets.KEYSTORE_BASE64 }}"
           if [ -n "$B64_KEY" ]; then
             echo "Decoding custom release keystore from GitHub Secret..."
             echo "$B64_KEY" | base64 -d > my-upload-key.jks
+          elif [ -f "my-upload-key.jks" ]; then
+            echo "Using permanent my-upload-key.jks from repository..."
+          elif [ -f "app-release-upload.jks" ]; then
+            echo "Using permanent app-release-upload.jks from repository..."
+            cp -f app-release-upload.jks my-upload-key.jks
+          elif [ -f "app-release-upload.jks.base64" ]; then
+            echo "Decoding permanent app-release-upload.jks.base64..."
+            base64 -d app-release-upload.jks.base64 > my-upload-key.jks
           else
             echo "Generating fallback upload keystore..."
             keytool -genkey -v -keystore my-upload-key.jks -storepass "${{ secrets.RELEASE_STORE_PASSWORD || secrets.STORE_PASSWORD || 'tiksave2026pass' }}" -alias "${{ secrets.RELEASE_KEY_ALIAS || 'upload' }}" -keypass "${{ secrets.RELEASE_KEY_PASSWORD || secrets.KEY_PASSWORD || 'tiksave2026pass' }}" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=TikSave,O=TikSave,C=US"
