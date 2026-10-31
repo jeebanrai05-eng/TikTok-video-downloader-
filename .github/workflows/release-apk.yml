@@ -51,34 +51,39 @@ jobs:
       - name: Prepare Signing Keys
         shell: bash
         run: |
-          # 1. Prepare stable debug.keystore
+          # 1. Prepare stable debug.keystore (Strict - no random generation)
           if [ -f "debug.keystore" ]; then
-            echo "Using existing repository debug.keystore..."
+            echo "Using verified debug.keystore..."
           elif [ -f "debug.keystore.base64" ]; then
-            echo "Decoding debug.keystore from base64..."
+            echo "Decoding verified debug.keystore from base64..."
             base64 -d debug.keystore.base64 > debug.keystore
           else
-            echo "Generating fallback debug.keystore..."
-            keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+            echo "::error::Verified debug.keystore not found. Refusing to generate random key to preserve update compatibility."
+            exit 1
           fi
 
-          # 2. Prepare permanent release upload keystore (guarantees matching signatures)
+          # 2. Prepare genuine production upload keystore (Strict - no random generation)
           B64_KEY="${{ secrets.RELEASE_KEYSTORE_BASE64 || secrets.KEYSTORE_BASE64 }}"
           if [ -n "$B64_KEY" ]; then
-            echo "Decoding custom release keystore from GitHub Secret..."
+            echo "Decoding verified production keystore from GitHub Secret..."
             echo "$B64_KEY" | base64 -d > my-upload-key.jks
           elif [ -f "my-upload-key.jks" ]; then
-            echo "Using permanent my-upload-key.jks from repository..."
+            echo "Using verified my-upload-key.jks from repository..."
           elif [ -f "app-release-upload.jks" ]; then
-            echo "Using permanent app-release-upload.jks from repository..."
+            echo "Using verified app-release-upload.jks from repository..."
             cp -f app-release-upload.jks my-upload-key.jks
           elif [ -f "app-release-upload.jks.base64" ]; then
-            echo "Decoding permanent app-release-upload.jks.base64..."
+            echo "Decoding verified app-release-upload.jks.base64..."
             base64 -d app-release-upload.jks.base64 > my-upload-key.jks
           else
-            echo "Generating fallback upload keystore..."
-            keytool -genkey -v -keystore my-upload-key.jks -storepass "${{ secrets.RELEASE_STORE_PASSWORD || secrets.STORE_PASSWORD || 'tiksave2026pass' }}" -alias "${{ secrets.RELEASE_KEY_ALIAS || 'upload' }}" -keypass "${{ secrets.RELEASE_KEY_PASSWORD || secrets.KEY_PASSWORD || 'tiksave2026pass' }}" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=TikSave,O=TikSave,C=US"
+            echo "::error::CRITICAL: Genuine production upload keystore not found!"
+            echo "::error::To sign release APKs with your verified key, configure 'RELEASE_KEYSTORE_BASE64' in GitHub Repository Secrets."
+            echo "::error::Random key generation has been permanently disabled to prevent signature mismatch conflicts."
+            exit 1
           fi
+
+          # Copy keystore to app module to ensure Gradle resolves it in all environments
+          cp -f my-upload-key.jks app/my-upload-key.jks
 
       - name: Build Debug and Release APKs
         shell: bash
