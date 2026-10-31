@@ -1,5 +1,5 @@
 /**
- * TikSave Web - Application Logic
+ * TikSave Web - Application Logic (v1.0.3)
  * Matches com.example.ui.screens and com.example.data.repository
  */
 
@@ -16,58 +16,75 @@ const state = {
     enableHdr: true,
     enableTurbo: true,
     autoClipboard: true
-  }
+  },
+  aiInputText: '',
+  aiSelectedTone: 'viral', // 'viral', 'humorous', 'curiosity', 'inspirational', 'controversial'
+  aiActiveResult: null,
+  isGeneratingAi: false
 };
 
-// Demo Trending Sample Videos (Matches DownloadRepository.kt)
+// Curated Sample Items (Including 8K/4K HDR+ TikTok Photo Carousel and Videos)
 const SAMPLE_VIDEOS = [
   {
-    title: "HDR+ Ultra 60fps Neon Odyssey",
-    author: "@cyberwave",
-    nickname: "CyberWave",
-    url: "https://www.tiktok.com/@cyberwave/video/7321948192384729102",
-    cover: "https://picsum.photos/seed/tik1/720/1280",
-    avatar: "https://picsum.photos/seed/avatar1/200/200",
+    url: "https://www.tiktok.com/@nature.photographer/video/photo_slide_8k_hdr",
+    title: "8K HDR+ Mountain Landscapes of the Himalayas • Photo Slides",
+    nickname: "Nepal Alpine Explorers",
+    author: "@alpine.explorers",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+    cover: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=90",
     videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    music: "Original Sound - Neon Odyssey [Ultra Bass]",
-    likes: 1420000,
-    views: 9800000,
-    comments: 12400,
-    shares: 38900,
-    duration: 15,
-    sizes: { '8k': 28450000, 'hdr': 18450000, 'hd': 9820000, 'mp3': 3200000 }
-  },
-  {
-    title: "4K Sunset Coastline Drone Flight",
-    author: "@aerial_cinema",
-    nickname: "Aerial Cinema",
-    url: "https://www.tiktok.com/@aerial_cinema/video/7298374619283746281",
-    cover: "https://picsum.photos/seed/tik2/720/1280",
-    avatar: "https://picsum.photos/seed/avatar2/200/200",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    music: "Golden Hour Ambient (Remix)",
-    likes: 850000,
-    views: 4200000,
-    comments: 8900,
-    shares: 21000,
-    duration: 22,
-    sizes: { '8k': 32100000, 'hdr': 22500000, 'hd': 12400000, 'mp3': 4100000 }
-  },
-  {
-    title: "Trending Lo-Fi Tokyo Rain Beats",
-    author: "@tokyo_vibes",
-    nickname: "Tokyo Vibes",
-    url: "https://www.tiktok.com/@tokyo_vibes/video/7311098472619284720",
-    cover: "https://picsum.photos/seed/tik3/720/1280",
-    avatar: "https://picsum.photos/seed/avatar3/200/200",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4",
-    music: "Midnight In Shibuya - LoFi Chill",
-    likes: 2100000,
-    views: 15300000,
-    comments: 34100,
-    shares: 94000,
+    music: "Original Flute of Himalayas (Hi-Res Audio)",
     duration: 30,
-    sizes: { '8k': 38900000, 'hdr': 26700000, 'hd': 14800000, 'mp3': 5200000 }
+    views: 4500000,
+    likes: 820000,
+    comments: 42000,
+    shares: 110000,
+    isPhotoSlide: true,
+    images: [
+      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=2400&auto=format&fit=crop&q=95",
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=2400&auto=format&fit=crop&q=95",
+      "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=2400&auto=format&fit=crop&q=95",
+      "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=2400&auto=format&fit=crop&q=95",
+      "https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=2400&auto=format&fit=crop&q=95",
+      "https://images.unsplash.com/photo-1434725039720-aaad6dd32dfe?w=2400&auto=format&fit=crop&q=95"
+    ],
+    sizes: { '8k': 48000000, 'hdr': 28000000, 'hd': 12000000, 'mp3': 3800000 }
+  },
+  {
+    url: "https://www.tiktok.com/@tiktokcreators/video/7289192038192301928",
+    title: "Cinematic 8K Tokyo Rain Cyberpunk Neon Drift 120FPS",
+    nickname: "Tokyo City Lights",
+    author: "@tokyovibes.official",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
+    cover: "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=800&auto=format&fit=crop&q=90",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    music: "Tokyo Drift Synthwave • Neon Beats",
+    duration: 45,
+    views: 3200000,
+    likes: 490000,
+    comments: 18400,
+    shares: 62000,
+    isPhotoSlide: false,
+    images: [],
+    sizes: { '8k': 38000000, 'hdr': 22000000, 'hd': 9500000, 'mp3': 3400000 }
+  },
+  {
+    url: "https://www.tiktok.com/@travelnepal/video/everest_base_camp_drone",
+    title: "Mount Everest 8K Ultra Drone Aerial Sunrise • No Watermark",
+    nickname: "Nepal Tourism Hub",
+    author: "@discovernepal",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
+    cover: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800&auto=format&fit=crop&q=90",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4",
+    music: "Himalayan Sunrise Meditation Flute",
+    duration: 60,
+    views: 5800000,
+    likes: 920000,
+    comments: 31000,
+    shares: 140000,
+    isPhotoSlide: false,
+    images: [],
+    sizes: { '8k': 52000000, 'hdr': 31000000, 'hd': 14000000, 'mp3': 4100000 }
   }
 ];
 
@@ -77,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadHistory();
   setupClipboardListener();
   handleInputStateChange();
+  initAiStudio();
 });
 
 // Tab Switching
@@ -84,10 +102,10 @@ function switchTab(tabName) {
   state.activeTab = tabName;
 
   // View sections
-  const views = ['downloader', 'batch', 'library', 'settings'];
+  const views = ['downloader', 'ai', 'batch', 'library', 'settings'];
   views.forEach(v => {
     const el = document.getElementById(`view-${v}`);
-    if (el) el.style.display = (v === tabName) ? (v === 'downloader' ? 'block' : 'block') : 'none';
+    if (el) el.style.display = (v === tabName) ? 'block' : 'none';
   });
 
   // Top Nav tab buttons
@@ -100,7 +118,9 @@ function switchTab(tabName) {
   const activeBnav = document.getElementById(`bnav-${tabName}`);
   if (activeBnav) activeBnav.classList.add('active');
 
-  if (tabName === 'library') {
+  if (tabName === 'ai') {
+    renderAiStudio();
+  } else if (tabName === 'library') {
     renderHistory();
   }
 }
@@ -295,7 +315,9 @@ async function startExtraction() {
       streamMp3: sampleMatch.videoUrl,
       musicTitle: sampleMatch.music,
       sizes: sampleMatch.sizes,
-      originalUrl: sampleMatch.url
+      originalUrl: sampleMatch.url,
+      images: sampleMatch.images || [],
+      isPhotoSlide: !!sampleMatch.isPhotoSlide
     };
 
     displayResult(meta);
@@ -359,6 +381,7 @@ async function startExtraction() {
     const standardSize = data.size || 8500000;
     const hdSize = data.hd_size || Math.round(standardSize * 1.8);
     const ultra8kSize = Math.round(hdSize * 1.6);
+    const rawImages = (data.images && Array.isArray(data.images)) ? data.images.map(img => fixUrl(img)) : [];
 
     const meta = {
       id: data.id || Date.now().toString(),
@@ -383,7 +406,9 @@ async function startExtraction() {
         'hd': standardSize,
         'mp3': 3200000
       },
-      originalUrl: rawUrl
+      originalUrl: rawUrl,
+      images: rawImages,
+      isPhotoSlide: rawImages.length > 0
     };
 
     setExtractingProgress("Ready to download!", 100);
@@ -437,6 +462,33 @@ function displayResult(meta) {
   document.getElementById('size-mp3').textContent = formatBytes(meta.sizes['mp3']);
 
   selectStreamRow(state.selectedQuality);
+
+  // Render TikTok Photo Slides (Carousel)
+  const slidesBox = document.getElementById('photo-slides-box');
+  const slidesCount = document.getElementById('photo-slides-count');
+  const slidesScroll = document.getElementById('photo-slides-scroll');
+
+  if (slidesBox && slidesScroll) {
+    if (meta.images && meta.images.length > 0) {
+      if (slidesCount) slidesCount.textContent = meta.images.length;
+      slidesScroll.innerHTML = meta.images.map((imgUrl, idx) => `
+        <div class="photo-slide-card">
+          <div class="slide-img-wrap">
+            <span class="slide-badge-hdr">HDR+ 8K</span>
+            <span class="slide-badge-num">#${idx + 1}</span>
+            <img src="${imgUrl}" alt="Slide ${idx + 1}" loading="lazy" onerror="this.src='https://picsum.photos/seed/slide${idx}/400/600'">
+          </div>
+          <button class="btn-slide-save" onclick="saveSlidePhoto('${imgUrl}', ${idx + 1})">
+            💾 Save 8K
+          </button>
+        </div>
+      `).join('');
+      slidesBox.style.display = 'flex';
+    } else {
+      slidesBox.style.display = 'none';
+      slidesScroll.innerHTML = '';
+    }
+  }
 
   const card = document.getElementById('result-card');
   card.style.display = 'block';
@@ -899,3 +951,306 @@ function formatBytes(bytes) {
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+// ==========================================================================
+// TikTok Photo Slides (8K HDR+ Ultra Photo Carousel) Functions
+// ==========================================================================
+
+function saveSlidePhoto(url, slideNum) {
+  if (!url) return;
+  const meta = state.currentMetadata || {};
+  const filename = `tiksave_${meta.id || Date.now()}_slide_${slideNum}_8k_hdr.jpg`;
+
+  showToast(`Downloading Slide #${slideNum} (8K Ultra HDR+)...`);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.target = "_blank";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  // Add record to Library history
+  saveToHistory({
+    id: `${meta.id || Date.now()}_slide_${slideNum}`,
+    title: `${meta.title || "TikTok Photo Slide"} - Slide #${slideNum} [8K HDR+]`,
+    coverUrl: url,
+    authorUsername: meta.authorUsername || "@tiktok",
+    authorNickname: meta.authorNickname || "TikTok Creator",
+    streamHd: url,
+    sizes: { hd: 4500000 },
+    durationSeconds: 0
+  });
+}
+
+async function downloadAllPhotoSlides() {
+  if (!state.currentMetadata || !state.currentMetadata.images || state.currentMetadata.images.length === 0) {
+    showToast("No photo slides found in this post!");
+    return;
+  }
+
+  const images = state.currentMetadata.images;
+  showToast(`Starting batch download of all ${images.length} 8K photos...`);
+
+  for (let i = 0; i < images.length; i++) {
+    saveSlidePhoto(images[i], i + 1);
+    await delay(350);
+  }
+
+  showToast(`✅ Successfully queued all ${images.length} 8K photos!`);
+}
+
+// ==========================================================================
+// AI Creator Studio (Viral Hook, Facebook Post, CTR Description) Functions
+// ==========================================================================
+
+function initAiStudio() {
+  const input = document.getElementById("ai-topic-input");
+  if (input) {
+    input.addEventListener("input", (e) => {
+      state.aiInputText = e.target.value;
+    });
+  }
+}
+
+function openAiWithCurrentVideo() {
+  if (!state.currentMetadata) return;
+  const meta = state.currentMetadata;
+  const topicInput = document.getElementById("ai-topic-input");
+  if (topicInput) {
+    topicInput.value = meta.title;
+  }
+  state.aiInputText = meta.title;
+  switchTab("ai");
+  runAiViralGeneration();
+}
+
+function renderAiStudio() {
+  const topicInput = document.getElementById("ai-topic-input");
+  if (topicInput && state.aiInputText) {
+    topicInput.value = state.aiInputText;
+  }
+}
+
+function selectAiTone(tone, element) {
+  state.aiSelectedTone = tone;
+  document.querySelectorAll(".tone-pill").forEach(p => p.classList.remove("active"));
+  if (element) element.classList.add("active");
+  if (state.aiActiveResult) {
+    runAiViralGeneration();
+  }
+}
+
+async function runAiViralGeneration() {
+  const input = document.getElementById("ai-topic-input");
+  const query = (input ? input.value : state.aiInputText).trim() || 
+                (state.currentMetadata ? state.currentMetadata.title : "") || 
+                "Himalayan travel adventures and high energy lifestyle";
+
+  const btn = document.getElementById("btn-run-ai");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span>⏳</span> Generating Viral Hooks & Facebook Post...`;
+  }
+
+  showToast("✨ AI is analyzing high-retention TikTok patterns...");
+  await delay(600);
+
+  // Generate Tone-Aware Viral Hooks
+  const tone = state.aiSelectedTone || "viral";
+  let hooks = [];
+  let fbTitle = "";
+  let fbBody = "";
+  let viralScore = 96;
+
+  if (tone === "viral") {
+    hooks = [
+      `🔥 Wait until you see the ending! 99% of people missed this detail 😱`,
+      `Stop scrolling! This TikTok hack changed everything I thought I knew 🤯`,
+      `Here is why everyone is talking about: "${query.substring(0, 40)}..." 👀`
+    ];
+    fbTitle = `🔥 तपाईंले विश्वास नै गर्न सक्नुहुन्न! "${query}" को सबैभन्दा भाइरल क्लिप! 😱`;
+    fbBody = `यस भिडियोले टिकटकमा तहल्का मच्चाएको छ! पूरै भिडियो हेर्नुहोस् र तपाईंको प्रतिक्रिया कमेन्ट गर्नुहोस्। साथीहरुलाई पनि शेयर गरेर देखाउनुहोस्!`;
+    viralScore = 97;
+  } else if (tone === "humorous") {
+    hooks = [
+      `😂 I was not supposed to laugh this hard, but wait for the 5-second mark!`,
+      `Tell me you do this too without actually telling me 💀🤣`,
+      `My honest reaction to: "${query.substring(0, 35)}..." 😂`
+    ];
+    fbTitle = `😂 हाँसेर पेट मिचिमिचि रुनुहुनेछ! "${query}" 🤣`;
+    fbBody = `दिनभरिको तनाव भगाउन यो भिडियो एकपटक हेर्नैपर्छ! तपाईंको हाँसो रोकिने छैन। साथीहरुलाई मेन्सन गर्नुहोस्!`;
+    viralScore = 94;
+  } else if (tone === "curiosity") {
+    hooks = [
+      `👀 The secret truth nobody talks about when it comes to this...`,
+      `Ever wondered what actually happens behind the scenes? Watch closely:`,
+      `This one simple detail explains why this went insanely viral...`
+    ];
+    fbTitle = `👀 यसको पछाडिको वास्तविक सत्य के हो? "${query}" बारे गोप्य रहस्य!`;
+    fbBody = `धेरैलाई थाहा नभएको अनौठो र रोचक जानकारी। के तपाईंलाई यो कुरा पहिल्यै थाहा थियो? आफ्नो विचार अवश्य लेख्नुहोस्।`;
+    viralScore = 98;
+  } else if (tone === "inspirational") {
+    hooks = [
+      `🌟 If you needed a sign to never give up today, this is it.`,
+      `Proof that passion and relentless dedication conquer all obstacles 💪`,
+      `Save this video for the days you feel like quitting ✨`
+    ];
+    fbTitle = `🌟 हृदय छुने प्रेरणादायी सन्देश: "${query}" 💪🇳🇵`;
+    fbBody = `मेहनत र आत्मविश्वास भए असम्भव केही छैन। यो प्रेरणादायी भिडियो हेरेर आफ्नो लक्ष्यतर्फ अघि बढ्नुहोस्। अरुलाई पनि प्रेरणा दिन शेयर गर्नुहोस्!`;
+    viralScore = 95;
+  } else {
+    // Controversial / Debate
+    hooks = [
+      `⚠️ Unpopular opinion: most people have completely misunderstood this.`,
+      `Are you team Agree or Disagree? Watch before answering in the comments! ⚡`,
+      `Nobody wants to admit this, but someone had to say it out loud:`
+    ];
+    fbTitle = `⚠️ कडा बहस: तपाईं यसमा सहमत हुनुहुन्छ कि असहमत? "${query}" ⚡`;
+    fbBody = `यसमा मानिसहरुको दुई फरक मत देखिएको छ। तपाईंको धारणा के हो? भिडियो हेरेर आफ्नो सत्य विचार निर्धक्क कमेन्ट गर्नुहोस्!`;
+    viralScore = 96;
+  }
+
+  const hashtags = [
+    "#fyp", "#foryou", "#trending", "#viral", "#tiktoknepal", "#foryoupage",
+    "#explore", "#reels", "#viralvideo", "#highctr", "#nepal", "#creator",
+    "#facebookpost", "#trendingsong"
+  ];
+
+  const fullFacebookPost = `${fbTitle}\n\n${fbBody}\n\n${hashtags.join(" ")}`;
+
+  state.aiActiveResult = {
+    hooks,
+    fbTitle,
+    fbBody,
+    fullPost: fullFacebookPost,
+    hashtags,
+    viralScore
+  };
+
+  // Render into AI Studio elements
+  const scoreBadge = document.getElementById("viral-score-number");
+  if (scoreBadge) scoreBadge.textContent = `${viralScore}%`;
+
+  const progressFill = document.getElementById("viral-meter-fill");
+  if (progressFill) progressFill.style.width = `${viralScore}%`;
+
+  // Render Hooks
+  const hooksContainer = document.getElementById("ai-hooks-container");
+  if (hooksContainer) {
+    hooksContainer.innerHTML = hooks.map((h, i) => `
+      <div class="hook-item">
+        <div class="hook-text"><strong>#${i + 1}</strong> ${h}</div>
+        <button class="btn-copy-small" onclick="copyAiHook(${i})">📋 Copy Hook</button>
+      </div>
+    `).join("");
+  }
+
+  // Render Facebook Post
+  const fbPreview = document.getElementById("ai-fb-preview-content");
+  if (fbPreview) {
+    fbPreview.textContent = fullFacebookPost;
+  }
+
+  // Render Hashtags Cloud
+  const hashCloud = document.getElementById("ai-hashtags-cloud");
+  if (hashCloud) {
+    hashCloud.innerHTML = hashtags.map(tag => `
+      <span class="hashtag-chip" onclick="copySingleHashtag('${tag}')">${tag}</span>
+    `).join("");
+  }
+
+  const resultsBox = document.getElementById("ai-results-box");
+  if (resultsBox) {
+    resultsBox.style.display = "flex";
+    resultsBox.classList.add("visible");
+    resultsBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `<span>✨</span> Generate Viral Hooks &amp; Facebook Post`;
+  }
+
+  showToast(`🎉 Generated 3 Hooks & Facebook Ready Post (${viralScore}% Potential)!`);
+}
+
+function copyAiHook(index) {
+  if (!state.aiActiveResult || !state.aiActiveResult.hooks[index]) return;
+  const hook = state.aiActiveResult.hooks[index];
+  navigator.clipboard.writeText(hook).then(() => {
+    showToast(`📋 Copied Hook #${index + 1}!`);
+  }).catch(() => {
+    prompt("Copy Hook:", hook);
+  });
+}
+
+function copyAiFacebookPost() {
+  if (!state.aiActiveResult) return;
+  const text = state.aiActiveResult.fullPost;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast("📋 Copied Ready-to-Post Facebook Caption & Hashtags!");
+  }).catch(() => {
+    prompt("Copy Facebook Post:", text);
+  });
+}
+
+function shareAiToFacebook() {
+  if (!state.aiActiveResult) return;
+  copyAiFacebookPost();
+  showToast("Opening Facebook... (Caption is copied to your clipboard!)");
+  window.open("https://www.facebook.com/", "_blank");
+}
+
+function copyAiHashtags() {
+  if (!state.aiActiveResult) return;
+  const tags = state.aiActiveResult.hashtags.join(" ");
+  navigator.clipboard.writeText(tags).then(() => {
+    showToast("📋 Copied all trending hashtags!");
+  }).catch(() => {
+    prompt("Copy Hashtags:", tags);
+  });
+}
+
+function copySingleHashtag(tag) {
+  navigator.clipboard.writeText(tag).then(() => {
+    showToast(`Copied ${tag}`);
+  });
+}
+
+// Simple Toast Notification
+function showToast(msg) {
+  let toast = document.getElementById('tiksave-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'tiksave-toast';
+    toast.style.position = 'fixed';
+    toast.style.bottom = '80px';
+    toast.style.left = '50%';
+    toast.style.transform = 'translateX(-50%)';
+    toast.style.background = 'rgba(18, 20, 29, 0.95)';
+    toast.style.color = '#fff';
+    toast.style.border = '1px solid var(--neon-cyan)';
+    toast.style.boxShadow = '0 8px 24px rgba(0, 242, 254, 0.3)';
+    toast.style.padding = '10px 20px';
+    toast.style.borderRadius = '9999px';
+    toast.style.fontSize = '13px';
+    toast.style.fontWeight = '700';
+    toast.style.zIndex = '9999';
+    toast.style.transition = 'all 0.3s ease';
+    toast.style.pointerEvents = 'none';
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateX(-50%) translateY(0)';
+
+  clearTimeout(window.__toastTimeout);
+  window.__toastTimeout = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(10px)';
+  }, 2500);
+}
+

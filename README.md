@@ -1,10 +1,10 @@
 # TikSave - Ultra HDR TikTok Video Downloader
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v1.0.2-ff0050.svg)](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases)
+[![Release](https://img.shields.io/badge/Release-v1.0.3-ff0050.svg)](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-00C853?style=flat-square)](https://jeebanrai05-eng.github.io/TikTok-video-downloader-/)
 
-TikSave is a high-speed, modern TikTok video downloader and web application. Download TikTok videos without watermarks in pristine 8K 120FPS, HDR+ Ultra, 1080p Full HD, or extract high-fidelity MP3 audio streams.
+TikSave is a high-speed, modern TikTok video & photo slide downloader and web application. Download TikTok videos without watermarks in pristine 8K 120FPS, HDR+ Ultra, 1080p Full HD, photo carousel slides, and extract high-fidelity MP3 audio streams. Integrated with Gemini AI for instant viral captions, hooks, and hashtags ready to post on Facebook & TikTok.
 
 ---
 
@@ -16,12 +16,14 @@ TikSave is a high-speed, modern TikTok video downloader and web application. Dow
 
 ---
 
-## 📱 Android App (APK v1.0.2)
+## 📱 Android App (APK v1.0.3)
 
 Download the official Android application directly to your phone:
-- **Download APK:** [TikSave-Debug.apk v1.0.2](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.0.2/TikSave-Debug.apk)
+- **Download APK:** [TikSave-Debug.apk v1.0.3](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.0.3/TikSave-Debug.apk)
 
 ### Features
+- 📸 **TikTok Photo Slide Mode**: Download full carousel image slides in 8K/4K HDR+ resolution + soundtrack MP3.
+- ✨ **AI Viral Creator Studio**: Instant viral hooks, ready-to-post Facebook descriptions, and high-reach hashtags (#fyp).
 - 🚀 Ultra-fast dual-engine download (TikWM + Direct Stream fallback).
 - 💧 Clean water-mark-free downloads in MP4 and MP3.
 - 📺 In-app video preview player.

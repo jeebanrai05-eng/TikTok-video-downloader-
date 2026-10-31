@@ -76,6 +76,17 @@ class DownloadRepository(private val context: Context) {
                 musicTitle = "Midnight In Shibuya - LoFi Chill",
                 likes = 2100000L,
                 views = 15300000L
+            ),
+            SampleItem(
+                title = "Himalayan Sunrise Photo Slides (8K HDR+)",
+                author = "@nepal_travel",
+                url = "https://www.tiktok.com/@nepal_travel/video/7345678910111213141",
+                category = "Photo Slide Mode",
+                previewCover = "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800&auto=format&fit=crop&q=80",
+                fallbackVideo = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+                musicTitle = "Resham Firiri (Lo-Fi Acoustic)",
+                likes = 3450000L,
+                views = 18900000L
             )
         )
 
@@ -105,7 +116,15 @@ class DownloadRepository(private val context: Context) {
             val sampleMatch = SAMPLE_VIDEOS.find { rawInput.contains(it.url) || rawInput.contains(it.title) }
             if (sampleMatch != null) {
                 onProgress("Connecting to high-speed CDN...", 0.65f)
-                onProgress("Optimizing 8K 120FPS & HDR+ streams...", 0.90f)
+                val sampleImages = if (sampleMatch.category == "Photo Slide Mode") {
+                    listOf(
+                        "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1600&auto=format&fit=crop&q=90",
+                        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&auto=format&fit=crop&q=90",
+                        "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1600&auto=format&fit=crop&q=90",
+                        "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=1600&auto=format&fit=crop&q=90"
+                    )
+                } else emptyList()
+
                 val meta = VideoMetadata(
                     id = "sample_${sampleMatch.hashCode()}",
                     title = sampleMatch.title,
@@ -127,7 +146,8 @@ class DownloadRepository(private val context: Context) {
                     audioUrl = sampleMatch.fallbackVideo,
                     musicTitle = sampleMatch.musicTitle,
                     musicAuthor = sampleMatch.author,
-                    originalTikTokUrl = sampleMatch.url
+                    originalTikTokUrl = sampleMatch.url,
+                    images = sampleImages
                 )
                 return@withContext ExtractionState.Success(meta)
             }
@@ -167,6 +187,8 @@ class DownloadRepository(private val context: Context) {
         val hdSize = data.hdSize ?: (standardSize * 1.8).toLong()
         val ultra8kSize = (hdSize * 1.6).toLong()
 
+        val images = data.images?.map { if (it.startsWith("/")) "https://www.tikwm.com$it" else it } ?: emptyList()
+
         return VideoMetadata(
             id = data.id ?: System.currentTimeMillis().toString(),
             title = if (!data.title.isNullOrBlank()) data.title else "TikTok Video (${data.author?.nickname ?: "Creator"})",
@@ -188,7 +210,8 @@ class DownloadRepository(private val context: Context) {
             audioUrl = musicUrl,
             musicTitle = data.musicInfo?.title ?: "Original Sound",
             musicAuthor = data.musicInfo?.author ?: (data.author?.nickname ?: ""),
-            originalTikTokUrl = originalUrl
+            originalTikTokUrl = originalUrl,
+            images = images
         )
     }
 
@@ -203,6 +226,7 @@ class DownloadRepository(private val context: Context) {
             DownloadQuality.HD_STANDARD -> metadata.standardHdUrl
             DownloadQuality.AUDIO_ONLY -> metadata.audioUrl
             DownloadQuality.COVER_IMAGE -> metadata.coverUrl
+            DownloadQuality.PHOTO_SLIDE_ULTRA -> metadata.images.firstOrNull() ?: metadata.coverUrl
         }
 
         val item = DownloadItem(

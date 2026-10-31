@@ -1,10 +1,10 @@
 {
-  "versionCode": 2,
-  "versionName": "1.0.2",
-  "releaseTitle": "TikSave 8K 120FPS Ultra v1.0.2",
-  "releaseNotes": "• 8K Ultra & 120FPS Extreme high-speed streaming support\n• Super smooth video processing engine\n• Fixed duplicate video download issue\n• Modern animated update UI with loading, downloading, and install indicators\n• Instant push notification for new app updates",
-  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.0.2/TikSave-Debug.apk",
+  "versionCode": 3,
+  "versionName": "1.0.3",
+  "releaseTitle": "TikSave AI Studio & Photo Slides v1.0.3",
+  "releaseNotes": "• Real TikTok Photo Slide / Image Carousel download in 8K/4K HDR+ Ultra\n• Integrated AI Creator Studio (Viral Hook, Caption & Hashtag generator for Facebook & TikTok)\n• Cleaned UI by removing trending politics section\n• One-click Ready-to-Post sharing with tags\n• Ultra fast download pipeline and stability fixes",
+  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.0.3/TikSave-Debug.apk",
   "minSupportedVersion": "1.0.0",
   "mandatory": false,
-  "publishedAt": "2026-10-28"
+  "publishedAt": "2026-10-30"
 }

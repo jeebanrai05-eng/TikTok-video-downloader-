@@ -1,5 +1,5 @@
 /**
- * TikSave Web - Application Logic
+ * TikSave Web - Application Logic (v1.0.3)
  * Matches com.example.ui.screens and com.example.data.repository
  */
 
@@ -17,156 +17,74 @@ const state = {
     enableTurbo: true,
     autoClipboard: true
   },
-  trendingCategory: 'सबै',
-  trendingSearchQuery: '',
-  activeFbModalItem: null
+  aiInputText: '',
+  aiSelectedTone: 'viral', // 'viral', 'humorous', 'curiosity', 'inspirational', 'controversial'
+  aiActiveResult: null,
+  isGeneratingAi: false
 };
 
-// Nepal Politics Viral Dataset (Matches TrendingPoliticsRepository.kt)
-const TRENDING_POLITICS = [
+// Curated Sample Items (Including 8K/4K HDR+ TikTok Photo Carousel and Videos)
+const SAMPLE_VIDEOS = [
   {
-    id: "np_pol_01",
-    title: "हर्क साम्पाङको गर्जन: 'श्रमदान रोकिँदैन, धरानले देशलाई पाठ सिकाउँछ!' 🔥🇳🇵",
-    leaderCategory: "हर्क साम्पाङ",
-    authorHandle: "@harkasampang.official",
-    authorName: "Harka Sampang A Revolution",
-    coverUrl: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=600&auto=format&fit=crop&q=80",
+    url: "https://www.tiktok.com/@nature.photographer/video/photo_slide_8k_hdr",
+    title: "8K HDR+ Mountain Landscapes of the Himalayas • Photo Slides",
+    nickname: "Nepal Alpine Explorers",
+    author: "@alpine.explorers",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+    cover: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=90",
     videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    durationText: "1:15",
-    viewsCount: "2.8M",
-    likesCount: "340K",
-    trendingRank: 1,
-    badgeLabel: "#1 Trending Nepal",
-    facebookTitle: "🇳🇵 धरानका मेयर हर्क साम्पाङको कडा गर्जन! 'हामी जनताको सेवक हौं, मालिक होइनौं!'",
-    facebookBody: "धरानको श्रमदान अभियानमा जनताको अपार समर्थन। खोलाबाट ढुङ्गा बोक्दै देश बनाउने नयाँ मोडेल। भाषण होइन, कर्म गरेर देखाउने हर्क साम्पाङको नयाँ सन्देश।",
-    hashtags: "#HarkaSampang #Dharan #Shramdaan #NepalPolitics #RajnitiNepal #BalenShah #RabiLamichhane #ViralNepal #NepaliTikTok #DeshBanauneAbhiyan",
-    downloadFileName: "Harka_Sampang_Shramdaan_Speech.mp4"
+    music: "Original Flute of Himalayas (Hi-Res Audio)",
+    duration: 30,
+    views: 4500000,
+    likes: 820000,
+    comments: 42000,
+    shares: 110000,
+    isPhotoSlide: true,
+    images: [
+      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=2400&auto=format&fit=crop&q=95",
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=2400&auto=format&fit=crop&q=95",
+      "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=2400&auto=format&fit=crop&q=95",
+      "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=2400&auto=format&fit=crop&q=95",
+      "https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=2400&auto=format&fit=crop&q=95",
+      "https://images.unsplash.com/photo-1434725039720-aaad6dd32dfe?w=2400&auto=format&fit=crop&q=95"
+    ],
+    sizes: { '8k': 48000000, 'hdr': 28000000, 'hd': 12000000, 'mp3': 3800000 }
   },
   {
-    id: "np_pol_02",
-    title: "बालेन शाहको एक्सन: काठमाडौंको ऐतिहासिक सम्पदा र सार्वजनिक जग्गा संरक्षण अभियान! ⚡🏛️",
-    leaderCategory: "बालेन शाह",
-    authorHandle: "@balenshah.updates",
-    authorName: "Balen Shah Supporters",
-    coverUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&auto=format&fit=crop&q=80",
+    url: "https://www.tiktok.com/@tiktokcreators/video/7289192038192301928",
+    title: "Cinematic 8K Tokyo Rain Cyberpunk Neon Drift 120FPS",
+    nickname: "Tokyo City Lights",
+    author: "@tokyovibes.official",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
+    cover: "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=800&auto=format&fit=crop&q=90",
     videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    durationText: "0:58",
-    viewsCount: "3.4M",
-    likesCount: "480K",
-    trendingRank: 2,
-    badgeLabel: "#2 Viral Politics",
-    facebookTitle: "⚡ बालेन शाहको सम्झौताहीन एक्सन! काठमाडौं महानगरमा कानुन उल्लंघन गर्नेलाई कडा चेतावनी!",
-    facebookBody: "सडक पेटी खाली गर्नेदेखि टुकुचा खोला उत्खनन र सार्वजनिक जग्गा फिर्ता ल्याउनेसम्मको ऐतिहासिक कदम। के तपाईं बालेनको एक्सनलाई समर्थन गर्नुहुन्छ? आफ्नो विचार कमेन्टमा लेख्नुहोस्।",
-    hashtags: "#BalenShah #Kathmandu #KMC #GoodGovernance #NepalPolitics #MayorBalen #ViralNepal #NepaliTikTok #Rajniti2081 #NepalGovt",
-    downloadFileName: "Balen_Shah_Action_Kathmandu.mp4"
+    music: "Tokyo Drift Synthwave • Neon Beats",
+    duration: 45,
+    views: 3200000,
+    likes: 490000,
+    comments: 18400,
+    shares: 62000,
+    isPhotoSlide: false,
+    images: [],
+    sizes: { '8k': 38000000, 'hdr': 22000000, 'hd': 9500000, 'mp3': 3400000 }
   },
   {
-    id: "np_pol_03",
-    title: "संसदमा रवि लामिछानेका ५ ज्वलन्त प्रश्न: सत्तापक्ष निरुत्तर! 💥🎤",
-    leaderCategory: "रवि लामिछाने",
-    authorHandle: "@rabikura.nepal",
-    authorName: "RSP Media Cell",
-    coverUrl: "https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?w=600&auto=format&fit=crop&q=80",
+    url: "https://www.tiktok.com/@travelnepal/video/everest_base_camp_drone",
+    title: "Mount Everest 8K Ultra Drone Aerial Sunrise • No Watermark",
+    nickname: "Nepal Tourism Hub",
+    author: "@discovernepal",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
+    cover: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800&auto=format&fit=crop&q=90",
     videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4",
-    durationText: "2:10",
-    viewsCount: "1.9M",
-    likesCount: "290K",
-    trendingRank: 3,
-    badgeLabel: "#3 Hot Parliament",
-    facebookTitle: "💥 संसदको रोष्ट्रमबाट रवि लामिछानेको गर्जन! जनताले तिरेको करको हिसाब माग!",
-    facebookBody: "युवाहरुको विदेश पलायन रोक्न र देशमा सुशासन कायम गर्न प्रत्यक्ष संसद बहस। सत्तापक्षलाई प्रत्यक्ष जवाफदेही बनाउने प्रयास। अवश्य शेयर गर्नुहोस्!",
-    hashtags: "#RabiLamichhane #RSP #NepalParliament #SamsadBaithak #NepalPolitics #BalenShah #HarkaSampang #BhrastacharBirodh #TrendingNepal #NepaliViral",
-    downloadFileName: "Rabi_Lamichhane_Parliament_Debate.mp4"
-  },
-  {
-    id: "np_pol_04",
-    title: "हर्क साम्पाङ: 'विदेशी ऋण र अनुदानमा होइन, आफ्नै पसिनामा गर्व गर्न सिकौं!' 🏔️💪",
-    leaderCategory: "हर्क साम्पाङ",
-    authorHandle: "@dharan.samachar",
-    authorName: "Dharan Voice",
-    coverUrl: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&auto=format&fit=crop&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-    durationText: "1:42",
-    viewsCount: "2.1M",
-    likesCount: "260K",
-    trendingRank: 4,
-    badgeLabel: "#4 Trending Speech",
-    facebookTitle: "🏔️ हर्क साम्पाङको प्रेरणादायी विचार: 'स्वाभिमान बेचेर देश बन्दैन!'",
-    facebookBody: "श्रम र उत्पादनमा आधारित अर्थतन्त्रको वकालत गर्दै धरानका मेयर हर्क साम्पाङ। नेपाली माटो र युवा शक्तिलाई जगाउने शक्तिशाली भनाइ।",
-    hashtags: "#HarkaSampang #DharanModel #YouthPower #Swabhiman #NepalPolitics #RajnitiNepal #TrendingTikTok #ViralVideo #DharanWaterProject",
-    downloadFileName: "Harka_Sampang_Youth_Speech.mp4"
-  },
-  {
-    id: "np_pol_05",
-    title: "संसदमा चर्काचर्की! युवा सांसदहरुको खबरदारी: 'अब पुरानो दलको सिन्डिकेट टिक्दैन' ⚠️🔥",
-    leaderCategory: "संसद बहस",
-    authorHandle: "@samsad.watch",
-    authorName: "Nepal Parliament Watch",
-    coverUrl: "https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?w=600&auto=format&fit=crop&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackSeeTheWorld.mp4",
-    durationText: "1:55",
-    viewsCount: "1.5M",
-    likesCount: "180K",
-    trendingRank: 5,
-    badgeLabel: "#5 Parliament Debate",
-    facebookTitle: "🔥 संसदमा प्रत्यक्ष बहस: नयाँ पुस्ताको निर्णायक आवाज!",
-    facebookBody: "बजेट अनियमितता र युवाको रोजगारीका सवालमा संसदमा उठेको तीखो आवाज। जनताको पक्षमा उभिने जनप्रतिनिधिको खाँचो छ भन्दै कडा सम्बोधन।",
-    hashtags: "#SamsadNews #NepalParliament #YouthInPolitics #NepalPolitics #HotDebate #RajnitiUpdate #BalenShah #HarkaSampang #ViralNews",
-    downloadFileName: "Parliament_Hot_Debate_Youth.mp4"
-  },
-  {
-    id: "np_pol_06",
-    title: "नेपालको राजनीतिमा नयाँ युग: बालेन, हर्क र रविको प्रभाव कति? 🚀🇳🇵",
-    leaderCategory: "अन्य राजनीति",
-    authorHandle: "@rajniti.nepal",
-    authorName: "Nepali Politics Analysis",
-    coverUrl: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=600&auto=format&fit=crop&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-    durationText: "2:30",
-    viewsCount: "3.1M",
-    likesCount: "410K",
-    trendingRank: 6,
-    badgeLabel: "#6 Analysis Viral",
-    facebookTitle: "🚀 नेपालको राजनीतिमा नयाँ युगको सुरुवात! बालेन, हर्क र रविले कसरी बदल्दैछन् सोच?",
-    facebookBody: "परम्परागत राजनीतिक दलहरुको असफलतापछि उदाएको नयाँ नेतृत्व। जनता अब कुरामा होइन, परिणाममा विश्वास गर्छन्। तपाईलाई सबैभन्दा मनपर्ने नेता को हुन्?",
-    hashtags: "#BalenShah #HarkaSampang #RabiLamichhane #Kathmandu #Dharan #NepalPolitics #RajnitiRevolution #NayaNepal #ViralTikTok #FacebookPost",
-    downloadFileName: "Nepal_New_Politics_Wave.mp4"
-  },
-  {
-    id: "np_pol_07",
-    title: "रवि लामिछाने: 'हामी डराउँदैनौं, जनताको अदालत सबैभन्दा ठूलो अदालत हो!' ⚡🛡️",
-    leaderCategory: "रवि लामिछाने",
-    authorHandle: "@rsp.updates",
-    authorName: "RSP Official Clips",
-    coverUrl: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=600&auto=format&fit=crop&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
-    durationText: "1:20",
-    viewsCount: "1.7M",
-    likesCount: "230K",
-    trendingRank: 7,
-    badgeLabel: "#7 Direct Statement",
-    facebookTitle: "⚡ 'हामी झुक्दैनौं, सत्यको जीत हुन्छ!' रवि लामिछानेको नयाँ उद्घोष!",
-    facebookBody: "राजनीतिक प्रतिशोध र घेराबन्दीविरुद्ध दृढतापूर्वक उभिने सन्देश। जनताको समर्थन नै सबैभन्दा ठूलो शक्ति हो।",
-    hashtags: "#RabiLamichhane #RSPNepal #NyayaRaSushasan #NepalPolitics #TrendingNow #ViralPost #FacebookReelsNepal #Nepal2081",
-    downloadFileName: "Rabi_Lamichhane_Statement.mp4"
-  },
-  {
-    id: "np_pol_08",
-    title: "बालेन शाहको विकास मोडल: 'काठमाडौं सफा र व्यवस्थित हुनैपर्छ' 🇳🇵🧹",
-    leaderCategory: "बालेन शाह",
-    authorHandle: "@balen.vision",
-    authorName: "Balen City Vision",
-    coverUrl: "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=600&auto=format&fit=crop&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4",
-    durationText: "1:05",
-    viewsCount: "2.6M",
-    likesCount: "390K",
-    trendingRank: 8,
-    badgeLabel: "#8 Smart City",
-    facebookTitle: "🇳🇵 बालेन शाहको सपना: सुन्दर, सफा र व्यवस्थित काठमाडौं!",
-    facebookBody: "पैदलयात्रीको अधिकार, सम्पदा संरक्षण र फोहोर व्यवस्थापनमा महानगरको निरन्तर प्रयास। बालेनको कामलाई कस्तो मान्नुहुन्छ?",
-    hashtags: "#BalenShah #KathmanduMetropolitan #CleanKathmandu #HeritageNepal #NepalPolitics #MayorAction #TikTokNepal #ViralReels",
-    downloadFileName: "Balen_Clean_City_Mission.mp4"
+    music: "Himalayan Sunrise Meditation Flute",
+    duration: 60,
+    views: 5800000,
+    likes: 920000,
+    comments: 31000,
+    shares: 140000,
+    isPhotoSlide: false,
+    images: [],
+    sizes: { '8k': 52000000, 'hdr': 31000000, 'hd': 14000000, 'mp3': 4100000 }
   }
 ];
 
@@ -176,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadHistory();
   setupClipboardListener();
   handleInputStateChange();
-  renderTrendingCards();
+  initAiStudio();
 });
 
 // Tab Switching
@@ -184,7 +102,7 @@ function switchTab(tabName) {
   state.activeTab = tabName;
 
   // View sections
-  const views = ['downloader', 'trending', 'batch', 'library', 'settings'];
+  const views = ['downloader', 'ai', 'batch', 'library', 'settings'];
   views.forEach(v => {
     const el = document.getElementById(`view-${v}`);
     if (el) el.style.display = (v === tabName) ? 'block' : 'none';
@@ -200,8 +118,8 @@ function switchTab(tabName) {
   const activeBnav = document.getElementById(`bnav-${tabName}`);
   if (activeBnav) activeBnav.classList.add('active');
 
-  if (tabName === 'trending') {
-    renderTrendingCards();
+  if (tabName === 'ai') {
+    renderAiStudio();
   } else if (tabName === 'library') {
     renderHistory();
   }
@@ -397,7 +315,9 @@ async function startExtraction() {
       streamMp3: sampleMatch.videoUrl,
       musicTitle: sampleMatch.music,
       sizes: sampleMatch.sizes,
-      originalUrl: sampleMatch.url
+      originalUrl: sampleMatch.url,
+      images: sampleMatch.images || [],
+      isPhotoSlide: !!sampleMatch.isPhotoSlide
     };
 
     displayResult(meta);
@@ -461,6 +381,7 @@ async function startExtraction() {
     const standardSize = data.size || 8500000;
     const hdSize = data.hd_size || Math.round(standardSize * 1.8);
     const ultra8kSize = Math.round(hdSize * 1.6);
+    const rawImages = (data.images && Array.isArray(data.images)) ? data.images.map(img => fixUrl(img)) : [];
 
     const meta = {
       id: data.id || Date.now().toString(),
@@ -485,7 +406,9 @@ async function startExtraction() {
         'hd': standardSize,
         'mp3': 3200000
       },
-      originalUrl: rawUrl
+      originalUrl: rawUrl,
+      images: rawImages,
+      isPhotoSlide: rawImages.length > 0
     };
 
     setExtractingProgress("Ready to download!", 100);
@@ -539,6 +462,33 @@ function displayResult(meta) {
   document.getElementById('size-mp3').textContent = formatBytes(meta.sizes['mp3']);
 
   selectStreamRow(state.selectedQuality);
+
+  // Render TikTok Photo Slides (Carousel)
+  const slidesBox = document.getElementById('photo-slides-box');
+  const slidesCount = document.getElementById('photo-slides-count');
+  const slidesScroll = document.getElementById('photo-slides-scroll');
+
+  if (slidesBox && slidesScroll) {
+    if (meta.images && meta.images.length > 0) {
+      if (slidesCount) slidesCount.textContent = meta.images.length;
+      slidesScroll.innerHTML = meta.images.map((imgUrl, idx) => `
+        <div class="photo-slide-card">
+          <div class="slide-img-wrap">
+            <span class="slide-badge-hdr">HDR+ 8K</span>
+            <span class="slide-badge-num">#${idx + 1}</span>
+            <img src="${imgUrl}" alt="Slide ${idx + 1}" loading="lazy" onerror="this.src='https://picsum.photos/seed/slide${idx}/400/600'">
+          </div>
+          <button class="btn-slide-save" onclick="saveSlidePhoto('${imgUrl}', ${idx + 1})">
+            💾 Save 8K
+          </button>
+        </div>
+      `).join('');
+      slidesBox.style.display = 'flex';
+    } else {
+      slidesBox.style.display = 'none';
+      slidesScroll.innerHTML = '';
+    }
+  }
 
   const card = document.getElementById('result-card');
   card.style.display = 'block';
@@ -1003,287 +953,270 @@ function delay(ms) {
 }
 
 // ==========================================================================
-// Trending Nepal Politics Functions (Matches TrendingScreen.kt)
+// TikTok Photo Slides (8K HDR+ Ultra Photo Carousel) Functions
 // ==========================================================================
 
-function getFilteredTrendingVideos() {
-  const cat = state.trendingCategory || 'सबै';
-  const q = (state.trendingSearchQuery || '').toLowerCase().trim();
+function saveSlidePhoto(url, slideNum) {
+  if (!url) return;
+  const meta = state.currentMetadata || {};
+  const filename = `tiksave_${meta.id || Date.now()}_slide_${slideNum}_8k_hdr.jpg`;
 
-  let list = TRENDING_POLITICS;
-  if (cat !== 'सबै' && cat !== 'सबै (All)') {
-    list = list.filter(item => item.leaderCategory.toLowerCase() === cat.toLowerCase());
-  }
+  showToast(`Downloading Slide #${slideNum} (8K Ultra HDR+)...`);
 
-  if (q.length > 0) {
-    list = list.filter(item => 
-      item.title.toLowerCase().includes(q) ||
-      item.leaderCategory.toLowerCase().includes(q) ||
-      item.authorName.toLowerCase().includes(q) ||
-      item.hashtags.toLowerCase().includes(q) ||
-      item.facebookTitle.toLowerCase().includes(q)
-    );
-  }
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.target = "_blank";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 
-  return list;
+  // Add record to Library history
+  saveToHistory({
+    id: `${meta.id || Date.now()}_slide_${slideNum}`,
+    title: `${meta.title || "TikTok Photo Slide"} - Slide #${slideNum} [8K HDR+]`,
+    coverUrl: url,
+    authorUsername: meta.authorUsername || "@tiktok",
+    authorNickname: meta.authorNickname || "TikTok Creator",
+    streamHd: url,
+    sizes: { hd: 4500000 },
+    durationSeconds: 0
+  });
 }
 
-function renderTrendingCards() {
-  const container = document.getElementById('trending-cards-grid');
-  const countBadge = document.getElementById('trending-count-badge');
-  if (!container) return;
-
-  const items = getFilteredTrendingVideos();
-  if (countBadge) countBadge.textContent = items.length.toString();
-
-  if (items.length === 0) {
-    container.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 48px 16px; color: var(--text-tertiary);">
-        <div style="font-size: 32px; margin-bottom: 8px;">🇳🇵</div>
-        <div style="font-size: 15px; font-weight: 700; color: #fff;">कुनै भिडियो भेटिएन</div>
-        <div style="font-size: 12px; margin-top: 4px;">कृपया अर्को नेता वा शब्द खोज्नुहोस्</div>
-      </div>
-    `;
+async function downloadAllPhotoSlides() {
+  if (!state.currentMetadata || !state.currentMetadata.images || state.currentMetadata.images.length === 0) {
+    showToast("No photo slides found in this post!");
     return;
   }
 
-  container.innerHTML = items.map(item => `
-    <div class="trending-card" id="card-${item.id}">
-      <div class="trending-thumb-wrap" onclick="openTrendingVideoPreview('${item.id}')">
-        <img src="${item.coverUrl}" alt="${item.title}" loading="lazy" onerror="this.src='https://picsum.photos/seed/${item.id}/600/340'">
-        <span class="trending-badge-rank">${item.badgeLabel}</span>
-        <span class="trending-duration">${item.durationText}</span>
-        <div class="trending-play-overlay">
-          <div class="play-circle">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-          </div>
-        </div>
-      </div>
+  const images = state.currentMetadata.images;
+  showToast(`Starting batch download of all ${images.length} 8K photos...`);
 
-      <div class="trending-card-body">
-        <div style="display: flex; gap: 6px; align-items: center;">
-          <span class="cat-pill active" style="font-size: 10px; padding: 2px 8px;">${item.leaderCategory}</span>
-          <span style="font-size: 11px; color: var(--neon-cyan); font-weight: 600;">Clean HD</span>
-        </div>
+  for (let i = 0; i < images.length; i++) {
+    saveSlidePhoto(images[i], i + 1);
+    await delay(350);
+  }
 
-        <h3 class="trending-card-title">${item.title}</h3>
-
-        <div class="trending-author-row">
-          <span>${item.authorName}</span>
-          <span>${item.authorHandle}</span>
-        </div>
-
-        <div class="trending-stats-row">
-          <span>👁️ ${item.viewsCount} views</span>
-          <span>❤️ ${item.likesCount} likes</span>
-        </div>
-
-        <!-- Facebook Ready Post Preview Box -->
-        <div class="fb-preview-box">
-          <div class="fb-preview-header">
-            <span class="fb-badge">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-              Ready To Post
-            </span>
-            <button class="btn-copy-small" onclick="copyFacebookPost('${item.id}')">Copy FB Post</button>
-          </div>
-          <div class="fb-preview-title">${item.facebookTitle}</div>
-          <div class="fb-preview-tags">${item.hashtags}</div>
-        </div>
-
-        <!-- Actions -->
-        <div class="trending-card-actions">
-          <button class="btn-fb-share" onclick="openFacebookModal('${item.id}')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-            <span>Facebook मा Upload गर्नुहोस्</span>
-          </button>
-
-          <div class="trending-sub-actions">
-            <button class="btn-trending-dl" onclick="downloadTrendingVideo('${item.id}')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              <span>Download</span>
-            </button>
-            <button class="btn-copy-tags" onclick="copyTrendingTags('${item.id}')">
-              <span># Copy Tags</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `).join('');
+  showToast(`✅ Successfully queued all ${images.length} 8K photos!`);
 }
 
-function filterTrendingCategory(cat) {
-  state.trendingCategory = cat;
-  document.querySelectorAll('.cat-pill').forEach(pill => {
-    if (pill.textContent.includes(cat) || (cat === 'सबै' && pill.textContent.includes('सबै'))) {
-      pill.classList.add('active');
-    } else {
-      pill.classList.remove('active');
-    }
-  });
-  renderTrendingCards();
-}
+// ==========================================================================
+// AI Creator Studio (Viral Hook, Facebook Post, CTR Description) Functions
+// ==========================================================================
 
-function handleTrendingSearch(query) {
-  state.trendingSearchQuery = query;
-  renderTrendingCards();
-}
-
-function openFacebookModal(itemId) {
-  const item = TRENDING_POLITICS.find(x => x.id === itemId);
-  if (!item) return;
-
-  state.activeFbModalItem = item;
-
-  const modal = document.getElementById('modal-fb-post');
-  const cover = document.getElementById('fb-modal-cover');
-  const cat = document.getElementById('fb-modal-category');
-  const rank = document.getElementById('fb-modal-rank');
-  const title = document.getElementById('fb-modal-video-title');
-  const author = document.getElementById('fb-modal-author');
-  const inputTitle = document.getElementById('fb-input-title');
-  const inputBody = document.getElementById('fb-input-body');
-  const inputTags = document.getElementById('fb-input-tags');
-
-  if (cover) cover.src = item.coverUrl;
-  if (cat) cat.textContent = item.leaderCategory;
-  if (rank) rank.textContent = item.badgeLabel;
-  if (title) title.textContent = item.title;
-  if (author) author.textContent = `${item.authorName} (${item.authorHandle})`;
-  if (inputTitle) inputTitle.value = item.facebookTitle;
-  if (inputBody) inputBody.value = item.facebookBody;
-  if (inputTags) inputTags.value = item.hashtags;
-
-  if (modal) {
-    modal.style.display = 'flex';
-    modal.classList.add('visible');
+function initAiStudio() {
+  const input = document.getElementById("ai-topic-input");
+  if (input) {
+    input.addEventListener("input", (e) => {
+      state.aiInputText = e.target.value;
+    });
   }
 }
 
-function closeFacebookModal() {
-  const modal = document.getElementById('modal-fb-post');
-  if (modal) {
-    modal.style.display = 'none';
-    modal.classList.remove('visible');
+function openAiWithCurrentVideo() {
+  if (!state.currentMetadata) return;
+  const meta = state.currentMetadata;
+  const topicInput = document.getElementById("ai-topic-input");
+  if (topicInput) {
+    topicInput.value = meta.title;
+  }
+  state.aiInputText = meta.title;
+  switchTab("ai");
+  runAiViralGeneration();
+}
+
+function renderAiStudio() {
+  const topicInput = document.getElementById("ai-topic-input");
+  if (topicInput && state.aiInputText) {
+    topicInput.value = state.aiInputText;
   }
 }
 
-function copyFieldText(elementId) {
-  const el = document.getElementById(elementId);
-  if (!el) return;
-  const val = el.value || el.textContent;
-  navigator.clipboard.writeText(val).then(() => {
-    showToast("कपी भयो! (Copied to Clipboard)");
-  }).catch(() => {
-    showToast("कपी भयो!");
-  });
+function selectAiTone(tone, element) {
+  state.aiSelectedTone = tone;
+  document.querySelectorAll(".tone-pill").forEach(p => p.classList.remove("active"));
+  if (element) element.classList.add("active");
+  if (state.aiActiveResult) {
+    runAiViralGeneration();
+  }
 }
 
-function copyFullPost() {
-  const inputTitle = document.getElementById('fb-input-title');
-  const inputBody = document.getElementById('fb-input-body');
-  const inputTags = document.getElementById('fb-input-tags');
+async function runAiViralGeneration() {
+  const input = document.getElementById("ai-topic-input");
+  const query = (input ? input.value : state.aiInputText).trim() || 
+                (state.currentMetadata ? state.currentMetadata.title : "") || 
+                "Himalayan travel adventures and high energy lifestyle";
 
-  const fullText = `${inputTitle ? inputTitle.value : ''}\n\n${inputBody ? inputBody.value : ''}\n\n${inputTags ? inputTags.value : ''}`.trim();
-  navigator.clipboard.writeText(fullText).then(() => {
-    showToast("सम्पूर्ण Facebook पोष्ट कपी भयो! 📋");
-  }).catch(() => {
-    showToast("पोष्ट कपी भयो!");
-  });
-}
+  const btn = document.getElementById("btn-run-ai");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span>⏳</span> Generating Viral Hooks & Facebook Post...`;
+  }
 
-function copyFacebookPost(itemId) {
-  const item = TRENDING_POLITICS.find(x => x.id === itemId);
-  if (!item) return;
+  showToast("✨ AI is analyzing high-retention TikTok patterns...");
+  await delay(600);
 
-  const fullText = `${item.facebookTitle}\n\n${item.facebookBody}\n\n${item.hashtags}`;
-  navigator.clipboard.writeText(fullText).then(() => {
-    showToast("Facebook शीर्षक र ह्यासट्याग कपी भयो! 📋");
-  }).catch(() => {
-    showToast("कपी भयो!");
-  });
-}
+  // Generate Tone-Aware Viral Hooks
+  const tone = state.aiSelectedTone || "viral";
+  let hooks = [];
+  let fbTitle = "";
+  let fbBody = "";
+  let viralScore = 96;
 
-function copyTrendingTags(itemId) {
-  const item = TRENDING_POLITICS.find(x => x.id === itemId);
-  if (!item) return;
+  if (tone === "viral") {
+    hooks = [
+      `🔥 Wait until you see the ending! 99% of people missed this detail 😱`,
+      `Stop scrolling! This TikTok hack changed everything I thought I knew 🤯`,
+      `Here is why everyone is talking about: "${query.substring(0, 40)}..." 👀`
+    ];
+    fbTitle = `🔥 तपाईंले विश्वास नै गर्न सक्नुहुन्न! "${query}" को सबैभन्दा भाइरल क्लिप! 😱`;
+    fbBody = `यस भिडियोले टिकटकमा तहल्का मच्चाएको छ! पूरै भिडियो हेर्नुहोस् र तपाईंको प्रतिक्रिया कमेन्ट गर्नुहोस्। साथीहरुलाई पनि शेयर गरेर देखाउनुहोस्!`;
+    viralScore = 97;
+  } else if (tone === "humorous") {
+    hooks = [
+      `😂 I was not supposed to laugh this hard, but wait for the 5-second mark!`,
+      `Tell me you do this too without actually telling me 💀🤣`,
+      `My honest reaction to: "${query.substring(0, 35)}..." 😂`
+    ];
+    fbTitle = `😂 हाँसेर पेट मिचिमिचि रुनुहुनेछ! "${query}" 🤣`;
+    fbBody = `दिनभरिको तनाव भगाउन यो भिडियो एकपटक हेर्नैपर्छ! तपाईंको हाँसो रोकिने छैन। साथीहरुलाई मेन्सन गर्नुहोस्!`;
+    viralScore = 94;
+  } else if (tone === "curiosity") {
+    hooks = [
+      `👀 The secret truth nobody talks about when it comes to this...`,
+      `Ever wondered what actually happens behind the scenes? Watch closely:`,
+      `This one simple detail explains why this went insanely viral...`
+    ];
+    fbTitle = `👀 यसको पछाडिको वास्तविक सत्य के हो? "${query}" बारे गोप्य रहस्य!`;
+    fbBody = `धेरैलाई थाहा नभएको अनौठो र रोचक जानकारी। के तपाईंलाई यो कुरा पहिल्यै थाहा थियो? आफ्नो विचार अवश्य लेख्नुहोस्।`;
+    viralScore = 98;
+  } else if (tone === "inspirational") {
+    hooks = [
+      `🌟 If you needed a sign to never give up today, this is it.`,
+      `Proof that passion and relentless dedication conquer all obstacles 💪`,
+      `Save this video for the days you feel like quitting ✨`
+    ];
+    fbTitle = `🌟 हृदय छुने प्रेरणादायी सन्देश: "${query}" 💪🇳🇵`;
+    fbBody = `मेहनत र आत्मविश्वास भए असम्भव केही छैन। यो प्रेरणादायी भिडियो हेरेर आफ्नो लक्ष्यतर्फ अघि बढ्नुहोस्। अरुलाई पनि प्रेरणा दिन शेयर गर्नुहोस्!`;
+    viralScore = 95;
+  } else {
+    // Controversial / Debate
+    hooks = [
+      `⚠️ Unpopular opinion: most people have completely misunderstood this.`,
+      `Are you team Agree or Disagree? Watch before answering in the comments! ⚡`,
+      `Nobody wants to admit this, but someone had to say it out loud:`
+    ];
+    fbTitle = `⚠️ कडा बहस: तपाईं यसमा सहमत हुनुहुन्छ कि असहमत? "${query}" ⚡`;
+    fbBody = `यसमा मानिसहरुको दुई फरक मत देखिएको छ। तपाईंको धारणा के हो? भिडियो हेरेर आफ्नो सत्य विचार निर्धक्क कमेन्ट गर्नुहोस्!`;
+    viralScore = 96;
+  }
 
-  navigator.clipboard.writeText(item.hashtags).then(() => {
-    showToast("भाइरल ह्यासट्याग कपी भयो! 🏷️");
-  }).catch(() => {
-    showToast("ह्यासट्याग कपी भयो!");
-  });
-}
+  const hashtags = [
+    "#fyp", "#foryou", "#trending", "#viral", "#tiktoknepal", "#foryoupage",
+    "#explore", "#reels", "#viralvideo", "#highctr", "#nepal", "#creator",
+    "#facebookpost", "#trendingsong"
+  ];
 
-function postToFacebookFromModal() {
-  copyFullPost();
-  showToast("शीर्षक कपी भयो! Facebook खुल्दैछ... 🚀");
-  setTimeout(() => {
-    // Open Facebook create post or facebook feed
-    window.open("https://www.facebook.com/", "_blank");
-  }, 500);
-}
+  const fullFacebookPost = `${fbTitle}\n\n${fbBody}\n\n${hashtags.join(" ")}`;
 
-function downloadFromFbModal() {
-  if (!state.activeFbModalItem) return;
-  downloadTrendingVideo(state.activeFbModalItem.id);
-}
-
-function downloadTrendingVideo(itemId) {
-  const item = TRENDING_POLITICS.find(x => x.id === itemId);
-  if (!item) return;
-
-  // Synthesize metadata for download modal
-  state.currentMetadata = {
-    title: item.title,
-    author: item.authorHandle,
-    nickname: item.authorName,
-    cover: item.coverUrl,
-    avatar: item.coverUrl,
-    videoUrl: item.videoUrl,
-    music: "Nepal Politics Viral Audio",
-    likes: 340000,
-    duration: 65,
-    sizes: { '8k': 24000000, 'hdr': 15000000, 'hd': 8500000, 'mp3': 2800000 }
+  state.aiActiveResult = {
+    hooks,
+    fbTitle,
+    fbBody,
+    fullPost: fullFacebookPost,
+    hashtags,
+    viralScore
   };
 
-  triggerDownload();
-  showToast(`${item.downloadFileName} डाउनलोड सुरु भयो! ⚡`);
+  // Render into AI Studio elements
+  const scoreBadge = document.getElementById("viral-score-number");
+  if (scoreBadge) scoreBadge.textContent = `${viralScore}%`;
+
+  const progressFill = document.getElementById("viral-meter-fill");
+  if (progressFill) progressFill.style.width = `${viralScore}%`;
+
+  // Render Hooks
+  const hooksContainer = document.getElementById("ai-hooks-container");
+  if (hooksContainer) {
+    hooksContainer.innerHTML = hooks.map((h, i) => `
+      <div class="hook-item">
+        <div class="hook-text"><strong>#${i + 1}</strong> ${h}</div>
+        <button class="btn-copy-small" onclick="copyAiHook(${i})">📋 Copy Hook</button>
+      </div>
+    `).join("");
+  }
+
+  // Render Facebook Post
+  const fbPreview = document.getElementById("ai-fb-preview-content");
+  if (fbPreview) {
+    fbPreview.textContent = fullFacebookPost;
+  }
+
+  // Render Hashtags Cloud
+  const hashCloud = document.getElementById("ai-hashtags-cloud");
+  if (hashCloud) {
+    hashCloud.innerHTML = hashtags.map(tag => `
+      <span class="hashtag-chip" onclick="copySingleHashtag('${tag}')">${tag}</span>
+    `).join("");
+  }
+
+  const resultsBox = document.getElementById("ai-results-box");
+  if (resultsBox) {
+    resultsBox.style.display = "flex";
+    resultsBox.classList.add("visible");
+    resultsBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `<span>✨</span> Generate Viral Hooks &amp; Facebook Post`;
+  }
+
+  showToast(`🎉 Generated 3 Hooks & Facebook Ready Post (${viralScore}% Potential)!`);
 }
 
-function openTrendingVideoPreview(itemId) {
-  const item = TRENDING_POLITICS.find(x => x.id === itemId);
-  if (!item) return;
+function copyAiHook(index) {
+  if (!state.aiActiveResult || !state.aiActiveResult.hooks[index]) return;
+  const hook = state.aiActiveResult.hooks[index];
+  navigator.clipboard.writeText(hook).then(() => {
+    showToast(`📋 Copied Hook #${index + 1}!`);
+  }).catch(() => {
+    prompt("Copy Hook:", hook);
+  });
+}
 
-  const modal = document.getElementById('modal-player');
-  const video = document.getElementById('preview-video-element');
-  const title = document.getElementById('player-modal-title');
+function copyAiFacebookPost() {
+  if (!state.aiActiveResult) return;
+  const text = state.aiActiveResult.fullPost;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast("📋 Copied Ready-to-Post Facebook Caption & Hashtags!");
+  }).catch(() => {
+    prompt("Copy Facebook Post:", text);
+  });
+}
 
-  if (title) title.textContent = item.title;
-  if (video) {
-    video.src = item.videoUrl;
-    video.load();
-    video.play().catch(() => {});
-  }
+function shareAiToFacebook() {
+  if (!state.aiActiveResult) return;
+  copyAiFacebookPost();
+  showToast("Opening Facebook... (Caption is copied to your clipboard!)");
+  window.open("https://www.facebook.com/", "_blank");
+}
 
-  state.currentMetadata = {
-    title: item.title,
-    author: item.authorHandle,
-    nickname: item.authorName,
-    cover: item.coverUrl,
-    avatar: item.coverUrl,
-    videoUrl: item.videoUrl,
-    music: "Nepal Politics Audio",
-    likes: 340000,
-    duration: 65,
-    sizes: { '8k': 24000000, 'hdr': 15000000, 'hd': 8500000, 'mp3': 2800000 }
-  };
+function copyAiHashtags() {
+  if (!state.aiActiveResult) return;
+  const tags = state.aiActiveResult.hashtags.join(" ");
+  navigator.clipboard.writeText(tags).then(() => {
+    showToast("📋 Copied all trending hashtags!");
+  }).catch(() => {
+    prompt("Copy Hashtags:", tags);
+  });
+}
 
-  if (modal) {
-    modal.style.display = 'flex';
-    modal.classList.add('visible');
-  }
+function copySingleHashtag(tag) {
+  navigator.clipboard.writeText(tag).then(() => {
+    showToast(`Copied ${tag}`);
+  });
 }
 
 // Simple Toast Notification

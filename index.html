@@ -58,9 +58,9 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         Downloader
       </button>
-      <button class="nav-tab" id="tab-btn-trending" onclick="switchTab('trending')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-        🔥 Trending Nepal
+      <button class="nav-tab" id="tab-btn-ai" onclick="switchTab('ai')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        ✨ AI Studio
       </button>
       <button class="nav-tab" id="tab-btn-batch" onclick="switchTab('batch')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
@@ -288,6 +288,23 @@
           </div>
         </div>
 
+        <!-- Photo Slide Mode Section (Auto-Shown if images array is present) -->
+        <div id="photo-slides-box" class="photo-slides-box" style="display: none;">
+          <div class="photo-slides-header">
+            <div>
+              <span class="photo-badge">📸 PHOTO SLIDE MODE</span>
+              <span id="photo-count-label" class="photo-count">0 Photos Detected</span>
+            </div>
+            <button class="btn-download-all-photos" onclick="downloadAllPhotosBatch()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Download All Photos (HDR+ Ultra)</span>
+            </button>
+          </div>
+          <div id="photo-slides-scroll" class="photo-slides-scroll">
+            <!-- Populated dynamically via app.js -->
+          </div>
+        </div>
+
         <!-- Stream Quality Selection Option Rows -->
         <div class="stream-options-title">Select Download Stream</div>
         <div class="stream-options-list">
@@ -365,55 +382,89 @@
               <span>Copy Link</span>
             </button>
           </div>
+
+          <button class="btn-ai-card-trigger" onclick="openAiWithCurrentVideo()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <span>✨ AI Viral Generator (Hooks & Facebook Post)</span>
+          </button>
         </div>
       </div>
 
     </section>
 
-    <!-- ==================== VIEW 2: TRENDING NEPAL POLITICS ==================== -->
-    <section id="view-trending" class="trending-container" style="display: none;">
-      <!-- Hero Banner -->
-      <div class="trending-hero">
-        <div class="trending-hero-badge">
-          <span class="badge-fire">🔥 100% NEPAL POLITICS</span>
-          <span class="badge-fb-ready">1-Click Facebook Ready</span>
+    <!-- ==================== VIEW 2: AI VIRAL CREATOR STUDIO ==================== -->
+    <section id="view-ai" class="ai-container" style="display: none;">
+      <div class="ai-hero-banner">
+        <div class="ai-hero-sparkle">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         </div>
-        <h2 class="trending-hero-title">नेपाल राजनीति भाइरल TikTok भिडियोहरू</h2>
-        <p class="trending-hero-sub">
-          हर्क साम्पाङ, बालेन शाह, रवि लामिछाने र संसद बहसका चर्चित भिडियोहरू डाउनलोड गरी शीर्षक र ह्यासट्याग सहित सोझै फेसबुकमा पोष्ट गर्नुहोस्।
-        </p>
-      </div>
-
-      <!-- Search & Filters -->
-      <div class="trending-filters-wrapper">
-        <div class="trending-search-box">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="trending-search-input" placeholder="हर्क साम्पाङ, बालेन, रवि, संसद बहस खोज्नुहोस्..." oninput="handleTrendingSearch(this.value)">
-        </div>
-
-        <div class="trending-categories-scroll">
-          <button class="cat-pill active" onclick="filterTrendingCategory('सबै')">सबै (All)</button>
-          <button class="cat-pill" onclick="filterTrendingCategory('हर्क साम्पाङ')">हर्क साम्पाङ</button>
-          <button class="cat-pill" onclick="filterTrendingCategory('बालेन शाह')">बालेन शाह</button>
-          <button class="cat-pill" onclick="filterTrendingCategory('रवि लामिछाने')">रवि लामिछाने</button>
-          <button class="cat-pill" onclick="filterTrendingCategory('संसद बहस')">संसद बहस</button>
-          <button class="cat-pill" onclick="filterTrendingCategory('अन्य राजनीति')">अन्य राजनीति</button>
+        <div>
+          <h2 class="ai-hero-title">AI Viral Creator Studio</h2>
+          <p class="ai-hero-sub">
+            Generate high-CTR hooks, ready-to-post Facebook descriptions, and trending hashtags with Gemini AI.
+          </p>
         </div>
       </div>
 
-      <!-- Feed Header -->
-      <div class="trending-feed-header">
-        <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; color: #fff;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#ff5722"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-          <span>भाइरल राजनीति भिडियोहरू</span>
-          <span id="trending-count-badge" class="badge-count">8</span>
+      <div class="ai-card">
+        <label class="ai-label">VIDEO TOPIC OR TITLE</label>
+        <div class="ai-input-wrap">
+          <input type="text" id="ai-topic-input" placeholder="Enter topic, video title, or photo slide description..." />
+          <button class="ai-paste-btn" onclick="pasteToAiInput()">Paste</button>
         </div>
-        <div style="font-size: 12px; color: var(--neon-cyan);">Ready to Post on Facebook 🚀</div>
+
+        <label class="ai-label" style="margin-top: 14px;">CONTENT TONE & STYLE</label>
+        <div class="ai-tones-scroll">
+          <button class="ai-tone-pill active" onclick="selectAiTone('viral', this)">🔥 Viral Trend</button>
+          <button class="ai-tone-pill" onclick="selectAiTone('politics', this)">🇳🇵 News & Politics</button>
+          <button class="ai-tone-pill" onclick="selectAiTone('comedy', this)">😂 Comedy & Humor</button>
+          <button class="ai-tone-pill" onclick="selectAiTone('aesthetic', this)">✨ Aesthetic & Chill</button>
+          <button class="ai-tone-pill" onclick="selectAiTone('motivation', this)">💪 Motivation & Life</button>
+        </div>
+
+        <button class="btn-generate-ai" id="btn-run-ai" onclick="runAiViralGeneration()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <span id="btn-run-ai-label">Generate Viral Hooks & Captions</span>
+        </button>
       </div>
 
-      <!-- Trending Cards Grid -->
-      <div id="trending-cards-grid" class="trending-cards-grid">
-        <!-- Rendered via app.js -->
+      <!-- AI Result Panel -->
+      <div id="ai-result-panel" class="ai-result-panel" style="display: none;">
+        <!-- Score Bar -->
+        <div class="ai-score-card">
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: var(--hdr-gold); letter-spacing: 0.5px;">VIRAL POTENTIAL SCORE</div>
+            <div style="font-size: 18px; font-weight: 800; color: #fff;" id="ai-score-label">96% High Engagement</div>
+          </div>
+          <div class="ai-score-badge">🔥 HIGH REACH</div>
+        </div>
+
+        <!-- Hooks -->
+        <div class="ai-section-card">
+          <div class="ai-section-title">⚡ TOP VIRAL HOOKS (FIRST 3 SECONDS)</div>
+          <div id="ai-hooks-container" class="ai-hooks-list"></div>
+        </div>
+
+        <!-- Facebook Ready Post -->
+        <div class="ai-section-card fb-card-accent">
+          <div class="ai-section-header-row">
+            <span style="color: #1877f2; font-weight: 800; font-size: 12px; letter-spacing: 0.5px;">READY FOR FACEBOOK POST</span>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-copy-small" onclick="copyAiFacebookPost()">Copy Post</button>
+              <button class="btn-share-fb" onclick="shareAiToFacebook()">Post</button>
+            </div>
+          </div>
+          <pre id="ai-fb-post-text" class="ai-post-preview"></pre>
+        </div>
+
+        <!-- Trending Hashtags -->
+        <div class="ai-section-card">
+          <div class="ai-section-header-row">
+            <span style="color: var(--neon-magenta); font-weight: 800; font-size: 12px; letter-spacing: 0.5px;">TRENDING HASHTAGS</span>
+            <button class="btn-copy-small" onclick="copyAiHashtags()">Copy All Tags</button>
+          </div>
+          <div id="ai-tags-container" class="ai-tags-cloud"></div>
+        </div>
       </div>
     </section>
 
@@ -698,9 +749,9 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       <span>Downloader</span>
     </button>
-    <button class="bnav-item" id="bnav-trending" onclick="switchTab('trending')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-      <span>Trending</span>
+    <button class="bnav-item" id="bnav-ai" onclick="switchTab('ai')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      <span>AI Studio</span>
     </button>
     <button class="bnav-item" id="bnav-batch" onclick="switchTab('batch')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>

@@ -27,14 +27,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 import android.content.Intent
-import android.net.Uri
-import com.example.data.model.TrendingPoliticsItem
-import com.example.data.repository.TrendingPoliticsRepository
-import kotlinx.coroutines.flow.combine
+import com.example.data.ai.AiContentTone
+import com.example.data.ai.AiGenerationState
+import com.example.data.ai.AiService
+import com.example.data.ai.AiViralResult
 
 enum class AppTab {
     DOWNLOADER,
-    TRENDING,
+    AI_STUDIO,
     LIBRARY,
     SETTINGS
 }
@@ -96,19 +96,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val favoriteDownloads: StateFlow<List<DownloadItem>> = repository.favoriteDownloads
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Trending Nepal Politics state
-    private val _trendingCategory = MutableStateFlow("सबै (All)")
-    val trendingCategory: StateFlow<String> = _trendingCategory.asStateFlow()
+    // AI Creator Studio state
+    private val aiService = AiService()
 
-    private val _trendingSearchQuery = MutableStateFlow("")
-    val trendingSearchQuery: StateFlow<String> = _trendingSearchQuery.asStateFlow()
+    private val _aiInputText = MutableStateFlow("")
+    val aiInputText: StateFlow<String> = _aiInputText.asStateFlow()
 
-    val trendingVideos: StateFlow<List<TrendingPoliticsItem>> = combine(
-        _trendingCategory,
-        _trendingSearchQuery
-    ) { cat, query ->
-        TrendingPoliticsRepository.getItemsForCategory(cat, query)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TrendingPoliticsRepository.TRENDING_POLITICS_VIDEOS)
+    private val _aiSelectedTone = MutableStateFlow(AiContentTone.VIRAL_TREND)
+    val aiSelectedTone: StateFlow<AiContentTone> = _aiSelectedTone.asStateFlow()
+
+    private val _aiGenerationState = MutableStateFlow<AiGenerationState>(AiGenerationState.Idle)
+    val aiGenerationState: StateFlow<AiGenerationState> = _aiGenerationState.asStateFlow()
 
     private var currentDownloadJob: Job? = null
 
@@ -223,6 +221,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             DownloadQuality.HD_STANDARD -> metadata.standardHdUrl
             DownloadQuality.AUDIO_ONLY -> metadata.audioUrl
             DownloadQuality.COVER_IMAGE -> metadata.coverUrl
+            DownloadQuality.PHOTO_SLIDE_ULTRA -> metadata.ultraHdrUrl.ifBlank { metadata.coverUrl }
         }
 
         if (downloadUrl.isBlank()) {
@@ -233,7 +232,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         val ext = when (quality) {
             DownloadQuality.AUDIO_ONLY -> "mp3"
-            DownloadQuality.COVER_IMAGE -> "jpg"
+            DownloadQuality.COVER_IMAGE, DownloadQuality.PHOTO_SLIDE_ULTRA -> "jpg"
             else -> "mp4"
         }
 
@@ -409,81 +408,72 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Trending Nepal Politics actions
-    fun setTrendingCategory(category: String) {
-        _trendingCategory.value = category
+    // AI Creator Studio actions
+    fun setAiInputText(text: String) {
+        _aiInputText.value = text
     }
 
-    fun setTrendingSearchQuery(query: String) {
-        _trendingSearchQuery.value = query
+    fun setAiSelectedTone(tone: AiContentTone) {
+        _aiSelectedTone.value = tone
     }
 
-    fun copyFacebookPost(item: TrendingPoliticsItem) {
-        val clipboard = getApplication<Application>().getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-        val clip = ClipData.newPlainText("Facebook Post", item.fullFacebookPostContent)
-        clipboard?.setPrimaryClip(clip)
+    fun generateAiViralPack() {
+        val input = _aiInputText.value.ifBlank {
+            when (val state = _extractionState.value) {
+                is ExtractionState.Success -> state.metadata.title
+                else -> "Viral TikTok Content"
+            }
+        }
         viewModelScope.launch {
-            _toastEvents.emit("📋 Facebook Title & Hashtags copied to clipboard!")
+            _aiGenerationState.value = AiGenerationState.Generating("Analyzing content hooks...", 0.2f)
+            try {
+                val result = aiService.generateViralPack(
+                    input = input,
+                    tone = _aiSelectedTone.value,
+                    onProgress = { step, prog ->
+                        _aiGenerationState.value = AiGenerationState.Generating(step, prog)
+                    }
+                )
+                _aiGenerationState.value = AiGenerationState.Success(result)
+            } catch (e: Exception) {
+                _aiGenerationState.value = AiGenerationState.Error(e.localizedMessage ?: "Failed to generate AI package")
+            }
         }
     }
 
-    fun downloadTrendingVideo(item: TrendingPoliticsItem) {
-        val metadata = VideoMetadata(
-            id = item.id,
-            title = item.title,
-            authorNickname = item.authorName,
-            authorUsername = item.authorHandle,
-            authorAvatar = item.coverUrl,
-            coverUrl = item.coverUrl,
-            durationSeconds = 60,
-            playCount = 1000000L,
-            likeCount = 200000L,
-            commentCount = 15000L,
-            shareCount = 25000L,
-            ultra8kUrl = item.videoUrl,
-            ultra8kSize = 25000000L,
-            ultraHdrUrl = item.videoUrl,
-            ultraHdrSize = 18000000L,
-            standardHdUrl = item.videoUrl,
-            standardHdSize = 12000000L,
-            audioUrl = item.videoUrl,
-            musicTitle = "Original Political Audio - Nepal",
-            musicAuthor = item.authorName,
-            originalTikTokUrl = "https://www.tiktok.com/${item.authorHandle}"
-        )
-        startDownload(metadata, DownloadQuality.HDR_ULTRA)
+    fun launchAiWithVideo(metadata: VideoMetadata) {
+        _aiInputText.value = metadata.title
+        _currentTab.value = AppTab.AI_STUDIO
+        viewModelScope.launch {
+            _aiGenerationState.value = AiGenerationState.Generating("Analyzing video & generating viral pack...", 0.25f)
+            try {
+                val result = aiService.generateViralPack(
+                    input = metadata.title,
+                    tone = _aiSelectedTone.value,
+                    author = metadata.authorNickname,
+                    isPhotoSlide = metadata.isPhotoSlide,
+                    slideCount = metadata.images.size,
+                    onProgress = { step, prog ->
+                        _aiGenerationState.value = AiGenerationState.Generating(step, prog)
+                    }
+                )
+                _aiGenerationState.value = AiGenerationState.Success(result)
+            } catch (e: Exception) {
+                _aiGenerationState.value = AiGenerationState.Error(e.localizedMessage ?: "Failed to generate AI pack")
+            }
+        }
     }
 
-    fun downloadAndShareToFacebook(context: Context, item: TrendingPoliticsItem) {
-        copyFacebookPost(item)
-        downloadTrendingVideo(item)
-
-        try {
-            val fbIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, item.fullFacebookPostContent)
-                setPackage("com.facebook.katana")
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(fbIntent)
-        } catch (_: Exception) {
-            try {
-                val shareIntent = Intent.createChooser(
-                    Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, item.fullFacebookPostContent)
-                    },
-                    "Post to Facebook"
-                ).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(shareIntent)
-            } catch (_: Exception) {
-                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.facebook.com/")).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(browserIntent)
-            }
+    fun downloadPhotoSlide(metadata: VideoMetadata, slideUrl: String, slideNumber: Int) {
+        val slideMeta = metadata.copy(
+            id = "${metadata.id}_slide_$slideNumber",
+            title = "${metadata.title} - Slide #$slideNumber",
+            ultraHdrUrl = slideUrl,
+            standardHdUrl = slideUrl
+        )
+        startDownload(slideMeta, DownloadQuality.PHOTO_SLIDE_ULTRA)
+        viewModelScope.launch {
+            _toastEvents.emit("📸 Saving Slide #$slideNumber in 8K HDR+ Ultra...")
         }
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -58,6 +59,10 @@ import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceVariant
 import com.example.ui.util.FormatUtils
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.AutoAwesome
+
 @Composable
 fun ResultVideoCard(
     metadata: VideoMetadata,
@@ -65,6 +70,8 @@ fun ResultVideoCard(
     onQualitySelected: (DownloadQuality) -> Unit,
     onDownloadClick: (VideoMetadata, DownloadQuality) -> Unit,
     onPreviewClick: (url: String, title: String) -> Unit,
+    onGenerateAiClick: (VideoMetadata) -> Unit,
+    onDownloadPhotoSlide: (url: String, index: Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -309,6 +316,111 @@ fun ResultVideoCard(
                 )
             }
 
+            if (metadata.isPhotoSlide) {
+                Spacer(modifier = Modifier.height(14.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF6366F1).copy(alpha = 0.15f), RoundedCornerShape(14.dp))
+                        .border(1.dp, Color(0xFF818CF8).copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                        .padding(12.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "📸 PHOTO SLIDES (${metadata.images.size} Photos)",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
+                                color = Color(0xFF818CF8),
+                                letterSpacing = 1.sp
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .background(HdrGold.copy(alpha = 0.2f), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "8K HDR+ QUALITY",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = HdrGold,
+                                    fontSize = 9.sp
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            metadata.images.forEachIndexed { index, imgUrl ->
+                                Column(
+                                    modifier = Modifier
+                                        .width(130.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(ObsidianSurfaceVariant)
+                                        .border(1.dp, ObsidianCardBorder, RoundedCornerShape(12.dp))
+                                        .padding(6.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(140.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color.Black)
+                                            .clickable { onPreviewClick(imgUrl, "Slide #${index + 1}") }
+                                    ) {
+                                        AsyncImage(
+                                            model = imgUrl,
+                                            contentDescription = "Slide ${index + 1}",
+                                            modifier = Modifier.matchParentSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.TopStart)
+                                                .padding(4.dp)
+                                                .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
+                                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = "#${index + 1}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color.White,
+                                                fontSize = 9.sp
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(6.dp))
+
+                                    Button(
+                                        onClick = { onDownloadPhotoSlide(imgUrl, index + 1) },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(30.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                                        shape = RoundedCornerShape(6.dp),
+                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                                    ) {
+                                        Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(12.dp), tint = Color.Black)
+                                        Spacer(modifier = Modifier.width(2.dp))
+                                        Text("Save 8K", fontSize = 10.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // Download Button
@@ -323,6 +435,7 @@ fun ResultVideoCard(
                         DownloadQuality.ULTRA_8K_120FPS -> Color(0xFF00E5FF)
                         DownloadQuality.HDR_ULTRA -> HdrGold
                         DownloadQuality.AUDIO_ONLY -> NeonMagenta
+                        DownloadQuality.PHOTO_SLIDE_ULTRA -> Color(0xFF818CF8)
                         else -> NeonCyan
                     },
                     contentColor = Color.Black
@@ -352,6 +465,29 @@ fun ResultVideoCard(
                 Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("Watch In-App Preview")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // AI Viral Generator Button
+            Button(
+                onClick = { onGenerateAiClick(metadata) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(46.dp)
+                    .testTag("ai_generate_from_card_button"),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF6366F1),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "✨ AI Viral Generator (Hooks & Facebook Post)",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                )
             }
         }
     }

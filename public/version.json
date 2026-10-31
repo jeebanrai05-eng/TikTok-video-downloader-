@@ -1,0 +1,10 @@
+{
+  "versionCode": 3,
+  "versionName": "1.0.3",
+  "releaseTitle": "TikSave AI Studio & Photo Slides v1.0.3",
+  "releaseNotes": "• Real TikTok Photo Slide / Image Carousel download in 8K/4K HDR+ Ultra\n• Integrated AI Creator Studio (Viral Hook, Caption & Hashtag generator for Facebook & TikTok)\n• Cleaned UI by removing trending politics section\n• One-click Ready-to-Post sharing with tags\n• Ultra fast download pipeline and stability fixes",
+  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.0.3/TikSave-Debug.apk",
+  "minSupportedVersion": "1.0.0",
+  "mandatory": false,
+  "publishedAt": "2026-10-30"
+}

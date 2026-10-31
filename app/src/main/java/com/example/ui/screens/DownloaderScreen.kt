@@ -98,6 +98,8 @@ fun DownloaderScreen(
     onQualitySelected: (DownloadQuality) -> Unit,
     onDownloadClick: (VideoMetadata, DownloadQuality) -> Unit,
     onPreviewClick: (url: String, title: String) -> Unit,
+    onGenerateAiClick: (VideoMetadata) -> Unit,
+    onDownloadPhotoSlide: (url: String, index: Int) -> Unit,
     activeDownload: ActiveDownload?,
     onCancelDownload: () -> Unit,
     onDismissActiveDownload: () -> Unit,
@@ -482,7 +484,9 @@ fun DownloaderScreen(
                     selectedQuality = selectedQuality,
                     onQualitySelected = onQualitySelected,
                     onDownloadClick = onDownloadClick,
-                    onPreviewClick = onPreviewClick
+                    onPreviewClick = onPreviewClick,
+                    onGenerateAiClick = onGenerateAiClick,
+                    onDownloadPhotoSlide = onDownloadPhotoSlide
                 )
             }
         }

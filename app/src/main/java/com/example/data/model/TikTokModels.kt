@@ -51,7 +51,8 @@ enum class DownloadQuality(val label: String, val badge: String, val description
     HDR_ULTRA("HDR+ Ultra", "4K / 1080p Ultra", "Original bitrate stream with enhanced HDR fidelity & zero watermark"),
     HD_STANDARD("HD Fast", "1080p / 720p", "High-speed clean video without TikTok watermark"),
     AUDIO_ONLY("Audio MP3", "320 kbps", "Extract studio quality background audio soundtrack"),
-    COVER_IMAGE("HD Cover", "JPG Poster", "Download original full-resolution video cover")
+    COVER_IMAGE("HD Cover", "JPG Poster", "Download original full-resolution video cover"),
+    PHOTO_SLIDE_ULTRA("Photo Slide HDR+", "4K / 8K Photo", "Download photo slides in pristine HDR+ ultra high resolution")
 }
 
 data class VideoMetadata(
@@ -75,8 +76,11 @@ data class VideoMetadata(
     val audioUrl: String,
     val musicTitle: String,
     val musicAuthor: String,
-    val originalTikTokUrl: String
-)
+    val originalTikTokUrl: String,
+    val images: List<String> = emptyList()
+) {
+    val isPhotoSlide: Boolean get() = images.isNotEmpty()
+}
 
 sealed interface ExtractionState {
     object Idle : ExtractionState
