@@ -64,13 +64,13 @@ class UpdateManager(private val context: Context) {
                         val body = resp.body?.string() ?: ""
                         if (body.isNotBlank()) {
                             val json = JSONObject(body)
-                            val vName = json.optString("versionName", "1.0.2")
-                            val vCode = json.optInt("versionCode", 2)
-                            val title = json.optString("releaseTitle", "TikSave 8K 120FPS Ultra v$vName")
-                            val notes = json.optString("releaseNotes", "• 8K Ultra 120FPS streaming\n• Duplicate download fixed\n• Performance improvements")
-                            val apk = json.optString("apkUrl", "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v$vName/TikSave-Debug.apk")
+                            val vName = json.optString("versionName", "1.0.3")
+                            val vCode = json.optInt("versionCode", 3)
+                            val title = json.optString("releaseTitle", "TikSave AI Studio & Photo Slides v$vName")
+                            val notes = json.optString("releaseNotes", "• TikTok Photo Slides (8K HDR+ Ultra)\n• AI Creator Studio (Hooks & Facebook Post)\n• Performance & stability updates")
+                            val apk = json.optString("apkUrl", "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v$vName/TikSave-Release.apk")
 
-                            val hasNewer = isNewerVersion(currentVersion, vName) || vCode > 2
+                            val hasNewer = isNewerVersion(currentVersion, vName) || vCode > 3
                             return@withContext Result.success(
                                 AppUpdateInfo(
                                     latestVersion = "v$vName",
@@ -104,26 +104,37 @@ class UpdateManager(private val context: Context) {
             if (response != null && response.isSuccessful) {
                 val bodyStr = response.body?.string() ?: ""
                 val json = JSONObject(bodyStr)
-                val tagName = json.optString("tag_name", "v1.0.2")
+                val tagName = json.optString("tag_name", "v1.0.3")
                 val cleanTag = tagName.removePrefix("v").trim()
-                val releaseName = json.optString("name", "TikSave 8K 120FPS Ultra v1.0.2")
-                val body = json.optString("body", "• 8K 120FPS ultra smooth support\n• Faster processing engine")
+                val releaseName = json.optString("name", "TikSave AI Studio & Photo Slides $tagName")
+                val body = json.optString("body", "• 8K HDR+ Ultra Photo Slides\n• AI Viral Creator Studio")
 
                 var apkUrl = ""
                 val assets = json.optJSONArray("assets")
                 if (assets != null) {
+                    // Strict priority: Always choose Release APK over Debug APK
                     for (i in 0 until assets.length()) {
                         val asset = assets.getJSONObject(i)
                         val name = asset.optString("name")
-                        if (name.endsWith(".apk", ignoreCase = true)) {
+                        if (name.contains("Release", ignoreCase = true) && name.endsWith(".apk", ignoreCase = true)) {
                             apkUrl = asset.optString("browser_download_url")
                             break
+                        }
+                    }
+                    if (apkUrl.isBlank()) {
+                        for (i in 0 until assets.length()) {
+                            val asset = assets.getJSONObject(i)
+                            val name = asset.optString("name")
+                            if (name.endsWith(".apk", ignoreCase = true) && !name.contains("Debug", ignoreCase = true)) {
+                                apkUrl = asset.optString("browser_download_url")
+                                break
+                            }
                         }
                     }
                 }
 
                 if (apkUrl.isBlank()) {
-                    apkUrl = "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/$tagName/TikSave-Debug.apk"
+                    apkUrl = "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/$tagName/TikSave-Release.apk"
                 }
 
                 val hasNewer = isNewerVersion(currentVersion, cleanTag)

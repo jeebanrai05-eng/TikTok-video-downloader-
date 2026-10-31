@@ -18,9 +18,7 @@ TikSave is a high-speed, modern TikTok video & photo slide downloader and web ap
 
 ## 📱 Android App (APK v1.0.3)
 
-Download the official Android application directly to your phone:
-- **Release APK (Recommended):** [TikSave-Release.apk v1.0.3](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.0.3/TikSave-Release.apk)
-- **Debug APK:** [TikSave-Debug.apk v1.0.3](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.0.3/TikSave-Debug.apk)
+- **Download Release APK:** [TikSave-Release.apk v1.0.3](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.0.3/TikSave-Release.apk)
 
 ### Features
 - 📸 **TikTok Photo Slide Mode**: Download full carousel image slides in 8K/4K HDR+ resolution + soundtrack MP3.
