@@ -279,41 +279,70 @@ fun ResultVideoCard(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                QualityOptionRow(
-                    quality = DownloadQuality.ULTRA_8K_120FPS,
-                    selected = selectedQuality == DownloadQuality.ULTRA_8K_120FPS,
-                    fileSize = metadata.ultra8kSize,
-                    badgeText = "8K 120FPS ULTRA",
-                    badgeColor = Color(0xFF00E5FF),
-                    onClick = { onQualitySelected(DownloadQuality.ULTRA_8K_120FPS) }
-                )
+                if (metadata.isPhotoSlide) {
+                    QualityOptionRow(
+                        quality = DownloadQuality.PHOTO_SLIDE_ULTRA,
+                        selected = selectedQuality == DownloadQuality.PHOTO_SLIDE_ULTRA,
+                        fileSize = (metadata.images.size * 2_500_000L),
+                        badgeText = "8K HDR+ PHOTOS",
+                        badgeColor = Color(0xFF818CF8),
+                        onClick = { onQualitySelected(DownloadQuality.PHOTO_SLIDE_ULTRA) }
+                    )
 
-                QualityOptionRow(
-                    quality = DownloadQuality.HDR_ULTRA,
-                    selected = selectedQuality == DownloadQuality.HDR_ULTRA,
-                    fileSize = metadata.ultraHdrSize,
-                    badgeText = "BEST QUALITY",
-                    badgeColor = HdrGold,
-                    onClick = { onQualitySelected(DownloadQuality.HDR_ULTRA) }
-                )
+                    QualityOptionRow(
+                        quality = DownloadQuality.AUDIO_ONLY,
+                        selected = selectedQuality == DownloadQuality.AUDIO_ONLY,
+                        fileSize = 3_200_000L,
+                        badgeText = "MP3 SOUNDTRACK",
+                        badgeColor = NeonMagenta,
+                        onClick = { onQualitySelected(DownloadQuality.AUDIO_ONLY) }
+                    )
 
-                QualityOptionRow(
-                    quality = DownloadQuality.HD_STANDARD,
-                    selected = selectedQuality == DownloadQuality.HD_STANDARD,
-                    fileSize = metadata.standardHdSize,
-                    badgeText = "FAST SPEED",
-                    badgeColor = NeonCyan,
-                    onClick = { onQualitySelected(DownloadQuality.HD_STANDARD) }
-                )
+                    QualityOptionRow(
+                        quality = DownloadQuality.COVER_IMAGE,
+                        selected = selectedQuality == DownloadQuality.COVER_IMAGE,
+                        fileSize = 1_500_000L,
+                        badgeText = "COVER POSTER",
+                        badgeColor = NeonCyan,
+                        onClick = { onQualitySelected(DownloadQuality.COVER_IMAGE) }
+                    )
+                } else {
+                    QualityOptionRow(
+                        quality = DownloadQuality.ULTRA_8K_120FPS,
+                        selected = selectedQuality == DownloadQuality.ULTRA_8K_120FPS,
+                        fileSize = metadata.ultra8kSize,
+                        badgeText = "8K 120FPS ULTRA",
+                        badgeColor = Color(0xFF00E5FF),
+                        onClick = { onQualitySelected(DownloadQuality.ULTRA_8K_120FPS) }
+                    )
 
-                QualityOptionRow(
-                    quality = DownloadQuality.AUDIO_ONLY,
-                    selected = selectedQuality == DownloadQuality.AUDIO_ONLY,
-                    fileSize = 3_200_000L,
-                    badgeText = "MP3 ONLY",
-                    badgeColor = NeonMagenta,
-                    onClick = { onQualitySelected(DownloadQuality.AUDIO_ONLY) }
-                )
+                    QualityOptionRow(
+                        quality = DownloadQuality.HDR_ULTRA,
+                        selected = selectedQuality == DownloadQuality.HDR_ULTRA,
+                        fileSize = metadata.ultraHdrSize,
+                        badgeText = "BEST QUALITY",
+                        badgeColor = HdrGold,
+                        onClick = { onQualitySelected(DownloadQuality.HDR_ULTRA) }
+                    )
+
+                    QualityOptionRow(
+                        quality = DownloadQuality.HD_STANDARD,
+                        selected = selectedQuality == DownloadQuality.HD_STANDARD,
+                        fileSize = metadata.standardHdSize,
+                        badgeText = "FAST SPEED",
+                        badgeColor = NeonCyan,
+                        onClick = { onQualitySelected(DownloadQuality.HD_STANDARD) }
+                    )
+
+                    QualityOptionRow(
+                        quality = DownloadQuality.AUDIO_ONLY,
+                        selected = selectedQuality == DownloadQuality.AUDIO_ONLY,
+                        fileSize = 3_200_000L,
+                        badgeText = "MP3 ONLY",
+                        badgeColor = NeonMagenta,
+                        onClick = { onQualitySelected(DownloadQuality.AUDIO_ONLY) }
+                    )
+                }
             }
 
             if (metadata.isPhotoSlide) {
@@ -417,6 +446,27 @@ fun ResultVideoCard(
                                 }
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = { onDownloadClick(metadata, DownloadQuality.PHOTO_SLIDE_ULTRA) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(42.dp)
+                                .testTag("download_all_photos_carousel_button"),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "📥 Download All ${metadata.images.size} Photos (8K HDR+ Ultra)",
+                                fontSize = 12.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
@@ -445,7 +495,11 @@ fun ResultVideoCard(
                 Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(22.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Download ${selectedQuality.badge} (No Watermark)",
+                    text = if (metadata.isPhotoSlide && selectedQuality == DownloadQuality.PHOTO_SLIDE_ULTRA) {
+                        "Download All Photos (${metadata.images.size} Photos in 8K HDR+)"
+                    } else {
+                        "Download ${selectedQuality.badge} (No Watermark)"
+                    },
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.ExtraBold)
                 )
             }

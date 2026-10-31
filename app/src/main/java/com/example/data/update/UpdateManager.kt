@@ -49,7 +49,10 @@ class UpdateManager(private val context: Context) {
         private const val GITHUB_API_LATEST = "https://api.github.com/repos/jeebanrai05-eng/TikTok-video-downloader-/releases/latest"
     }
 
-    suspend fun checkForUpdates(currentVersion: String = "1.0.2"): Result<AppUpdateInfo> = withContext(Dispatchers.IO) {
+    suspend fun checkForUpdates(
+        currentVersion: String = com.example.BuildConfig.VERSION_NAME,
+        currentVersionCode: Int = com.example.BuildConfig.VERSION_CODE
+    ): Result<AppUpdateInfo> = withContext(Dispatchers.IO) {
         try {
             // Step 1: Check raw version.json from repository
             val versionEndpoints = listOf(RAW_VERSION_MAIN, RAW_VERSION_MASTER)
@@ -70,7 +73,7 @@ class UpdateManager(private val context: Context) {
                             val notes = json.optString("releaseNotes", "• TikTok Photo Slides (8K HDR+ Ultra)\n• AI Creator Studio (Hooks & Facebook Post)\n• Performance & stability updates")
                             val apk = json.optString("apkUrl", "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v$vName/TikSave-Release.apk")
 
-                            val hasNewer = isNewerVersion(currentVersion, vName) || vCode > 3
+                            val hasNewer = isNewerVersion(currentVersion, vName) || vCode > currentVersionCode
                             return@withContext Result.success(
                                 AppUpdateInfo(
                                     latestVersion = "v$vName",
@@ -151,9 +154,9 @@ class UpdateManager(private val context: Context) {
                 // If offline or repo release pending, show current up-to-date state
                 Result.success(
                     AppUpdateInfo(
-                        latestVersion = "v1.0.2",
-                        releaseTitle = "TikSave 8K 120FPS Ultra v1.0.2",
-                        releaseNotes = "• 8K Ultra 120FPS Extreme stream mode\n• Fixed double video download bug\n• Modern animated update manager\n• Direct device storage & Gallery sync",
+                        latestVersion = "v${com.example.BuildConfig.VERSION_NAME}",
+                        releaseTitle = "TikSave v${com.example.BuildConfig.VERSION_NAME}",
+                        releaseNotes = "• 8K Ultra 120FPS Extreme stream mode\n• TikTok Photo Slides (8K HDR+ Ultra)\n• AI Creator Studio\n• Direct device storage & Gallery sync",
                         apkDownloadUrl = "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases",
                         isUpdateAvailable = false
                     )

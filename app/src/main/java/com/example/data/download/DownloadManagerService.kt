@@ -37,17 +37,28 @@ class DownloadManagerService(private val context: Context) {
         .build()
 
     /**
-     * Resolves the primary public storage directory on the device (Movies/TikSave or Downloads/TikSave)
+     * Resolves the primary public storage directory on the device (Pictures for images, Music for audio, Movies for videos)
      * Exactly one folder is used so no duplicate files are created.
      */
-    fun getPublicStorageDir(quality: DownloadQuality): File {
-        val publicCategory = when (quality) {
-            DownloadQuality.AUDIO_ONLY -> Environment.DIRECTORY_MUSIC
-            DownloadQuality.COVER_IMAGE -> Environment.DIRECTORY_PICTURES
+    fun getPublicStorageDir(quality: DownloadQuality, filename: String = ""): File {
+        val isImage = quality == DownloadQuality.COVER_IMAGE ||
+                quality == DownloadQuality.PHOTO_SLIDE_ULTRA ||
+                filename.endsWith(".jpg", ignoreCase = true) ||
+                filename.endsWith(".jpeg", ignoreCase = true) ||
+                filename.endsWith(".png", ignoreCase = true) ||
+                filename.endsWith(".webp", ignoreCase = true)
+
+        val isAudio = quality == DownloadQuality.AUDIO_ONLY ||
+                filename.endsWith(".mp3", ignoreCase = true) ||
+                filename.endsWith(".m4a", ignoreCase = true)
+
+        val publicCategory = when {
+            isAudio -> Environment.DIRECTORY_MUSIC
+            isImage -> Environment.DIRECTORY_PICTURES
             else -> Environment.DIRECTORY_MOVIES
         }
 
-        // 1. Try public device directory (e.g., /storage/emulated/0/Movies/TikSave or Downloads/TikSave)
+        // 1. Try public device directory (e.g., /storage/emulated/0/Pictures/TikSave or Movies/TikSave)
         val publicBase = Environment.getExternalStoragePublicDirectory(publicCategory)
             ?: Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         val targetFolder = File(publicBase, "TikSave")
@@ -82,14 +93,25 @@ class DownloadManagerService(private val context: Context) {
         onProgress: (progress: Float, downloadedBytes: Long, totalBytes: Long, speedBytesPerSec: Long, etaSeconds: Int) -> Unit
     ): Result<DownloadResult> = withContext(Dispatchers.IO) {
         try {
-            val mimeType = when (quality) {
-                DownloadQuality.AUDIO_ONLY -> "audio/mp3"
-                DownloadQuality.COVER_IMAGE -> "image/jpeg"
+            val isImage = quality == DownloadQuality.COVER_IMAGE ||
+                    quality == DownloadQuality.PHOTO_SLIDE_ULTRA ||
+                    targetFilename.endsWith(".jpg", ignoreCase = true) ||
+                    targetFilename.endsWith(".jpeg", ignoreCase = true) ||
+                    targetFilename.endsWith(".png", ignoreCase = true) ||
+                    targetFilename.endsWith(".webp", ignoreCase = true)
+
+            val isAudio = quality == DownloadQuality.AUDIO_ONLY ||
+                    targetFilename.endsWith(".mp3", ignoreCase = true) ||
+                    targetFilename.endsWith(".m4a", ignoreCase = true)
+
+            val mimeType = when {
+                isAudio -> "audio/mpeg"
+                isImage -> "image/jpeg"
                 else -> "video/mp4"
             }
 
             // Target SINGLE public device file - no second copy!
-            val destinationDir = getPublicStorageDir(quality)
+            val destinationDir = getPublicStorageDir(quality, targetFilename)
             val outputFile = File(destinationDir, targetFilename)
 
             // Remove any pre-existing incomplete file with same name
@@ -99,7 +121,9 @@ class DownloadManagerService(private val context: Context) {
 
             val request = Request.Builder()
                 .url(url)
-                .header("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120.0 Mobile Safari/537.36")
+                .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36")
+                .header("Referer", "https://www.tiktok.com/")
+                .header("Origin", "https://www.tiktok.com")
                 .header("Accept", "*/*")
                 .header("Connection", "keep-alive")
                 .header("Accept-Encoding", "identity")

@@ -199,12 +199,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
             _extractionState.value = result
             if (result is ExtractionState.Success) {
-                _toastEvents.emit("Video extracted without watermark! Choose HDR or HD.")
+                if (result.metadata.isPhotoSlide) {
+                    _selectedQuality.value = DownloadQuality.PHOTO_SLIDE_ULTRA
+                    _toastEvents.emit("📸 Photo Carousel detected (${result.metadata.images.size} photos in 8K HDR+ Ultra)!")
+                } else {
+                    _selectedQuality.value = DownloadQuality.ULTRA_8K_120FPS
+                    _toastEvents.emit("Video extracted without watermark! Choose HDR or HD.")
+                }
             }
         }
     }
 
     fun startDownload(metadata: VideoMetadata, quality: DownloadQuality) {
+        // If it's a photo slide and quality is PHOTO_SLIDE_ULTRA with multiple images, download all photos
+        if (metadata.isPhotoSlide && quality == DownloadQuality.PHOTO_SLIDE_ULTRA && metadata.images.size > 1) {
+            downloadAllPhotoSlides(metadata)
+            return
+        }
+
         // Prevent concurrent duplicate download clicks
         if (_isDownloading.value) {
             viewModelScope.launch { _toastEvents.emit("Download is already running in background") }
@@ -216,12 +228,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isDownloading.value = true
 
         val downloadUrl = when (quality) {
-            DownloadQuality.ULTRA_8K_120FPS -> metadata.ultra8kUrl
-            DownloadQuality.HDR_ULTRA -> metadata.ultraHdrUrl
-            DownloadQuality.HD_STANDARD -> metadata.standardHdUrl
+            DownloadQuality.ULTRA_8K_120FPS -> if (metadata.isPhotoSlide && metadata.ultra8kUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.ultra8kUrl
+            DownloadQuality.HDR_ULTRA -> if (metadata.isPhotoSlide && metadata.ultraHdrUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.ultraHdrUrl
+            DownloadQuality.HD_STANDARD -> if (metadata.isPhotoSlide && metadata.standardHdUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.standardHdUrl
             DownloadQuality.AUDIO_ONLY -> metadata.audioUrl
             DownloadQuality.COVER_IMAGE -> metadata.coverUrl
-            DownloadQuality.PHOTO_SLIDE_ULTRA -> metadata.ultraHdrUrl.ifBlank { metadata.coverUrl }
+            DownloadQuality.PHOTO_SLIDE_ULTRA -> metadata.ultraHdrUrl.ifBlank { metadata.images.firstOrNull() ?: metadata.coverUrl }
         }
 
         if (downloadUrl.isBlank()) {
@@ -230,9 +242,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        val ext = when (quality) {
-            DownloadQuality.AUDIO_ONLY -> "mp3"
-            DownloadQuality.COVER_IMAGE, DownloadQuality.PHOTO_SLIDE_ULTRA -> "jpg"
+        val ext = when {
+            quality == DownloadQuality.AUDIO_ONLY -> "mp3"
+            quality == DownloadQuality.COVER_IMAGE || quality == DownloadQuality.PHOTO_SLIDE_ULTRA || (metadata.isPhotoSlide && quality != DownloadQuality.AUDIO_ONLY) -> "jpg"
             else -> "mp4"
         }
 
@@ -353,7 +365,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (!silent) {
                 _isCheckingForUpdates.value = true
             }
-            val result = updateManager.checkForUpdates(currentVersion = "1.0.2")
+            val result = updateManager.checkForUpdates(
+                currentVersion = com.example.BuildConfig.VERSION_NAME,
+                currentVersionCode = com.example.BuildConfig.VERSION_CODE
+            )
             if (!silent) {
                 _isCheckingForUpdates.value = false
             }
@@ -464,12 +479,92 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun downloadAllPhotoSlides(metadata: VideoMetadata) {
+        if (metadata.images.isEmpty()) {
+            startDownload(metadata, DownloadQuality.PHOTO_SLIDE_ULTRA)
+            return
+        }
+
+        if (_isDownloading.value) {
+            viewModelScope.launch { _toastEvents.emit("Download is already running in background") }
+            _isDownloadModalVisible.value = true
+            return
+        }
+
+        currentDownloadJob?.cancel()
+        _isDownloading.value = true
+        _isDownloadModalVisible.value = true
+
+        val totalImages = metadata.images.size
+        _activeDownload.value = ActiveDownload(
+            videoId = metadata.id,
+            title = "${metadata.title} (All $totalImages Photos)",
+            quality = DownloadQuality.PHOTO_SLIDE_ULTRA,
+            progress = 0f,
+            bytesDownloaded = 0L,
+            totalBytes = (totalImages * 2_500_000L),
+            speedBytesPerSec = 0L,
+            etaSeconds = 0
+        )
+
+        currentDownloadJob = viewModelScope.launch {
+            try {
+                var successfulCount = 0
+                val cleanTitle = metadata.title.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(20)
+
+                for ((index, imgUrl) in metadata.images.withIndex()) {
+                    val slideNumber = index + 1
+                    val filename = "TikSave_${cleanTitle}_slide_${slideNumber}_${System.currentTimeMillis()}.jpg"
+
+                    val slideMeta = metadata.copy(
+                        id = "${metadata.id}_slide_$slideNumber",
+                        title = "${metadata.title} - Slide #$slideNumber",
+                        ultraHdrUrl = imgUrl,
+                        standardHdUrl = imgUrl,
+                        images = listOf(imgUrl)
+                    )
+
+                    val result = repository.downloadManager.download(
+                        url = imgUrl,
+                        targetFilename = filename,
+                        quality = DownloadQuality.PHOTO_SLIDE_ULTRA
+                    ) { prog, downloaded, _, speed, eta ->
+                        val overallProgress = (index.toFloat() + prog) / totalImages.toFloat()
+                        _activeDownload.value = _activeDownload.value?.copy(
+                            progress = overallProgress.coerceIn(0f, 1f),
+                            bytesDownloaded = (index * 2_500_000L) + downloaded,
+                            speedBytesPerSec = speed,
+                            etaSeconds = eta
+                        )
+                    }
+
+                    result.onSuccess { res ->
+                        successfulCount++
+                        repository.saveDownloadRecord(slideMeta, DownloadQuality.PHOTO_SLIDE_ULTRA, res.file)
+                    }
+                }
+
+                _activeDownload.value = _activeDownload.value?.copy(
+                    progress = 1.0f,
+                    isCompleted = true,
+                    speedBytesPerSec = 0L
+                )
+                _toastEvents.emit("✅ Successfully saved all $successfulCount photos to Gallery (Pictures/TikSave)!")
+            } catch (e: Exception) {
+                _toastEvents.emit("Download error: ${e.localizedMessage}")
+            } finally {
+                _isDownloading.value = false
+            }
+        }
+    }
+
     fun downloadPhotoSlide(metadata: VideoMetadata, slideUrl: String, slideNumber: Int) {
         val slideMeta = metadata.copy(
             id = "${metadata.id}_slide_$slideNumber",
             title = "${metadata.title} - Slide #$slideNumber",
             ultraHdrUrl = slideUrl,
-            standardHdUrl = slideUrl
+            standardHdUrl = slideUrl,
+            images = listOf(slideUrl)
         )
         startDownload(slideMeta, DownloadQuality.PHOTO_SLIDE_ULTRA)
         viewModelScope.launch {
