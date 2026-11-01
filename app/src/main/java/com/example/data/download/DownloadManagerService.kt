@@ -1,11 +1,13 @@
 package com.example.data.download
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import com.example.data.model.DownloadQuality
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
@@ -27,64 +29,14 @@ data class DownloadResult(
 
 class DownloadManagerService(private val context: Context) {
 
-    // Turbo HTTP client with high-speed connection pooling & keep-alive
+    // High performance HTTP client with connection pooling and resilient timeouts
     private val client = OkHttpClient.Builder()
         .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))
-        .connectTimeout(15, TimeUnit.SECONDS)
+        .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .followRedirects(true)
         .followSslRedirects(true)
         .build()
-
-    /**
-     * Resolves the primary public storage directory on the device (Pictures for images, Music for audio, Movies for videos)
-     * Exactly one folder is used so no duplicate files are created.
-     */
-    fun getPublicStorageDir(quality: DownloadQuality, filename: String = ""): File {
-        val isImage = quality == DownloadQuality.COVER_IMAGE ||
-                quality == DownloadQuality.PHOTO_SLIDE_ULTRA ||
-                filename.endsWith(".jpg", ignoreCase = true) ||
-                filename.endsWith(".jpeg", ignoreCase = true) ||
-                filename.endsWith(".png", ignoreCase = true) ||
-                filename.endsWith(".webp", ignoreCase = true)
-
-        val isAudio = quality == DownloadQuality.AUDIO_ONLY ||
-                filename.endsWith(".mp3", ignoreCase = true) ||
-                filename.endsWith(".m4a", ignoreCase = true)
-
-        val publicCategory = when {
-            isAudio -> Environment.DIRECTORY_MUSIC
-            isImage -> Environment.DIRECTORY_PICTURES
-            else -> Environment.DIRECTORY_MOVIES
-        }
-
-        // 1. Try public device directory (e.g., /storage/emulated/0/Pictures/TikSave or Movies/TikSave)
-        val publicBase = Environment.getExternalStoragePublicDirectory(publicCategory)
-            ?: Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        val targetFolder = File(publicBase, "TikSave")
-        if (!targetFolder.exists()) {
-            targetFolder.mkdirs()
-        }
-
-        if (targetFolder.exists() && (targetFolder.canWrite() || Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)) {
-            return targetFolder
-        }
-
-        // Fallback to public downloads
-        val dlFolder = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "TikSave")
-        if (!dlFolder.exists()) {
-            dlFolder.mkdirs()
-        }
-        if (dlFolder.exists() && dlFolder.canWrite()) {
-            return dlFolder
-        }
-
-        // Fallback to app external files dir
-        val appExternal = context.getExternalFilesDir(publicCategory) ?: context.filesDir
-        val appFolder = File(appExternal, "TikSave")
-        if (!appFolder.exists()) appFolder.mkdirs()
-        return appFolder
-    }
 
     suspend fun download(
         url: String,
@@ -101,8 +53,11 @@ class DownloadManagerService(private val context: Context) {
                     targetFilename.endsWith(".webp", ignoreCase = true)
 
             val isAudio = quality == DownloadQuality.AUDIO_ONLY ||
+                    quality == DownloadQuality.AUDIO_HIGH_SOUND ||
+                    quality == DownloadQuality.AUDIO_VFX_SOUND ||
                     targetFilename.endsWith(".mp3", ignoreCase = true) ||
-                    targetFilename.endsWith(".m4a", ignoreCase = true)
+                    targetFilename.endsWith(".m4a", ignoreCase = true) ||
+                    targetFilename.endsWith(".wav", ignoreCase = true)
 
             val mimeType = when {
                 isAudio -> "audio/mpeg"
@@ -110,13 +65,10 @@ class DownloadManagerService(private val context: Context) {
                 else -> "video/mp4"
             }
 
-            // Target SINGLE public device file - no second copy!
-            val destinationDir = getPublicStorageDir(quality, targetFilename)
-            val outputFile = File(destinationDir, targetFilename)
-
-            // Remove any pre-existing incomplete file with same name
-            if (outputFile.exists()) {
-                outputFile.delete()
+            val relativeFolder = when {
+                isAudio -> "Music/TikSave"
+                isImage -> "Pictures/TikSave"
+                else -> "Movies/TikSave"
             }
 
             val request = Request.Builder()
@@ -142,12 +94,16 @@ class DownloadManagerService(private val context: Context) {
             var bytesSinceLastCheck = 0L
             var currentSpeed = 0L
 
-            // 128 KB buffer for ultra high throughput
             val buffer = ByteArray(128 * 1024)
             var read = 0
 
+            // 1. Download to safe application cache directory first.
+            // This guarantees zero EPERM errors during download and prevents incomplete files in the Gallery.
+            val tempCacheFile = File(context.cacheDir, "dl_${System.currentTimeMillis()}_$targetFilename")
+            if (tempCacheFile.exists()) tempCacheFile.delete()
+
             body.byteStream().use { inputStream: InputStream ->
-                FileOutputStream(outputFile).use { outputStream ->
+                FileOutputStream(tempCacheFile).use { outputStream ->
                     while (coroutineContext.isActive) {
                         read = inputStream.read(buffer)
                         if (read == -1) break
@@ -180,34 +136,85 @@ class DownloadManagerService(private val context: Context) {
             }
 
             if (!coroutineContext.isActive) {
-                if (outputFile.exists()) outputFile.delete()
+                if (tempCacheFile.exists()) tempCacheFile.delete()
                 return@withContext Result.failure(Exception("Download cancelled"))
             }
 
-            // Register the single file in Android MediaStore via MediaScannerConnection (NO DUPLICATE COPY)
-            var mediaStoreUri: Uri? = null
-            try {
+            // 2. Commit file to Android MediaStore (Android 10+ / Scoped Storage) or Public Directory
+            var mediaUri: Uri? = null
+            var finalLibraryFile: File = tempCacheFile
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Official MediaStore API for Android 10, 11, 12, 13, 14, 15, 16
+                // Zero permission required, zero EPERM errors, instantly visible in phone Gallery & Music players
+                val values = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, targetFilename)
+                    put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, relativeFolder)
+                    put(MediaStore.MediaColumns.IS_PENDING, 1)
+                }
+
+                val collectionUri = when {
+                    isAudio -> MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                    isImage -> MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                    else -> MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                }
+
+                val insertedUri = context.contentResolver.insert(collectionUri, values)
+                if (insertedUri != null) {
+                    context.contentResolver.openOutputStream(insertedUri)?.use { outStream ->
+                        tempCacheFile.inputStream().use { inStream ->
+                            inStream.copyTo(outStream)
+                        }
+                        outStream.flush()
+                    }
+
+                    values.clear()
+                    values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                    context.contentResolver.update(insertedUri, values, null, null)
+                    mediaUri = insertedUri
+                }
+
+                // Also save persistent copy in app external files directory for local DB and built-in player
+                val persistentDir = File(context.getExternalFilesDir(null), relativeFolder)
+                if (!persistentDir.exists()) persistentDir.mkdirs()
+                finalLibraryFile = File(persistentDir, targetFilename)
+                tempCacheFile.copyTo(finalLibraryFile, overwrite = true)
+                tempCacheFile.delete()
+            } else {
+                // Android 9 and lower: Direct public directory
+                val publicType = when {
+                    isAudio -> Environment.DIRECTORY_MUSIC
+                    isImage -> Environment.DIRECTORY_PICTURES
+                    else -> Environment.DIRECTORY_MOVIES
+                }
+                val publicDir = File(Environment.getExternalStoragePublicDirectory(publicType), "TikSave")
+                if (!publicDir.exists()) publicDir.mkdirs()
+                finalLibraryFile = File(publicDir, targetFilename)
+                tempCacheFile.copyTo(finalLibraryFile, overwrite = true)
+                tempCacheFile.delete()
+
                 MediaScannerConnection.scanFile(
                     context,
-                    arrayOf(outputFile.absolutePath),
+                    arrayOf(finalLibraryFile.absolutePath),
                     arrayOf(mimeType)
-                ) { path, uri ->
-                    mediaStoreUri = uri
-                }
+                ) { _, uri -> mediaUri = uri }
 
-                // Broadcast media scan for maximum compatibility across all Android versions
                 val scanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
-                    data = Uri.fromFile(outputFile)
+                    data = Uri.fromFile(finalLibraryFile)
                 }
                 context.sendBroadcast(scanIntent)
-            } catch (_: Exception) {
             }
 
-            // Final progress 100%
             onProgress(1f, downloadedBytes, if (totalBytes > 0) totalBytes else downloadedBytes, 0L, 0)
 
-            val locationText = "Saved in Gallery & ${outputFile.parentFile?.name ?: "Movies"}/${outputFile.name}"
-            Result.success(DownloadResult(outputFile, mediaStoreUri, locationText))
+            val displayLocation = when {
+                isAudio -> "Music/TikSave"
+                isImage -> "Pictures/TikSave (Gallery)"
+                else -> "Movies/TikSave (Gallery)"
+            }
+
+            Result.success(DownloadResult(finalLibraryFile, mediaUri, "Saved to $displayLocation"))
         } catch (e: Exception) {
             Result.failure(e)
         }

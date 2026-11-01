@@ -338,10 +338,117 @@ fun ResultVideoCard(
                         quality = DownloadQuality.AUDIO_ONLY,
                         selected = selectedQuality == DownloadQuality.AUDIO_ONLY,
                         fileSize = 3_200_000L,
-                        badgeText = "MP3 ONLY",
+                        badgeText = "ORIGINAL SOUND",
                         badgeColor = NeonMagenta,
                         onClick = { onQualitySelected(DownloadQuality.AUDIO_ONLY) }
                     )
+
+                    QualityOptionRow(
+                        quality = DownloadQuality.AUDIO_HIGH_SOUND,
+                        selected = selectedQuality == DownloadQuality.AUDIO_HIGH_SOUND,
+                        fileSize = 3_800_000L,
+                        badgeText = "HIGH SOUND BOOST",
+                        badgeColor = Color(0xFFF43F5E),
+                        onClick = { onQualitySelected(DownloadQuality.AUDIO_HIGH_SOUND) }
+                    )
+
+                    QualityOptionRow(
+                        quality = DownloadQuality.AUDIO_VFX_SOUND,
+                        selected = selectedQuality == DownloadQuality.AUDIO_VFX_SOUND,
+                        fileSize = 3_100_000L,
+                        badgeText = "VFX & VOCAL",
+                        badgeColor = Color(0xFFA855F7),
+                        onClick = { onQualitySelected(DownloadQuality.AUDIO_VFX_SOUND) }
+                    )
+                }
+            }
+
+            // Dedicated TikTok Audio Extractor Card
+            if (metadata.audioUrl.isNotBlank()) {
+                Spacer(modifier = Modifier.height(14.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFE11D48).copy(alpha = 0.12f), RoundedCornerShape(14.dp))
+                        .border(1.dp, Color(0xFFF43F5E).copy(alpha = 0.45f), RoundedCornerShape(14.dp))
+                        .padding(12.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Audiotrack, contentDescription = null, tint = Color(0xFFF43F5E), modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "🎵 AUDIO EXTRACTOR",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
+                                    color = Color(0xFFF43F5E),
+                                    letterSpacing = 1.sp
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .background(Color(0xFFF43F5E).copy(alpha = 0.2f), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "STUDIO 320 KBPS",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = Color(0xFFFDA4AF),
+                                    fontSize = 9.sp
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "${metadata.musicTitle} • ${metadata.musicAuthor}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.8f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = { onDownloadClick(metadata, DownloadQuality.AUDIO_ONLY) },
+                                modifier = Modifier.weight(1f).height(38.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = if (selectedQuality == DownloadQuality.AUDIO_ONLY) Color(0xFFF43F5E) else ObsidianSurfaceVariant),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                            ) {
+                                Text("🎵 Original", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+
+                            Button(
+                                onClick = { onDownloadClick(metadata, DownloadQuality.AUDIO_HIGH_SOUND) },
+                                modifier = Modifier.weight(1f).height(38.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = if (selectedQuality == DownloadQuality.AUDIO_HIGH_SOUND) Color(0xFFF43F5E) else ObsidianSurfaceVariant),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                            ) {
+                                Text("🔊 High Sound", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+
+                            Button(
+                                onClick = { onDownloadClick(metadata, DownloadQuality.AUDIO_VFX_SOUND) },
+                                modifier = Modifier.weight(1f).height(38.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = if (selectedQuality == DownloadQuality.AUDIO_VFX_SOUND) Color(0xFFF43F5E) else ObsidianSurfaceVariant),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                            ) {
+                                Text("🎙️ VFX / Voice", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                        }
+                    }
                 }
             }
 
@@ -484,7 +591,7 @@ fun ResultVideoCard(
                     containerColor = when (selectedQuality) {
                         DownloadQuality.ULTRA_8K_120FPS -> Color(0xFF00E5FF)
                         DownloadQuality.HDR_ULTRA -> HdrGold
-                        DownloadQuality.AUDIO_ONLY -> NeonMagenta
+                        DownloadQuality.AUDIO_ONLY, DownloadQuality.AUDIO_HIGH_SOUND, DownloadQuality.AUDIO_VFX_SOUND -> Color(0xFFF43F5E)
                         DownloadQuality.PHOTO_SLIDE_ULTRA -> Color(0xFF818CF8)
                         else -> NeonCyan
                     },

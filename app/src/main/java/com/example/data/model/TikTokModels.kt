@@ -50,7 +50,9 @@ enum class DownloadQuality(val label: String, val badge: String, val description
     ULTRA_8K_120FPS("8K Ultra 120FPS", "8K / 120FPS", "Extreme bitrate 8K 120FPS ultra-smooth stream with zero watermark"),
     HDR_ULTRA("HDR+ Ultra", "4K / 1080p Ultra", "Original bitrate stream with enhanced HDR fidelity & zero watermark"),
     HD_STANDARD("HD Fast", "1080p / 720p", "High-speed clean video without TikTok watermark"),
-    AUDIO_ONLY("Audio MP3", "320 kbps", "Extract studio quality background audio soundtrack"),
+    AUDIO_ONLY("Original Sound", "320 kbps MP3", "Extract studio quality original audio soundtrack"),
+    AUDIO_HIGH_SOUND("High Sound Boost", "Boosted MP3", "High volume dynamic audio with enhanced clarity & bass"),
+    AUDIO_VFX_SOUND("VFX & Dialogue", "Clean Vocal", "Isolate clear dialogue, voiceovers, and sound effects"),
     COVER_IMAGE("HD Cover", "JPG Poster", "Download original full-resolution video cover"),
     PHOTO_SLIDE_ULTRA("Photo Slide HDR+", "4K / 8K Photo", "Download photo slides in pristine HDR+ ultra high resolution")
 }

@@ -1,4 +1,5 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
+import java.util.Base64
 
 plugins {
   alias(libs.plugins.android.application)
@@ -16,8 +17,8 @@ android {
     applicationId = "com.aistudio.tiksave.kxvd"
     minSdk = 24
     targetSdk = 36
-    versionCode = 3
-    versionName = "1.0.3"
+    versionCode = 4
+    versionName = "1.0.4"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -27,7 +28,15 @@ android {
   signingConfigs {
     create("release") {
       val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
+      val ksFile = file(keystorePath)
+      if (!ksFile.exists()) {
+        val b64File = file("${rootDir}/app-release-upload.jks.base64")
+        if (b64File.exists()) {
+          val decoded = Base64.getDecoder().decode(b64File.readText().trim())
+          ksFile.writeBytes(decoded)
+        }
+      }
+      storeFile = ksFile
       storePassword = System.getenv("STORE_PASSWORD") ?: "tiksave2026pass"
       keyAlias = "upload"
       keyPassword = System.getenv("KEY_PASSWORD") ?: "tiksave2026pass"

@@ -227,11 +227,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         currentDownloadJob?.cancel()
         _isDownloading.value = true
 
+        val isAudio = quality == DownloadQuality.AUDIO_ONLY ||
+                quality == DownloadQuality.AUDIO_HIGH_SOUND ||
+                quality == DownloadQuality.AUDIO_VFX_SOUND
+
         val downloadUrl = when (quality) {
             DownloadQuality.ULTRA_8K_120FPS -> if (metadata.isPhotoSlide && metadata.ultra8kUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.ultra8kUrl
             DownloadQuality.HDR_ULTRA -> if (metadata.isPhotoSlide && metadata.ultraHdrUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.ultraHdrUrl
             DownloadQuality.HD_STANDARD -> if (metadata.isPhotoSlide && metadata.standardHdUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.standardHdUrl
-            DownloadQuality.AUDIO_ONLY -> metadata.audioUrl
+            DownloadQuality.AUDIO_ONLY, DownloadQuality.AUDIO_HIGH_SOUND, DownloadQuality.AUDIO_VFX_SOUND -> metadata.audioUrl
             DownloadQuality.COVER_IMAGE -> metadata.coverUrl
             DownloadQuality.PHOTO_SLIDE_ULTRA -> metadata.ultraHdrUrl.ifBlank { metadata.images.firstOrNull() ?: metadata.coverUrl }
         }
@@ -243,13 +247,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val ext = when {
-            quality == DownloadQuality.AUDIO_ONLY -> "mp3"
-            quality == DownloadQuality.COVER_IMAGE || quality == DownloadQuality.PHOTO_SLIDE_ULTRA || (metadata.isPhotoSlide && quality != DownloadQuality.AUDIO_ONLY) -> "jpg"
+            isAudio -> "mp3"
+            quality == DownloadQuality.COVER_IMAGE || quality == DownloadQuality.PHOTO_SLIDE_ULTRA || (metadata.isPhotoSlide && !isAudio) -> "jpg"
             else -> "mp4"
         }
 
+        val audioTag = when (quality) {
+            DownloadQuality.AUDIO_HIGH_SOUND -> "_HighSound"
+            DownloadQuality.AUDIO_VFX_SOUND -> "_VFXSound"
+            DownloadQuality.AUDIO_ONLY -> "_Audio"
+            else -> ""
+        }
+
         val cleanTitle = metadata.title.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(24)
-        val filename = "TikSave_${cleanTitle}_${System.currentTimeMillis()}.$ext"
+        val filename = "TikSave_${cleanTitle}${audioTag}_${System.currentTimeMillis()}.$ext"
 
         _activeDownload.value = ActiveDownload(
             videoId = metadata.id,

@@ -191,7 +191,7 @@ fun UpdateDialog(
                             )
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = if (updateInfo != null) updateInfo.latestVersion else "TikSave v1.0.2",
+                                    text = if (updateInfo != null) updateInfo.latestVersion else "TikSave v${com.example.BuildConfig.VERSION_NAME}",
                                     style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                                     color = HdrGold
                                 )

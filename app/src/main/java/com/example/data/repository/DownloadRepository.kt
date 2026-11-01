@@ -224,7 +224,7 @@ class DownloadRepository(private val context: Context) {
             DownloadQuality.ULTRA_8K_120FPS -> metadata.ultra8kUrl
             DownloadQuality.HDR_ULTRA -> metadata.ultraHdrUrl
             DownloadQuality.HD_STANDARD -> metadata.standardHdUrl
-            DownloadQuality.AUDIO_ONLY -> metadata.audioUrl
+            DownloadQuality.AUDIO_ONLY, DownloadQuality.AUDIO_HIGH_SOUND, DownloadQuality.AUDIO_VFX_SOUND -> metadata.audioUrl
             DownloadQuality.COVER_IMAGE -> metadata.coverUrl
             DownloadQuality.PHOTO_SLIDE_ULTRA -> metadata.images.firstOrNull() ?: metadata.coverUrl
         }

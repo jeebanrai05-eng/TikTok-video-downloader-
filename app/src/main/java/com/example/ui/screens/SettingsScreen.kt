@@ -284,12 +284,12 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "TikSave 8K 120FPS Ultra v1.0.2",
+                                text = "TikSave v${com.example.BuildConfig.VERSION_NAME}",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                 color = Color.White
                             )
                             Text(
-                                text = "Engine build: v1.0.2 • 8K 120FPS Extreme & HDR+ Ultra",
+                                text = "Engine build: v${com.example.BuildConfig.VERSION_NAME} (Build ${com.example.BuildConfig.VERSION_CODE}) • 8K 120FPS & Audio Studio",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.White.copy(alpha = 0.6f)
                             )
