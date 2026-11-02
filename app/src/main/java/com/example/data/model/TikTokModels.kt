@@ -46,14 +46,30 @@ data class TikWmMusicInfo(
     @Json(name = "play") val play: String? = null
 )
 
+enum class MediaPlatform(val label: String, val badge: String, val destination: String) {
+    TIKTOK("TikTok Downloader", "🎵 TikTok", "No Watermark HD"),
+    YOUTUBE_TO_REELS("YouTube to Facebook Reels", "▶️ YouTube", "Ready for Facebook Reels"),
+    FACEBOOK_TO_SHORTS("Facebook to TikTok / Shorts", "👥 Facebook", "Ready for TikTok & Shorts")
+}
+
+enum class ClipPreset(val label: String, val seconds: Int, val description: String) {
+    SEC_15("15s Viral Reel", 15, "Fast-paced high-retention reel"),
+    SEC_30("30s Short Clip", 30, "Optimal TikTok & FB Reel duration"),
+    SEC_60("60s Full Reel", 60, "Complete storytelling clip"),
+    SEC_90("90s Max Reel", 90, "Extended Facebook Reel format"),
+    FULL("Full Length", 0, "Original full length video stream")
+}
+
 enum class DownloadQuality(val label: String, val badge: String, val description: String) {
     ULTRA_8K_120FPS("8K Ultra 120FPS", "8K / 120FPS", "Extreme bitrate 8K 120FPS ultra-smooth stream with zero watermark"),
-    HDR_ULTRA("HDR+ Ultra", "4K / 1080p Ultra", "Original bitrate stream with enhanced HDR fidelity & zero watermark"),
-    HD_STANDARD("HD Fast", "1080p / 720p", "High-speed clean video without TikTok watermark"),
+    HDR_ULTRA("4K HDR+ 60FPS", "4K / HDR+", "Original high-bitrate stream with enhanced HDR fidelity & vibrant colors"),
+    HD_STANDARD("1080p Full HD", "1080p FHD", "Crisp high-definition clean video ready to post"),
+    NORMAL_720P("720p Normal", "720p HD", "Balanced quality and fast download for immediate sharing"),
+    LOW_480P("480p Low Fast", "480p SD", "Compact lightweight clip for fast messaging & low data"),
     AUDIO_ONLY("Original Sound", "320 kbps MP3", "Extract studio quality original audio soundtrack"),
-    AUDIO_HIGH_SOUND("High Sound Boost", "Boosted MP3", "High volume dynamic audio with enhanced clarity & bass"),
+    AUDIO_HIGH_SOUND("High Sound Boost", "Boosted MP3", "High volume dynamic audio with enhanced clarity & bass (+6dB)"),
     AUDIO_VFX_SOUND("VFX & Dialogue", "Clean Vocal", "Isolate clear dialogue, voiceovers, and sound effects"),
-    COVER_IMAGE("HD Cover", "JPG Poster", "Download original full-resolution video cover"),
+    COVER_IMAGE("HD Cover", "JPG Poster", "Download original full-resolution video cover poster"),
     PHOTO_SLIDE_ULTRA("Photo Slide HDR+", "4K / 8K Photo", "Download photo slides in pristine HDR+ ultra high resolution")
 }
 
@@ -75,11 +91,19 @@ data class VideoMetadata(
     val ultraHdrSize: Long,
     val standardHdUrl: String,
     val standardHdSize: Long,
+    val normal720pUrl: String = "",
+    val normal720pSize: Long = 0L,
+    val low480pUrl: String = "",
+    val low480pSize: Long = 0L,
     val audioUrl: String,
     val musicTitle: String,
     val musicAuthor: String,
     val originalTikTokUrl: String,
-    val images: List<String> = emptyList()
+    val images: List<String> = emptyList(),
+    val platform: MediaPlatform = MediaPlatform.TIKTOK,
+    val clipPreset: ClipPreset = ClipPreset.FULL,
+    val facebookReelsReadyCaption: String = "",
+    val tiktokShortsReadyCaption: String = ""
 ) {
     val isPhotoSlide: Boolean get() = images.isNotEmpty()
 }

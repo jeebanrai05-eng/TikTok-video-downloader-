@@ -1,7 +1,5 @@
 package com.example.ui.screens
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -31,14 +29,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -55,6 +55,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -89,11 +90,14 @@ fun AiStudioScreen(
     onToneSelected: (AiContentTone) -> Unit,
     generationState: AiGenerationState,
     onGenerateClick: () -> Unit,
+    onRegenerateClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     var copiedItemIndex by remember { mutableStateOf<String?>(null) }
+    var selectedPlatformTab by remember { mutableIntStateOf(0) } // 0: Facebook, 1: TikTok, 2: YouTube Shorts
+    var selectedVariationIndex by remember { mutableIntStateOf(0) }
 
     fun copyText(text: String, label: String, key: String) {
         clipboardManager.setText(AnnotatedString(text))
@@ -101,12 +105,12 @@ fun AiStudioScreen(
         Toast.makeText(context, "$label copied to clipboard!", Toast.LENGTH_SHORT).show()
     }
 
-    fun shareToSocial(text: String) {
+    fun shareToSocial(text: String, platformTitle: String) {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, text)
         }
-        context.startActivity(Intent.createChooser(intent, "Share Post via"))
+        context.startActivity(Intent.createChooser(intent, "Share $platformTitle via"))
     }
 
     LazyColumn(
@@ -132,9 +136,9 @@ fun AiStudioScreen(
                         .background(
                             Brush.linearGradient(
                                 colors = listOf(
-                                    Color(0xFF6366F1).copy(alpha = 0.25f),
-                                    Color(0xFFFF007F).copy(alpha = 0.15f),
-                                    Color.Black.copy(alpha = 0.5f)
+                                    Color(0xFF6366F1).copy(alpha = 0.3f),
+                                    Color(0xFFFF007F).copy(alpha = 0.2f),
+                                    Color.Black.copy(alpha = 0.6f)
                                 )
                             )
                         )
@@ -169,9 +173,9 @@ fun AiStudioScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = "Generate high-CTR viral hooks, ready-to-post Facebook descriptions, and trending TikTok hashtags with Gemini AI.",
+                            text = "Unlimited, dynamic caption & hashtag generator for TikTok, Facebook Reels, and YouTube Shorts. Generates fresh random angles every time!",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.75f),
+                            color = Color.White.copy(alpha = 0.8f),
                             lineHeight = 18.sp
                         )
                     }
@@ -190,7 +194,7 @@ fun AiStudioScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "VIDEO TOPIC OR TITLE",
+                        text = "TOPIC, VIDEO TITLE, OR NICHE",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = NeonCyan,
                         letterSpacing = 1.sp
@@ -206,7 +210,7 @@ fun AiStudioScreen(
                             .testTag("ai_topic_input"),
                         placeholder = {
                             Text(
-                                "Enter topic, video title, or photo slide description (e.g. Balen Shah, Harka Sampang, comedy, travel)...",
+                                "Enter any topic or paste video title (e.g., Balen Shah, Nepali comedy, travel, fitness, tech, podcast)...",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.White.copy(alpha = 0.4f)
                             )
@@ -219,7 +223,7 @@ fun AiStudioScreen(
                             } else {
                                 IconButton(
                                     onClick = {
-                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
                                         val clip = clipboard?.primaryClip?.getItemAt(0)?.text?.toString()
                                         if (!clip.isNullOrBlank()) {
                                             onInputChange(clip)
@@ -246,7 +250,7 @@ fun AiStudioScreen(
 
                     // Tone selector
                     Text(
-                        text = "CONTENT TONE & STYLE",
+                        text = "TARGET PLATFORM & CONTENT TONE",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = Color.White.copy(alpha = 0.8f),
                         letterSpacing = 0.5.sp
@@ -292,40 +296,67 @@ fun AiStudioScreen(
 
                     Spacer(modifier = Modifier.height(18.dp))
 
-                    // Generate Button
-                    Button(
-                        onClick = onGenerateClick,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .testTag("btn_generate_ai_pack"),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF6366F1),
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(14.dp),
-                        enabled = generationState !is AiGenerationState.Generating
+                    // Primary Action Buttons (Generate & Unlimited Randomize)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        if (generationState is AiGenerationState.Generating) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = Color.White,
-                                strokeWidth = 2.dp
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(generationState.step, style = MaterialTheme.typography.bodyMedium)
-                        } else {
-                            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Generate Viral Hooks & Captions",
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
-                            )
+                        Button(
+                            onClick = onGenerateClick,
+                            modifier = Modifier
+                                .weight(1.3f)
+                                .height(50.dp)
+                                .testTag("btn_generate_ai_pack"),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF6366F1),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(14.dp),
+                            enabled = generationState !is AiGenerationState.Generating
+                        ) {
+                            if (generationState is AiGenerationState.Generating) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Thinking...", style = MaterialTheme.typography.bodyMedium)
+                            } else {
+                                Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Generate Viral Pack", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
+                        }
+
+                        // Unlimited Randomize Button
+                        Button(
+                            onClick = onRegenerateClick,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp)
+                                .testTag("btn_randomize_ai_pack"),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = NeonMagenta,
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(14.dp),
+                            enabled = generationState !is AiGenerationState.Generating
+                        ) {
+                            Icon(Icons.Default.Casino, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Randomize 🎲", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                     }
 
                     if (generationState is AiGenerationState.Generating) {
                         Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = generationState.step,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = NeonCyan
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
                         LinearProgressIndicator(
                             progress = { generationState.progressFraction },
                             modifier = Modifier
@@ -344,7 +375,7 @@ fun AiStudioScreen(
         if (generationState is AiGenerationState.Success) {
             val result = generationState.result
 
-            // Score Banner
+            // Score Banner & Dynamic Iteration Indicator
             item {
                 Card(
                     modifier = Modifier
@@ -362,35 +393,200 @@ fun AiStudioScreen(
                     ) {
                         Column {
                             Text(
-                                text = "VIRAL POTENTIAL SCORE",
+                                text = "VIRAL POTENTIAL SCORE • ANGLE #${result.generationId}",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                 color = HdrGold,
                                 letterSpacing = 1.sp
                             )
                             Text(
-                                text = "${result.viralScore}% High Engagement",
+                                text = "${result.viralScore}% High Algorithm Reach",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
                                 color = Color.White
                             )
                         }
 
-                        Box(
-                            modifier = Modifier
-                                .background(HdrGold.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
-                                .border(1.dp, HdrGold, RoundedCornerShape(12.dp))
-                                .padding(horizontal = 14.dp, vertical = 8.dp)
+                        Button(
+                            onClick = onRegenerateClick,
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = HdrGold, contentColor = Color.Black)
                         ) {
-                            Text(
-                                text = "🔥 HIGH REACH",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Black),
-                                color = HdrGold
-                            )
+                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("New Angle", fontSize = 11.sp, fontWeight = FontWeight.Black)
                         }
                     }
                 }
             }
 
-            // Viral Hooks
+            // ==========================================
+            // MULTI-VARIATION SELECTOR (4 Distinct Flavors)
+            // ==========================================
+            if (result.variations.isNotEmpty()) {
+                item {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "CHOOSE CAPTION STYLE VARIATION",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = NeonCyan,
+                            letterSpacing = 1.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            result.variations.forEachIndexed { index, variation ->
+                                val isSelected = selectedVariationIndex == index
+                                Surface(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .border(
+                                            1.dp,
+                                            if (isSelected) NeonCyan else ObsidianCardBorder,
+                                            RoundedCornerShape(12.dp)
+                                        )
+                                        .clickable { selectedVariationIndex = index }
+                                        .testTag("variation_chip_$index"),
+                                    color = if (isSelected) NeonCyan.copy(alpha = 0.2f) else ObsidianSurfaceVariant
+                                ) {
+                                    Text(
+                                        text = variation.styleTitle,
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                        ),
+                                        color = if (isSelected) Color.White else Color.White.copy(alpha = 0.7f),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Current Variation Content
+            val currentVariation = result.variations.getOrNull(selectedVariationIndex)
+
+            // Platform Ready to Post Selector (Facebook Reels, TikTok, YouTube Shorts)
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(18.dp))
+                        .border(1.dp, ObsidianCardBorder, RoundedCornerShape(18.dp)),
+                    colors = CardDefaults.cardColors(containerColor = ObsidianSurface)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        // Platform Tabs
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val tabs = listOf("📘 Facebook Reels", "🎵 TikTok", "▶️ YouTube Shorts")
+                            tabs.forEachIndexed { idx, tabTitle ->
+                                val isSelected = selectedPlatformTab == idx
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .border(
+                                            1.dp,
+                                            if (isSelected) NeonCyan else ObsidianCardBorder,
+                                            RoundedCornerShape(8.dp)
+                                        )
+                                        .clickable { selectedPlatformTab = idx },
+                                    color = if (isSelected) NeonCyan.copy(alpha = 0.2f) else ObsidianSurfaceVariant
+                                ) {
+                                    Text(
+                                        text = tabTitle,
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = if (isSelected) Color.White else Color.White.copy(alpha = 0.6f),
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        val formattedText = when (selectedPlatformTab) {
+                            0 -> currentVariation?.facebookReelsPost ?: result.facebookReadyPost
+                            1 -> currentVariation?.tiktokPost ?: result.tiktokReadyPost
+                            else -> currentVariation?.youtubeShortsPost ?: result.youtubeShortsReadyPost
+                        }
+
+                        val platformLabel = when (selectedPlatformTab) {
+                            0 -> "Facebook Reels"
+                            1 -> "TikTok"
+                            else -> "YouTube Shorts"
+                        }
+
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp)),
+                            color = ObsidianSurfaceVariant
+                        ) {
+                            Text(
+                                text = formattedText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.9f),
+                                modifier = Modifier.padding(14.dp),
+                                lineHeight = 20.sp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = { copyText(formattedText, "$platformLabel Post", "post_copy") },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                            ) {
+                                Icon(
+                                    imageVector = if (copiedItemIndex == "post_copy") Icons.Default.Check else Icons.Default.ContentCopy,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = if (copiedItemIndex == "post_copy") NeonCyan else Color.White
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Copy Post", fontSize = 12.sp)
+                            }
+
+                            Button(
+                                onClick = { shareToSocial(formattedText, platformLabel) },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = when (selectedPlatformTab) {
+                                        0 -> Color(0xFF1877F2)
+                                        1 -> NeonMagenta
+                                        else -> Color(0xFFFF0000)
+                                    }
+                                )
+                            ) {
+                                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Post Now", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Viral Hooks List
             item {
                 Card(
                     modifier = Modifier
@@ -404,7 +600,7 @@ fun AiStudioScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(Icons.Default.TrendingUp, contentDescription = null, tint = NeonCyan, modifier = Modifier.size(18.dp))
+                            Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = NeonCyan, modifier = Modifier.size(18.dp))
                             Text(
                                 text = "TOP VIRAL HOOKS (FIRST 3 SECONDS)",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
@@ -455,78 +651,6 @@ fun AiStudioScreen(
                 }
             }
 
-            // Facebook Ready to Post
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(18.dp))
-                        .border(1.dp, Color(0xFF1877F2).copy(alpha = 0.4f), RoundedCornerShape(18.dp)),
-                    colors = CardDefaults.cardColors(containerColor = ObsidianSurface)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "READY FOR FACEBOOK POST",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = Color(0xFF1877F2),
-                                letterSpacing = 1.sp
-                            )
-
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                OutlinedButton(
-                                    onClick = { copyText(result.facebookReadyPost, "Facebook post", "fb_post") },
-                                    shape = RoundedCornerShape(8.dp),
-                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
-                                ) {
-                                    Icon(
-                                        imageVector = if (copiedItemIndex == "fb_post") Icons.Default.Check else Icons.Default.ContentCopy,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp),
-                                        tint = if (copiedItemIndex == "fb_post") NeonCyan else Color.White
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Copy Post", fontSize = 11.sp)
-                                }
-
-                                Button(
-                                    onClick = { shareToSocial(result.facebookReadyPost) },
-                                    shape = RoundedCornerShape(8.dp),
-                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1877F2))
-                                ) {
-                                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Post", fontSize = 11.sp)
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp)),
-                            color = ObsidianSurfaceVariant
-                        ) {
-                            Text(
-                                text = result.facebookReadyPost,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.9f),
-                                modifier = Modifier.padding(14.dp),
-                                lineHeight = 20.sp
-                            )
-                        }
-                    }
-                }
-            }
-
             // Trending Hashtags
             item {
                 Card(
@@ -543,7 +667,7 @@ fun AiStudioScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "TRENDING HASHTAGS",
+                                text = "HIGH-REACH HASHTAGS",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                 color = NeonMagenta,
                                 letterSpacing = 1.sp
@@ -562,7 +686,7 @@ fun AiStudioScreen(
                                     tint = if (copiedItemIndex == "tags_all") NeonCyan else Color.White
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Copy All Tags", fontSize = 11.sp)
+                                Text("Copy All", fontSize = 11.sp)
                             }
                         }
 
@@ -594,7 +718,7 @@ fun AiStudioScreen(
                 }
             }
 
-            // Insights (Best Posting Time & Soundtrack)
+            // Audience Insight & Best Posting Times
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),

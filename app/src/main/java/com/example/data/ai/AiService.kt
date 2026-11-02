@@ -11,6 +11,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
 class AiService {
@@ -20,71 +21,89 @@ class AiService {
         .readTimeout(25, TimeUnit.SECONDS)
         .build()
 
+    private val generationCounter = AtomicInteger(1)
+
     suspend fun generateViralPack(
         input: String,
         tone: AiContentTone,
         author: String = "",
         isPhotoSlide: Boolean = false,
         slideCount: Int = 0,
+        forceRandomSeed: Int = Random.nextInt(1000, 99999),
         onProgress: (String, Float) -> Unit = { _, _ -> }
     ): AiViralResult = withContext(Dispatchers.IO) {
-        val cleanInput = input.trim().ifEmpty { "Viral TikTok Content" }
+        val cleanInput = input.trim().ifEmpty { "Viral TikTok & Reels Content" }
+        val currentGenId = generationCounter.getAndIncrement()
 
-        onProgress("Analyzing content tone & viral hooks...", 0.25f)
-        delay(400)
+        onProgress("Analyzing topic context & sentiment...", 0.20f)
+        delay(350)
 
-        onProgress("Optimizing trending hashtags for TikTok & Facebook...", 0.60f)
-        delay(400)
+        onProgress("Brainstorming unlimited viral hooks & storytelling angles...", 0.50f)
+        delay(350)
 
-        onProgress("Formatting ready-to-post captions with high CTR...", 0.85f)
+        onProgress("Crafting multi-platform Facebook Reels & TikTok captions...", 0.75f)
         delay(300)
 
-        // Check if Gemini API Key is configured via BuildConfig / secrets
+        onProgress("Selecting high-reach trending hashtags...", 0.90f)
+        delay(200)
+
+        // Try Gemini live AI if available
         val geminiKey = try {
             val keyField = BuildConfig::class.java.getField("GEMINI_API_KEY")
             keyField.get(null) as? String
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
 
         if (!geminiKey.isNullOrBlank() && geminiKey != "MY_GEMINI_API_KEY") {
             try {
-                val liveResult = callGeminiApi(cleanInput, tone, isPhotoSlide, geminiKey)
+                val liveResult = callGeminiApi(cleanInput, tone, isPhotoSlide, geminiKey, currentGenId, forceRandomSeed)
                 if (liveResult != null) {
-                    onProgress("AI Viral Pack Generated!", 1.0f)
+                    onProgress("AI Viral Pack #$currentGenId Generated!", 1.0f)
                     return@withContext liveResult
                 }
-            } catch (e: Exception) {
-                // Fallback gracefully to smart generator if API fails or quotas exceed
+            } catch (_: Exception) {
+                // Fallback gracefully to dynamic generator
             }
         }
 
-        val smartResult = generateSmartViralPack(cleanInput, tone, author, isPhotoSlide, slideCount)
-        onProgress("AI Viral Pack Generated!", 1.0f)
-        smartResult
+        val dynamicResult = generateDynamicUnlimitedPack(cleanInput, tone, author, isPhotoSlide, slideCount, currentGenId, forceRandomSeed)
+        onProgress("AI Viral Pack #$currentGenId Generated!", 1.0f)
+        dynamicResult
     }
 
     private fun callGeminiApi(
         input: String,
         tone: AiContentTone,
         isPhotoSlide: Boolean,
-        apiKey: String
+        apiKey: String,
+        genId: Int,
+        seed: Int
     ): AiViralResult? {
         val prompt = """
-            You are a world-class viral TikTok and Facebook content strategist specializing in high engagement, hooks, and hashtags for Nepali and international audiences.
-            Create a viral package for this content:
-            Topic/Title: "$input"
-            Tone: ${tone.label}
-            Format: ${if (isPhotoSlide) "TikTok Photo Carousel Slideshow" else "Short Video"}
+            You are a viral social media growth master for TikTok, Facebook Reels, and YouTube Shorts (Nepali & global audiences).
+            Generate an ultra-creative, non-generic, high-engagement viral pack (Iteration #$genId, Creative Seed #$seed).
+            Topic: "$input"
+            Tone: ${tone.label} (${tone.targetCategory})
+            Format: ${if (isPhotoSlide) "Photo Slideshow Carousel" else "Short Video Clip / Reel"}
 
-            Return JSON only with these exact keys:
+            Rules:
+            1. DO NOT give repetitive or generic copy. Be bold, witty, intriguing, and authentic!
+            2. Provide 4 distinct variations (Viral Hook, Humor/Relatable, Storytelling, and Aesthetic).
+            3. Provide high-reach hashtags for TikTok, Facebook, and Shorts.
+
+            Return JSON only:
             {
-              "viralScore": 95,
-              "hooks": ["Hook 1 (Max 10 words)", "Hook 2", "Hook 3"],
-              "caption": "Short, engaging, high-CTR caption with relevant emojis",
-              "hashtags": ["#fyp", "#viral", "#tiktoknepal", "#trending", ...10 tags],
-              "bestPostingTime": "6:30 PM - 8:45 PM NPT",
-              "soundtrackRecommendation": "Trending sound name or style"
+              "viralScore": 96,
+              "hooks": ["Hook 1 (Max 10 words)", "Hook 2", "Hook 3", "Hook 4"],
+              "mainCaption": "Engaging main caption with emojis",
+              "facebookPost": "Complete ready-to-post Facebook caption with call to action",
+              "tiktokPost": "Short punchy TikTok caption with 6 FYP hashtags",
+              "youtubeShortsPost": "YouTube Shorts title and description with #Shorts",
+              "hashtags": ["#fyp", "#viral", "#foryou", ...12 tags],
+              "bestPostingTime": "6:30 PM - 9:00 PM NPT",
+              "soundtrackRecommendation": "Trending beat or acoustic style",
+              "audienceInsight": "Why this angle works for algorithms"
             }
         """.trimIndent()
 
@@ -99,7 +118,10 @@ class AiService {
                 put(content)
             }
             put("contents", contents)
-            put("generationConfig", JSONObject().put("responseMimeType", "application/json"))
+            put("generationConfig", JSONObject().apply {
+                put("responseMimeType", "application/json")
+                put("temperature", 1.0)
+            })
         }
 
         val request = Request.Builder()
@@ -117,190 +139,268 @@ class AiService {
             val partsArr = contentObj.optJSONArray("parts") ?: return null
             val text = partsArr.optJSONObject(0)?.optString("text") ?: return null
 
-            val parsedJson = JSONObject(text)
-            val viralScore = parsedJson.optInt("viralScore", 94)
-            val hooksArr = parsedJson.optJSONArray("hooks")
+            val parsed = JSONObject(text)
+            val score = parsed.optInt("viralScore", Random.nextInt(94, 99))
+            val hooksArr = parsed.optJSONArray("hooks")
             val hooks = mutableListOf<String>()
             if (hooksArr != null) {
-                for (i in 0 until hooksArr.length()) {
-                    hooks.add(hooksArr.getString(i))
-                }
+                for (i in 0 until hooksArr.length()) hooks.add(hooksArr.getString(i))
             }
 
-            val caption = parsedJson.optString("caption", "")
-            val tagsArr = parsedJson.optJSONArray("hashtags")
+            val tagsArr = parsed.optJSONArray("hashtags")
             val tags = mutableListOf<String>()
             if (tagsArr != null) {
-                for (i in 0 until tagsArr.length()) {
-                    tags.add(tagsArr.getString(i))
-                }
-            }
-            val bestTime = parsedJson.optString("bestPostingTime", "7:00 PM - 9:00 PM NPT")
-            val sound = parsedJson.optString("soundtrackRecommendation", "Original Sound - Trending Beat")
-
-            val fbPost = buildString {
-                appendLine("🔥 ${hooks.firstOrNull() ?: input}")
-                appendLine()
-                appendLine(caption)
-                appendLine()
-                appendLine("👉 पूरा भिडियो हेर्नुहोस् र सेयर गर्नुहोस्!")
-                appendLine()
-                append(tags.joinToString(" "))
+                for (i in 0 until tagsArr.length()) tags.add(tagsArr.getString(i))
             }
 
-            val ttPost = "$caption\n\n${tags.take(6).joinToString(" ")}"
+            val fbPost = parsed.optString("facebookPost", "")
+            val ttPost = parsed.optString("tiktokPost", "")
+            val ytPost = parsed.optString("youtubeShortsPost", "")
+            val mainCap = parsed.optString("mainCaption", "")
+            val bestTime = parsed.optString("bestPostingTime", "7:00 PM - 9:30 PM NPT")
+            val sound = parsed.optString("soundtrackRecommendation", "Original Trending Sound")
+            val insight = parsed.optString("audienceInsight", "High curiosity gap boosts retention by +40%")
+
+            val variations = listOf(
+                CaptionVariation("var_1", "⚡ Viral Hook (High CTR)", hooks.getOrNull(0) ?: "Wait till you see this 😱", mainCap, tags, fbPost, ttPost, ytPost),
+                CaptionVariation("var_2", "😂 Relatable & Fun", hooks.getOrNull(1) ?: "Bro didn't even hesitate 💀", "You won't believe how this ended! 😂 Tag someone who needs to see this.", tags.shuffled().take(8), fbPost, ttPost, ytPost),
+                CaptionVariation("var_3", "📖 Story & Curiosity", hooks.getOrNull(2) ?: "The truth nobody talks about...", "A closer look at this moment. What are your thoughts on this? Drop a comment below 👇", tags.shuffled().take(8), fbPost, ttPost, ytPost),
+                CaptionVariation("var_4", "✨ Aesthetic & Short", hooks.getOrNull(3) ?: "Pure vibes only ✨", "Moments like this remind us to pause and appreciate the details 🌿💫", tags.shuffled().take(8), fbPost, ttPost, ytPost)
+            )
 
             return AiViralResult(
                 title = input,
-                viralScore = viralScore,
+                viralScore = score,
+                generationId = genId,
+                toneLabel = tone.label,
                 hooks = if (hooks.isNotEmpty()) hooks else listOf("Watch till the end 😱", "This will blow your mind 💥"),
-                caption = caption,
+                caption = mainCap,
                 hashtags = tags,
                 facebookReadyPost = fbPost,
                 tiktokReadyPost = ttPost,
+                youtubeShortsReadyPost = ytPost,
                 bestPostingTime = bestTime,
-                soundtrackRecommendation = sound
+                soundtrackRecommendation = sound,
+                variations = variations,
+                audienceInsight = insight
             )
         }
         return null
     }
 
-    private fun generateSmartViralPack(
+    private fun generateDynamicUnlimitedPack(
         input: String,
         tone: AiContentTone,
         author: String,
         isPhotoSlide: Boolean,
-        slideCount: Int
+        slideCount: Int,
+        genId: Int,
+        seed: Int
     ): AiViralResult {
-        val score = Random.nextInt(92, 99)
+        val rng = Random(seed)
 
-        val (hooks, captionTemplate, hashtags, bestTime, sound) = when (tone) {
-            AiContentTone.NEPAL_POLITICS -> {
-                val h = listOf(
-                    "🚨 यस्तो छ आजको सबैभन्दा ठूलो राजनीतिक बहस!",
-                    "💥 जनताले हेर्नैपर्ने संसदको कडा सम्बोधन!",
-                    "यो भिडियो हेरेपछि तपाईको धारणा के छ? कमेन्ट गर्नुस् 👇"
-                )
-                val c = if (isPhotoSlide) {
-                    "📸 नेपाल राजनीतिका ताजा झलकहरू र मुख्य घटनाक्रम (${slideCount.coerceAtLeast(3)} फोटो स्लाइडहरूमा)। देशको विकास र जनसरोकारका मुद्दामा उठेका प्रमुख आवाजहरू।"
-                } else {
-                    "नेपालको राजनीतिमा आजको ताजा बहस र जनताको आवाज! देशको समसामयिक अवस्थाबारे महत्त्वपूर्ण सम्बोधन। तपाईंको धारणा के छ? तल कमेन्टमा लेख्नुहोला।"
-                }
-                val tags = listOf(
-                    "#NepalPolitics", "#HarkaSampang", "#BalenShah", "#RabiLamichhane",
-                    "#NepalNews", "#SamsadBaithak", "#TrendingNepal", "#fypnepal",
-                    "#TikTokNepal", "#ViralNepal", "#VoiceOfPeople"
-                )
-                Quint(h, c, tags, "6:30 PM - 8:45 PM NPT", "Desh Premi Patriotic Score (Trending)")
-            }
+        // Dynamic viral score
+        val score = rng.nextInt(93, 100)
 
-            AiContentTone.COMEDY_FUNNY -> {
-                val h = listOf(
-                    "😂 हाँसेर पेट दुख्ने भिडियो, अन्तिम सम्म हेर्नुस्!",
-                    "💀 भाईसाब! यस्तो पनि हुन्छ र? 😭",
-                    "तपाईंको त्यो साथीलाई मेन्सन गर्नुहोस् जो यस्तै गर्छ 👇"
-                )
-                val c = "अन्तिम सम्म नहेरी नछोड्नुहोस् 😂 यस्तो कमेडी सायदै देख्नुभएको थियो होला! आफ्नो मिल्ने साथीहरूलाई ट्याग गरेर सेयर गर्न नभुल्नुहोला 💥"
-                val tags = listOf(
-                    "#NepaliComedy", "#Hahah", "#FunnyTikTok", "#MemeNepal",
-                    "#ComedyNepal", "#fyp", "#viral", "#foryoupage", "#explore", "#relatable"
-                )
-                Quint(h, c, tags, "1:00 PM - 3:30 PM & 8:00 PM NPT", "Funny Laugh Effect / Meme Soundtrack")
-            }
+        // Massive library of creative hook templates
+        val viralOpeners = listOf(
+            "😱 ९०% मान्छेले यो कुरा ख्यालै गरेका हुँदैनन्...",
+            "🚨 यो भिडियो नहेरी स्क्रोल गर्दै नगर्नुस्!",
+            "💥 यस्तो ट्विस्ट आउला भनेर कसैले सोचेकै थिएन!",
+            "Stop scrolling right now, you NEED to hear this! 🔥",
+            "This literally changed my entire perspective 🤯",
+            "👀 भिडियोको अन्तिम ५ सेकेन्ड हेर्नुस्, होश उड्नेछ!",
+            "💀 ब्रोले यति सजिलै भनिदियो कि... म त चकित भएँ 😭",
+            "Wait for the unexpected ending... ⚡",
+            "💡 आजको सबैभन्दा ठूलो खुलासा र चर्चाको विषय!",
+            "के तपाईंलाई यो कुरा पहिले नै थाहा थियो? कमेन्ट गर्नुस् 👇"
+        ).shuffled(rng)
 
-            AiContentTone.AESTHETIC_VIBE -> {
-                val h = listOf(
-                    "✨ Finding peace in little moments...",
-                    "🌸 Just romanticizing life through these captures...",
-                    "यस क्षणको सुन्दरता... Feel the vibe 🎧"
-                )
-                val c = if (isPhotoSlide) {
-                    "A journey through beautiful frames and serene moments. Swipe left for the pure aesthetic calm 💫"
-                } else {
-                    "Some moments deserve to be felt, not just watched. Lost in the sound and memories 🌿✨"
-                }
-                val tags = listOf(
-                    "#aesthetic", "#visuals", "#vibes", "#calm",
-                    "#NepalDiaries", "#HimalayanVibe", "#LoFiNepal", "#photodump", "#fyp", "#nature"
-                )
-                Quint(h, c, tags, "9:00 PM - 11:30 PM NPT", "Lo-Fi Acoustic Ambient Piano")
-            }
+        val humorOpeners = listOf(
+            "😂 हाँसो थाम्न नसके म जिम्मेवार छैन है!",
+            "💀 भाईसाब! यस्तो पनि जिन्दगीमा हुन्छ र? 😭",
+            "Me pretending everything is under control vs Reality 😭💀",
+            "त्यो साथीलाई ट्याग गरिहाल्नुस् जो हुबहु यस्तै छ 👇😂",
+            "Nobody warned me this was going to happen lmao 🤣",
+            "नेपाली भएपछि यो नभएको सायदै कोही होला 😂🔥"
+        ).shuffled(rng)
 
-            AiContentTone.MOTIVATION -> {
-                val h = listOf(
-                    "🔥 सफलता त्यति सजिलै मिल्दैन, यो सुन्नुहोस्!",
-                    "सपना ठूलो छ भने आजैबाट मिहिनेत सुरु गर्नुहोस् 💡",
-                    "Remember: Tough times never last, but tough people do!"
-                )
-                val c = "जिन्दगीमा हार कहिल्यै नमान्नुहोस्। हरेक बिहान नयाँ सम्भावना लिएर आउँछ। यो सन्देश आफ्नो जीवनमा परिवर्तन खोजिरहेका साथीहरूलाई सेयर गर्नुहोला!"
-                val tags = listOf(
-                    "#NepaliMotivation", "#HardWork", "#SuccessMindset", "#Inspiration",
-                    "#LifeQuotes", "#fyp", "#foryou", "#NepaliQuotes", "#NeverGiveUp"
-                )
-                Quint(h, c, tags, "6:00 AM - 8:00 AM & 7:00 PM NPT", "Cinematic Orchestral Motivation")
-            }
+        val storyOpeners = listOf(
+            "📖 यो कथाले तपाईलाई भित्रैदेखि हल्लाउनेछ...",
+            "Behind every silent smile, there is a story untold 💭",
+            "कहिलेकाहीँ साना कुराहरूले नै जिन्दगी बदलिदिन्छन् ✨",
+            "Why this moment matters more than anything else right now.",
+            "यो घटना पछि सबैको सोच नै बदलियो... पूरा सुन्नुस् 👇"
+        ).shuffled(rng)
 
-            AiContentTone.VIRAL_TREND -> {
-                val h = listOf(
-                    "😱 This is trending everywhere right now!",
-                    "अहिले टिकटकमा भाइरल भइरहेको यो भिडियो नछुटाउनुस्!",
-                    "Watch till the end to see what happens next! 🔥"
-                )
-                val c = if (isPhotoSlide) {
-                    "⚡ Pure 8K HDR+ aesthetic photo carousel! Swipe through all $slideCount slides and let me know your favorite in the comments! 💥"
-                } else {
-                    "Breaking the algorithm with this one! Ultra high quality, crystal clear audio. Drop a ❤️ and share with friends!"
-                }
-                val tags = listOf(
-                    "#fyp", "#foryou", "#foryoupage", "#viral",
-                    "#trending", "#tiktoknepal", "#explore", "#viralvideo",
-                    "#TikSave", "#HDRUltra"
-                )
-                Quint(h, c, tags, "7:00 PM - 9:30 PM NPT", "High BPM Trending TikTok Sound")
-            }
+        val aestheticOpeners = listOf(
+            "✨ Just romanticizing the little moments in life 🌿",
+            "Lost in the sound, finding peace in the frames 🌸",
+            "मौनता भित्रको सुन्दरता... Feel the tranquility 🎧",
+            "Some places and moments just heal your soul 🏔️✨",
+            "Aesthetic frames that deserve to be saved forever 💫"
+        ).shuffled(rng)
+
+        val selectedHooks = listOf(
+            viralOpeners[0],
+            humorOpeners[0],
+            storyOpeners[0],
+            aestheticOpeners[0]
+        )
+
+        // Dynamic Hashtags Pool
+        val baseFypTags = listOf(
+            "#fyp", "#foryou", "#foryoupage", "#viral", "#trending",
+            "#tiktoknepal", "#explore", "#viralvideo", "#trend", "#growth"
+        ).shuffled(rng).take(6)
+
+        val nicheTags = when (tone) {
+            AiContentTone.NEPAL_POLITICS -> listOf(
+                "#NepalPolitics", "#BalenShah", "#HarkaSampang", "#RabiLamichhane",
+                "#NepalNews", "#SamsadBaithak", "#DeshPremi", "#VoiceOfPeople",
+                "#NepalDevelopment", "#TrendingNepal", "#RabiLamichhaneNews"
+            )
+            AiContentTone.COMEDY_FUNNY -> listOf(
+                "#NepaliComedy", "#Hahah", "#FunnyTikTok", "#MemeNepal",
+                "#ComedyNepal", "#Relatable", "#NepaliMeme", "#LOL", "#FunnyReels"
+            )
+            AiContentTone.AESTHETIC_VIBE -> listOf(
+                "#aesthetic", "#visuals", "#vibes", "#calm", "#NepalDiaries",
+                "#HimalayanVibe", "#LoFiNepal", "#photodump", "#nature", "#peaceful"
+            )
+            AiContentTone.MOTIVATION -> listOf(
+                "#NepaliMotivation", "#HardWork", "#SuccessMindset", "#Inspiration",
+                "#LifeQuotes", "#NepaliQuotes", "#NeverGiveUp", "#DailyMotivation", "#Hustle"
+            )
+            AiContentTone.YOUTUBE_TO_REELS -> listOf(
+                "#FacebookReels", "#ReelsViral", "#TrendingReels", "#FBReelsNepal",
+                "#VideoClip", "#BestMoments", "#ReelItFeelIt", "#ViralReel"
+            )
+            AiContentTone.FACEBOOK_TO_SHORTS -> listOf(
+                "#Shorts", "#YouTubeShorts", "#ShortsViral", "#TikTokVideo",
+                "#ClipMaster", "#DailyShorts", "#ViralClips", "#InstantReel"
+            )
+            AiContentTone.VIRAL_TREND -> listOf(
+                "#ViralChallenge", "#TikTokTrending", "#UltraHDR", "#8K120FPS",
+                "#TikSave", "#AlgorithmHack", "#ContentCreator", "#ExplorePage"
+            )
+        }.shuffled(rng).take(8)
+
+        val combinedTags = (baseFypTags + nicheTags).distinct()
+
+        // Dynamic Variations
+        val var1Caption = if (isPhotoSlide) {
+            "📸 Pure 8K HDR+ Photo Carousel ($slideCount slides). Swipe left to feel every detail! तपाईंलाई कुन फोटो सबैभन्दा बढी मन पर्यो? कमेन्ट गर्नुस् 👇"
+        } else {
+            "⚡ $input! यो भिडियोले सोच्ने तरिका नै बदलिदिन्छ। हेरेपछि तपाईंको मनमा के आयो? तल कमेन्टमा आफ्ना विचारहरू व्यक्त गर्नुहोस् र साथीहरूसँग सेयर गर्नुहोस्! 🔥"
         }
 
-        val formattedCaption = buildString {
-            appendLine(captionTemplate)
-            if (author.isNotBlank()) {
-                appendLine("Creator: $author")
-            }
-        }
+        val var2Caption = "यस्तो दृश्य सायदै देख्नुभएको थियो होला 😂 यसलाई देखेपछि हाँसो रोक्नै सकिएन! तपाईंका त्यो खास साथीहरूलाई ट्याग गरेर सेयर गर्न नबिर्सनुहोला 💀💥"
 
-        val fbPost = buildString {
-            appendLine("✨ ${hooks.first()}")
+        val var3Caption = "कहिलेकाहीँ एउटा सानो भिडियोले हाम्रो सोचमा गहिरो प्रभाव पार्छ। '$input' बारे यो महत्त्वपूर्ण अंश सबैले बुझ्न आवश्यक छ। तपाईंको यसमा के दृष्टिकोण छ? 👇"
+
+        val var4Caption = "Aesthetic calm & high fidelity visuals. Lost in the moment, appreciating the finer details of life. Save this reel for when you need peace ✨🌿"
+
+        val authorCredit = if (author.isNotBlank()) "\n🎥 Creator: $author" else ""
+
+        val fbReady = buildString {
+            appendLine("🔥 ${selectedHooks[0]}")
             appendLine()
-            appendLine(formattedCaption.trim())
+            appendLine(var1Caption)
+            if (authorCredit.isNotBlank()) appendLine(authorCredit)
             appendLine()
-            appendLine("👇 तपाईंको विचार तल कमेन्ट गर्नुहोस् र सेयर गर्नुहोस्!")
+            appendLine("👉 भिडियो मन परे लाइक, कमेन्ट र साथीहरूलाई सेयर गरिदिनुहोला!")
             appendLine()
-            append(hashtags.joinToString(" "))
+            append(combinedTags.joinToString(" "))
         }
 
-        val ttPost = buildString {
-            appendLine(hooks[1])
-            appendLine(formattedCaption.trim())
-            append(hashtags.take(8).joinToString(" "))
+        val ttReady = buildString {
+            appendLine(selectedHooks[0])
+            appendLine(var1Caption.take(120) + "...")
+            append(combinedTags.take(8).joinToString(" "))
         }
+
+        val ytReady = buildString {
+            appendLine("🔥 $input (Full HD Clip)")
+            appendLine()
+            appendLine(var1Caption)
+            appendLine()
+            append(combinedTags.take(6).joinToString(" "))
+        }
+
+        val variations = listOf(
+            CaptionVariation(
+                id = "var_${genId}_1",
+                styleTitle = "⚡ Viral Hook (High CTR)",
+                hook = selectedHooks[0],
+                caption = var1Caption,
+                hashtags = combinedTags,
+                facebookReelsPost = fbReady,
+                tiktokPost = ttReady,
+                youtubeShortsPost = ytReady
+            ),
+            CaptionVariation(
+                id = "var_${genId}_2",
+                styleTitle = "😂 Comedy & Relatable",
+                hook = selectedHooks[1],
+                caption = var2Caption,
+                hashtags = (nicheTags.shuffled(rng).take(5) + listOf("#fyp", "#viral", "#comedy")),
+                facebookReelsPost = "😂 ${selectedHooks[1]}\n\n$var2Caption\n\n${combinedTags.shuffled(rng).take(8).joinToString(" ")}",
+                tiktokPost = "${selectedHooks[1]}\n$var2Caption\n#fyp #comedy #nepali #viral",
+                youtubeShortsPost = "${selectedHooks[1]} 😂 #Shorts #comedy"
+            ),
+            CaptionVariation(
+                id = "var_${genId}_3",
+                styleTitle = "📖 Story & Curiosity",
+                hook = selectedHooks[2],
+                caption = var3Caption,
+                hashtags = combinedTags.shuffled(rng).take(8),
+                facebookReelsPost = "💭 ${selectedHooks[2]}\n\n$var3Caption\n\n${combinedTags.joinToString(" ")}",
+                tiktokPost = "${selectedHooks[2]}\n$var3Caption\n#story #fyp #nepal",
+                youtubeShortsPost = "${selectedHooks[2]} #Shorts #story"
+            ),
+            CaptionVariation(
+                id = "var_${genId}_4",
+                styleTitle = "✨ Aesthetic & Chill",
+                hook = selectedHooks[3],
+                caption = var4Caption,
+                hashtags = listOf("#aesthetic", "#visuals", "#calm", "#fyp", "#trending", "#lofi"),
+                facebookReelsPost = "✨ ${selectedHooks[3]}\n\n$var4Caption\n\n#aesthetic #reels #peace",
+                tiktokPost = "${selectedHooks[3]}\n$var4Caption\n#aesthetic #vibes #fyp",
+                youtubeShortsPost = "${selectedHooks[3]} #Shorts #aesthetic"
+            )
+        )
+
+        val bestTime = when (rng.nextInt(0, 3)) {
+            0 -> "6:45 PM - 8:30 PM NPT (Peak Evening Scroll)"
+            1 -> "12:30 PM - 2:15 PM NPT (Lunchtime Viral Window)"
+            else -> "8:30 PM - 10:45 PM NPT (Nighttime High Retention)"
+        }
+
+        val soundtrack = when (rng.nextInt(0, 4)) {
+            0 -> "🎵 Original Sound - Trending Bass Boosted Beat"
+            1 -> "🎧 Lo-Fi Acoustic Piano & Flute Melody"
+            2 -> "⚡ Fast High-Energy Drill / Hip-Hop Beat"
+            else -> "🎶 Viral TikTok Dialogue with Ambient Echo"
+        }
+
+        val audienceInsight = "Angle #${genId}: Early 3-second hook with relatable question increases watch-through rate by up to 64% on Facebook Reels and TikTok FYP."
 
         return AiViralResult(
             title = input,
             viralScore = score,
-            hooks = hooks,
-            caption = formattedCaption.trim(),
-            hashtags = hashtags,
-            facebookReadyPost = fbPost,
-            tiktokReadyPost = ttPost,
+            generationId = genId,
+            toneLabel = tone.label,
+            hooks = selectedHooks,
+            caption = var1Caption,
+            hashtags = combinedTags,
+            facebookReadyPost = fbReady,
+            tiktokReadyPost = ttReady,
+            youtubeShortsReadyPost = ytReady,
             bestPostingTime = bestTime,
-            soundtrackRecommendation = sound
+            soundtrackRecommendation = soundtrack,
+            variations = variations,
+            audienceInsight = audienceInsight
         )
     }
-
-    private data class Quint(
-        val hooks: List<String>,
-        val caption: String,
-        val tags: List<String>,
-        val bestTime: String,
-        val sound: String
-    )
 }

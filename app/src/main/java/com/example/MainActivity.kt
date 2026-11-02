@@ -130,6 +130,7 @@ fun TikSaveApp(viewModel: MainViewModel) {
     val snackbarHostState = remember { SnackbarHostState() }
 
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
+    val selectedPlatform by viewModel.selectedPlatform.collectAsStateWithLifecycle()
     val urlInput by viewModel.urlInput.collectAsStateWithLifecycle()
     val clipboardLink by viewModel.clipboardDetectedUrl.collectAsStateWithLifecycle()
     val extractionState by viewModel.extractionState.collectAsStateWithLifecycle()
@@ -334,6 +335,8 @@ fun TikSaveApp(viewModel: MainViewModel) {
                 AppTab.DOWNLOADER -> DownloaderScreen(
                     urlInput = urlInput,
                     onUrlChange = viewModel::onUrlChange,
+                    selectedPlatform = selectedPlatform,
+                    onPlatformChange = viewModel::setSelectedPlatform,
                     clipboardLink = clipboardLink,
                     onUseClipboardLink = viewModel::useClipboardUrl,
                     onDismissClipboard = viewModel::dismissClipboardPrompt,
@@ -364,14 +367,15 @@ fun TikSaveApp(viewModel: MainViewModel) {
                     selectedTone = aiSelectedTone,
                     onToneSelected = viewModel::setAiSelectedTone,
                     generationState = aiGenerationState,
-                    onGenerateClick = viewModel::generateAiViralPack
+                    onGenerateClick = viewModel::generateAiViralPack,
+                    onRegenerateClick = viewModel::regenerateAiViralPack
                 )
 
                 AppTab.LIBRARY -> LibraryScreen(
                     downloads = allDownloads,
                     onPlayItem = viewModel::previewMedia,
                     onDeleteItem = viewModel::deleteItem,
-                    onToggleFavorite = viewModel::toggleFavorite,
+                    onToggleFavorite = { id -> viewModel.toggleFavorite(id) },
                     onClearAll = viewModel::clearAllHistory,
                     onGoToDownloader = { viewModel.setTab(AppTab.DOWNLOADER) }
                 )

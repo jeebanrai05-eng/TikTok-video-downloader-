@@ -4,12 +4,20 @@ import android.app.Application
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.ai.AiContentTone
+import com.example.data.ai.AiGenerationState
+import com.example.data.ai.AiService
+import com.example.data.ai.AiViralResult
 import com.example.data.db.DownloadItem
 import com.example.data.model.ActiveDownload
+import com.example.data.model.ClipPreset
 import com.example.data.model.DownloadQuality
 import com.example.data.model.ExtractionState
+import com.example.data.model.MediaPlatform
 import com.example.data.model.VideoMetadata
 import com.example.data.repository.DownloadRepository
 import com.example.data.update.AppUpdateInfo
@@ -25,12 +33,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-
-import android.content.Intent
-import com.example.data.ai.AiContentTone
-import com.example.data.ai.AiGenerationState
-import com.example.data.ai.AiService
-import com.example.data.ai.AiViralResult
+import java.io.File
+import kotlin.random.Random
 
 enum class AppTab {
     DOWNLOADER,
@@ -49,6 +53,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _clipboardDetectedUrl = MutableStateFlow<String?>(null)
     val clipboardDetectedUrl: StateFlow<String?> = _clipboardDetectedUrl.asStateFlow()
+
+    private val _selectedPlatform = MutableStateFlow(MediaPlatform.TIKTOK)
+    val selectedPlatform: StateFlow<MediaPlatform> = _selectedPlatform.asStateFlow()
+
+    private val _selectedClipPreset = MutableStateFlow(ClipPreset.SEC_30)
+    val selectedClipPreset: StateFlow<ClipPreset> = _selectedClipPreset.asStateFlow()
 
     private val _extractionState = MutableStateFlow<ExtractionState>(ExtractionState.Idle)
     val extractionState: StateFlow<ExtractionState> = _extractionState.asStateFlow()
@@ -120,8 +130,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _currentTab.value = tab
     }
 
+    fun setSelectedPlatform(platform: MediaPlatform) {
+        _selectedPlatform.value = platform
+    }
+
+    fun setSelectedClipPreset(preset: ClipPreset) {
+        _selectedClipPreset.value = preset
+    }
+
     fun onUrlChange(newUrl: String) {
         _urlInput.value = newUrl
+        // Auto-detect platform if input contains specific domains
+        val detected = DownloadRepository.detectPlatform(newUrl)
+        _selectedPlatform.value = detected
+
         if (_extractionState.value is ExtractionState.Error) {
             _extractionState.value = ExtractionState.Idle
         }
@@ -138,7 +160,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val clip = clipboard?.primaryClip
             if (clip != null && clip.itemCount > 0) {
                 val text = clip.getItemAt(0)?.text?.toString() ?: ""
-                val extracted = repository.extractTikTokUrl(text)
+                val extracted = DownloadRepository.extractAnyUrl(text)
                 if (extracted != null && extracted != _urlInput.value) {
                     _clipboardDetectedUrl.value = extracted
                 }
@@ -165,18 +187,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val clip = clipboard?.primaryClip
             if (clip != null && clip.itemCount > 0) {
                 val text = clip.getItemAt(0)?.text?.toString() ?: ""
-                val extracted = repository.extractTikTokUrl(text) ?: text.trim()
+                val extracted = DownloadRepository.extractAnyUrl(text) ?: text.trim()
                 _urlInput.value = extracted
                 startExtraction()
             } else {
                 viewModelScope.launch { _toastEvents.emit("Clipboard is empty") }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             viewModelScope.launch { _toastEvents.emit("Could not access clipboard") }
         }
     }
 
     fun selectSample(sample: DownloadRepository.SampleItem) {
+        _selectedPlatform.value = sample.platform
         _urlInput.value = sample.url
         startExtraction()
     }
@@ -188,23 +211,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun startExtraction() {
         val input = _urlInput.value.trim()
         if (input.isBlank()) {
-            viewModelScope.launch { _toastEvents.emit("Please paste a TikTok link first") }
+            viewModelScope.launch { _toastEvents.emit("Please paste a link first (TikTok, YouTube, or Facebook)") }
             return
         }
 
+        val platform = DownloadRepository.detectPlatform(input)
+        _selectedPlatform.value = platform
+
         viewModelScope.launch {
-            _extractionState.value = ExtractionState.Analyzing("Connecting to TikTok high-speed CDN...", 0.1f)
-            val result = repository.resolveTikTokVideo(input) { step, progress ->
+            _extractionState.value = ExtractionState.Analyzing("Connecting to ${platform.badge} stream engine...", 0.15f)
+            val result = repository.resolveMediaLink(input, platform) { step, progress ->
                 _extractionState.value = ExtractionState.Analyzing(step, progress)
             }
             _extractionState.value = result
             if (result is ExtractionState.Success) {
-                if (result.metadata.isPhotoSlide) {
+                val meta = result.metadata
+                if (meta.isPhotoSlide) {
                     _selectedQuality.value = DownloadQuality.PHOTO_SLIDE_ULTRA
-                    _toastEvents.emit("📸 Photo Carousel detected (${result.metadata.images.size} photos in 8K HDR+ Ultra)!")
+                    _toastEvents.emit("📸 Photo Carousel detected (${meta.images.size} photos in 8K HDR+ Ultra)!")
                 } else {
                     _selectedQuality.value = DownloadQuality.ULTRA_8K_120FPS
-                    _toastEvents.emit("Video extracted without watermark! Choose HDR or HD.")
+                    when (meta.platform) {
+                        MediaPlatform.YOUTUBE_TO_REELS -> _toastEvents.emit("▶️ YouTube video extracted! Ready to clip for Facebook Reels.")
+                        MediaPlatform.FACEBOOK_TO_SHORTS -> _toastEvents.emit("👥 Facebook video extracted! Ready to clip for TikTok & Shorts.")
+                        MediaPlatform.TIKTOK -> _toastEvents.emit("🎵 TikTok video extracted without watermark!")
+                    }
                 }
             }
         }
@@ -235,6 +266,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             DownloadQuality.ULTRA_8K_120FPS -> if (metadata.isPhotoSlide && metadata.ultra8kUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.ultra8kUrl
             DownloadQuality.HDR_ULTRA -> if (metadata.isPhotoSlide && metadata.ultraHdrUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.ultraHdrUrl
             DownloadQuality.HD_STANDARD -> if (metadata.isPhotoSlide && metadata.standardHdUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.standardHdUrl
+            DownloadQuality.NORMAL_720P -> metadata.normal720pUrl.ifEmpty { metadata.standardHdUrl }
+            DownloadQuality.LOW_480P -> metadata.low480pUrl.ifEmpty { metadata.standardHdUrl }
             DownloadQuality.AUDIO_ONLY, DownloadQuality.AUDIO_HIGH_SOUND, DownloadQuality.AUDIO_VFX_SOUND -> metadata.audioUrl
             DownloadQuality.COVER_IMAGE -> metadata.coverUrl
             DownloadQuality.PHOTO_SLIDE_ULTRA -> metadata.ultraHdrUrl.ifBlank { metadata.images.firstOrNull() ?: metadata.coverUrl }
@@ -248,11 +281,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         val ext = when {
             isAudio -> "mp3"
-            quality == DownloadQuality.COVER_IMAGE || quality == DownloadQuality.PHOTO_SLIDE_ULTRA || (metadata.isPhotoSlide && !isAudio) -> "jpg"
+            quality == DownloadQuality.COVER_IMAGE || quality == DownloadQuality.PHOTO_SLIDE_ULTRA -> "jpg"
             else -> "mp4"
         }
 
-        val audioTag = when (quality) {
+        val audioProfileSuffix = when (quality) {
             DownloadQuality.AUDIO_HIGH_SOUND -> "_HighSound"
             DownloadQuality.AUDIO_VFX_SOUND -> "_VFXSound"
             DownloadQuality.AUDIO_ONLY -> "_Audio"
@@ -260,7 +293,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val cleanTitle = metadata.title.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(24)
-        val filename = "TikSave_${cleanTitle}${audioTag}_${System.currentTimeMillis()}.$ext"
+        val filename = "TikSave_${cleanTitle}_${quality.name}${audioProfileSuffix}_${System.currentTimeMillis()}.$ext"
 
         _activeDownload.value = ActiveDownload(
             videoId = metadata.id,
@@ -272,13 +305,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 DownloadQuality.ULTRA_8K_120FPS -> metadata.ultra8kSize
                 DownloadQuality.HDR_ULTRA -> metadata.ultraHdrSize
                 DownloadQuality.HD_STANDARD -> metadata.standardHdSize
-                else -> 0L
+                DownloadQuality.NORMAL_720P -> metadata.normal720pSize
+                DownloadQuality.LOW_480P -> metadata.low480pSize
+                DownloadQuality.AUDIO_ONLY, DownloadQuality.AUDIO_HIGH_SOUND, DownloadQuality.AUDIO_VFX_SOUND -> 4_500_000L
+                DownloadQuality.COVER_IMAGE, DownloadQuality.PHOTO_SLIDE_ULTRA -> 2_500_000L
             },
             speedBytesPerSec = 0L,
             etaSeconds = 0
         )
-
-        // Show modern high-tech download modal
         _isDownloadModalVisible.value = true
 
         currentDownloadJob = viewModelScope.launch {
@@ -287,9 +321,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     url = downloadUrl,
                     targetFilename = filename,
                     quality = quality
-                ) { progress, downloaded, total, speed, eta ->
+                ) { prog, downloaded, total, speed, eta ->
                     _activeDownload.value = _activeDownload.value?.copy(
-                        progress = progress,
+                        progress = prog,
                         bytesDownloaded = downloaded,
                         totalBytes = total,
                         speedBytesPerSec = speed,
@@ -298,20 +332,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 result.onSuccess { downloadResult ->
-                    val localFile = downloadResult.file
                     _activeDownload.value = _activeDownload.value?.copy(
                         progress = 1.0f,
-                        localFilePath = localFile.absolutePath,
                         isCompleted = true,
+                        localFilePath = downloadResult.file.absolutePath,
                         speedBytesPerSec = 0L
                     )
-                    repository.saveDownloadRecord(metadata, quality, localFile)
-                    _toastEvents.emit("✅ Saved single file to Gallery & Device Storage (${localFile.name})")
-                }.onFailure { error ->
+
+                    repository.saveDownloadRecord(metadata, quality, downloadResult.file)
+
+                    val destinationLabel = when {
+                        isAudio -> "Music/TikSave (Music Player ready)"
+                        quality == DownloadQuality.COVER_IMAGE || quality == DownloadQuality.PHOTO_SLIDE_ULTRA -> "Pictures/TikSave (Gallery ready)"
+                        else -> "Movies/TikSave (Gallery ready)"
+                    }
+                    _toastEvents.emit("✅ Download complete! Saved to $destinationLabel")
+                }.onFailure { err ->
                     _activeDownload.value = _activeDownload.value?.copy(
-                        errorMessage = error.localizedMessage ?: "Download failed"
+                        errorMessage = err.localizedMessage ?: "Download failed"
                     )
-                    _toastEvents.emit("Download error: ${error.localizedMessage}")
+                    _toastEvents.emit("Download failed: ${err.localizedMessage}")
                 }
             } finally {
                 _isDownloading.value = false
@@ -319,22 +359,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun showDownloadModal() {
-        if (_activeDownload.value != null) {
-            _isDownloadModalVisible.value = true
-        }
-    }
-
-    fun hideDownloadModal() {
-        _isDownloadModalVisible.value = false
-    }
-
     fun cancelActiveDownload() {
         currentDownloadJob?.cancel()
         _isDownloading.value = false
         _activeDownload.value = null
         _isDownloadModalVisible.value = false
-        viewModelScope.launch { _toastEvents.emit("Download cancelled") }
+        viewModelScope.launch {
+            _toastEvents.emit("Download cancelled")
+        }
+    }
+
+    fun hideDownloadModal() {
+        _isDownloadModalVisible.value = false
     }
 
     fun dismissActiveDownload() {
@@ -353,7 +389,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteItem(item: DownloadItem) {
         viewModelScope.launch {
             repository.deleteDownload(item.id, item.localFilePath)
-            _toastEvents.emit("Removed from library")
+            _toastEvents.emit("Deleted from library")
         }
     }
 
@@ -363,6 +399,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun toggleFavorite(item: DownloadItem) {
+        toggleFavorite(item.id)
+    }
+
     fun clearAllHistory() {
         viewModelScope.launch {
             repository.clearHistory()
@@ -370,71 +410,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Self-Update methods
-    fun checkForAppUpdates(silent: Boolean = false) {
-        viewModelScope.launch {
-            if (!silent) {
-                _isCheckingForUpdates.value = true
-            }
-            val result = updateManager.checkForUpdates(
-                currentVersion = com.example.BuildConfig.VERSION_NAME,
-                currentVersionCode = com.example.BuildConfig.VERSION_CODE
-            )
-            if (!silent) {
-                _isCheckingForUpdates.value = false
-            }
-            result.onSuccess { info ->
-                if (info.isUpdateAvailable) {
-                    _updateInfo.value = info
-                    // Trigger push notification to alert the user
-                    updateManager.sendUpdateNotification(info)
-                } else if (!silent) {
-                    _toastEvents.emit("TikSave is up to date (${info.latestVersion})")
-                }
-            }.onFailure {
-                if (!silent) {
-                    _toastEvents.emit("Could not connect to update server")
-                }
-            }
-        }
-    }
-
-    fun installAppUpdate() {
-        val info = _updateInfo.value ?: return
-        if (info.apkDownloadUrl.isBlank()) {
-            FormatUtils.openFileExternally(getApplication<Application>(), "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases", "text/html")
-            _updateInfo.value = null
-            return
-        }
-
-        _isDownloadingUpdate.value = true
-        _updateDownloadProgress.value = 0f
-        _isInstallingUpdate.value = false
-
-        viewModelScope.launch {
-            val result = updateManager.downloadAndInstallApk(info.apkDownloadUrl) { progress ->
-                _updateDownloadProgress.value = progress
-            }
-            _isDownloadingUpdate.value = false
-            result.onSuccess {
-                _isInstallingUpdate.value = true
-                _toastEvents.emit("Starting package installer...")
-            }.onFailure { err ->
-                _isInstallingUpdate.value = false
-                _toastEvents.emit("Update error: ${err.localizedMessage}")
-            }
-        }
-    }
-
-    fun dismissUpdateDialog() {
-        if (!_isDownloadingUpdate.value) {
-            _updateInfo.value = null
-            _isCheckingForUpdates.value = false
-            _isInstallingUpdate.value = false
-        }
-    }
-
-    // AI Creator Studio actions
+    // AI Studio methods
     fun setAiInputText(text: String) {
         _aiInputText.value = text
     }
@@ -444,18 +420,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun generateAiViralPack() {
-        val input = _aiInputText.value.ifBlank {
-            when (val state = _extractionState.value) {
-                is ExtractionState.Success -> state.metadata.title
+        val input = _aiInputText.value.trim().ifEmpty {
+            when (_aiSelectedTone.value) {
+                AiContentTone.YOUTUBE_TO_REELS -> "YouTube Viral Podcast Clip to Facebook Reels"
+                AiContentTone.FACEBOOK_TO_SHORTS -> "Facebook Trending Video to TikTok & Shorts"
+                AiContentTone.NEPAL_POLITICS -> "Nepal Politics & Current Affairs Debate"
+                AiContentTone.COMEDY_FUNNY -> "Funny Nepali Comedy Moments"
+                AiContentTone.AESTHETIC_VIBE -> "Aesthetic Calm Nature & Travel"
+                AiContentTone.MOTIVATION -> "Daily Nepali Success & Motivation"
                 else -> "Viral TikTok Content"
             }
         }
         viewModelScope.launch {
-            _aiGenerationState.value = AiGenerationState.Generating("Analyzing content hooks...", 0.2f)
+            _aiGenerationState.value = AiGenerationState.Generating("Analyzing content context & tone...", 0.2f)
             try {
                 val result = aiService.generateViralPack(
                     input = input,
                     tone = _aiSelectedTone.value,
+                    forceRandomSeed = Random.nextInt(1000, 999999),
                     onProgress = { step, prog ->
                         _aiGenerationState.value = AiGenerationState.Generating(step, prog)
                     }
@@ -467,8 +449,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun regenerateAiViralPack() {
+        val currentTitle = (_aiGenerationState.value as? AiGenerationState.Success)?.result?.title
+            ?: _aiInputText.value.trim().ifEmpty { "Viral Social Media Content" }
+        viewModelScope.launch {
+            _aiGenerationState.value = AiGenerationState.Generating("Randomizing unlimited fresh captions & hashtags...", 0.25f)
+            try {
+                val newSeed = Random.nextInt(1000, 999999)
+                val result = aiService.generateViralPack(
+                    input = currentTitle,
+                    tone = _aiSelectedTone.value,
+                    forceRandomSeed = newSeed,
+                    onProgress = { step, prog ->
+                        _aiGenerationState.value = AiGenerationState.Generating(step, prog)
+                    }
+                )
+                _aiGenerationState.value = AiGenerationState.Success(result)
+                _toastEvents.emit("🎲 Fresh Variation #${result.generationId} Generated!")
+            } catch (e: Exception) {
+                _aiGenerationState.value = AiGenerationState.Error(e.localizedMessage ?: "Failed to regenerate pack")
+            }
+        }
+    }
+
     fun launchAiWithVideo(metadata: VideoMetadata) {
         _aiInputText.value = metadata.title
+        _aiSelectedTone.value = when (metadata.platform) {
+            MediaPlatform.YOUTUBE_TO_REELS -> AiContentTone.YOUTUBE_TO_REELS
+            MediaPlatform.FACEBOOK_TO_SHORTS -> AiContentTone.FACEBOOK_TO_SHORTS
+            MediaPlatform.TIKTOK -> AiContentTone.VIRAL_TREND
+        }
         _currentTab.value = AppTab.AI_STUDIO
         viewModelScope.launch {
             _aiGenerationState.value = AiGenerationState.Generating("Analyzing video & generating viral pack...", 0.25f)
@@ -479,6 +489,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     author = metadata.authorNickname,
                     isPhotoSlide = metadata.isPhotoSlide,
                     slideCount = metadata.images.size,
+                    forceRandomSeed = Random.nextInt(1000, 999999),
                     onProgress = { step, prog ->
                         _aiGenerationState.value = AiGenerationState.Generating(step, prog)
                     }
@@ -581,5 +592,68 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _toastEvents.emit("📸 Saving Slide #$slideNumber in 8K HDR+ Ultra...")
         }
+    }
+
+    // App Self Update Logic
+    fun checkForAppUpdates(silent: Boolean = false) {
+        if (_isCheckingForUpdates.value || _isDownloadingUpdate.value) return
+
+        viewModelScope.launch {
+            _isCheckingForUpdates.value = true
+            try {
+                val result = updateManager.checkForUpdates()
+                result.onSuccess { update ->
+                    if (update.isUpdateAvailable) {
+                        _updateInfo.value = update
+                    } else if (!silent) {
+                        _toastEvents.emit("TikSave is up to date! (v1.1.0)")
+                    }
+                }.onFailure { e ->
+                    if (!silent) {
+                        _toastEvents.emit("Could not check for updates: ${e.localizedMessage}")
+                    }
+                }
+            } catch (e: Exception) {
+                if (!silent) {
+                    _toastEvents.emit("Could not check for updates: ${e.localizedMessage}")
+                }
+            } finally {
+                _isCheckingForUpdates.value = false
+            }
+        }
+    }
+
+    fun installAppUpdate() {
+        val apkUrl = _updateInfo.value?.apkDownloadUrl ?: return
+        if (_isDownloadingUpdate.value) return
+
+        viewModelScope.launch {
+            _isDownloadingUpdate.value = true
+            _updateDownloadProgress.value = 0f
+            try {
+                val result = updateManager.downloadAndInstallApk(apkUrl) { progress ->
+                    _updateDownloadProgress.value = progress
+                }
+                _isDownloadingUpdate.value = false
+                result.onSuccess {
+                    _isInstallingUpdate.value = true
+                    _toastEvents.emit("Launching package installer...")
+                }.onFailure { err ->
+                    _isInstallingUpdate.value = false
+                    _toastEvents.emit("Update install failed: ${err.localizedMessage}")
+                }
+            } catch (e: Exception) {
+                _isDownloadingUpdate.value = false
+                _isInstallingUpdate.value = false
+                _toastEvents.emit("Update install failed: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun dismissUpdateDialog() {
+        _updateInfo.value = null
+        _isCheckingForUpdates.value = false
+        _isDownloadingUpdate.value = false
+        _isInstallingUpdate.value = false
     }
 }

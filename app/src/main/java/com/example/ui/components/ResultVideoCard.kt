@@ -1,8 +1,12 @@
 package com.example.ui.components
 
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,13 +19,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ChatBubbleOutline
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PlayArrow
@@ -35,21 +44,31 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.data.model.ClipPreset
 import com.example.data.model.DownloadQuality
+import com.example.data.model.MediaPlatform
 import com.example.data.model.VideoMetadata
 import com.example.ui.theme.HdrGold
 import com.example.ui.theme.NeonCyan
@@ -58,10 +77,6 @@ import com.example.ui.theme.ObsidianCardBorder
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceVariant
 import com.example.ui.util.FormatUtils
-
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.filled.AutoAwesome
 
 @Composable
 fun ResultVideoCard(
@@ -74,6 +89,23 @@ fun ResultVideoCard(
     onDownloadPhotoSlide: (url: String, index: Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+    var selectedClip by remember { mutableStateOf(metadata.clipPreset) }
+
+    fun copyToClipboard(text: String, label: String) {
+        clipboardManager.setText(AnnotatedString(text))
+        Toast.makeText(context, "$label copied to clipboard!", Toast.LENGTH_SHORT).show()
+    }
+
+    fun shareDirectly(caption: String, chooserTitle: String) {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, caption)
+        }
+        context.startActivity(Intent.createChooser(intent, chooserTitle))
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -88,7 +120,7 @@ fun ResultVideoCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Author row
+            // Platform & Author Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -119,17 +151,24 @@ fun ResultVideoCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                // No watermark tag
+
+                // Platform Badge
+                val badgeColor = when (metadata.platform) {
+                    MediaPlatform.YOUTUBE_TO_REELS -> Color(0xFFFF0000)
+                    MediaPlatform.FACEBOOK_TO_SHORTS -> Color(0xFF1877F2)
+                    MediaPlatform.TIKTOK -> NeonMagenta
+                }
+
                 Box(
                     modifier = Modifier
-                        .background(NeonMagenta.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                        .border(1.dp, NeonMagenta.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                        .background(badgeColor.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                        .border(1.dp, badgeColor.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "NO WATERMARK",
+                        text = metadata.platform.badge,
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-                        color = NeonMagenta,
+                        color = Color.White,
                         fontSize = 10.sp
                     )
                 }
@@ -160,23 +199,24 @@ fun ResultVideoCard(
                         .matchParentSize()
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f))
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
                             )
                         )
                 )
 
-                // Play Button in center
+                // Center Play Button
                 Box(
                     modifier = Modifier
-                        .size(54.dp)
                         .align(Alignment.Center)
-                        .background(NeonCyan.copy(alpha = 0.9f), CircleShape),
+                        .size(54.dp)
+                        .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                        .border(1.5.dp, NeonCyan, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Play Video Preview",
-                        tint = Color.Black,
+                        contentDescription = "Play preview",
+                        tint = NeonCyan,
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -184,230 +224,253 @@ fun ResultVideoCard(
                 // Duration badge
                 Box(
                     modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(10.dp)
+                        .align(Alignment.BottomEnd)
+                        .padding(8.dp)
                         .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(6.dp))
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
                         text = FormatUtils.formatDuration(metadata.durationSeconds),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White
-                    )
-                }
-
-                // HDR badge on thumbnail
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(10.dp)
-                        .background(HdrGold.copy(alpha = 0.9f), RoundedCornerShape(6.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "HDR+ ULTRA",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = Color.Black,
-                        fontSize = 10.sp
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Caption
+            // Video Title
             Text(
                 text = metadata.title,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = Color.White,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            // Audio track info
-            if (metadata.musicTitle.isNotBlank()) {
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Audiotrack,
-                        contentDescription = null,
-                        tint = NeonMagenta,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = metadata.musicTitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Stats row (Views, Likes, Comments, Shares)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(ObsidianSurfaceVariant, RoundedCornerShape(12.dp))
-                    .padding(vertical = 8.dp, horizontal = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                StatItem(icon = Icons.Default.Visibility, value = FormatUtils.formatCount(metadata.playCount), label = "Views")
-                StatItem(icon = Icons.Default.Favorite, value = FormatUtils.formatCount(metadata.likeCount), label = "Likes", tint = NeonMagenta)
-                StatItem(icon = Icons.Default.ChatBubbleOutline, value = FormatUtils.formatCount(metadata.commentCount), label = "Comments")
-                StatItem(icon = Icons.Default.Share, value = FormatUtils.formatCount(metadata.shareCount), label = "Shares")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Quality Selection Title
-            Text(
-                text = "SELECT DOWNLOAD STREAM",
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = NeonCyan,
-                letterSpacing = 1.sp
+                overflow = TextOverflow.Ellipsis,
+                lineHeight = 22.sp
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Quality Selection Options
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+            // Metrics row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (metadata.isPhotoSlide) {
-                    QualityOptionRow(
-                        quality = DownloadQuality.PHOTO_SLIDE_ULTRA,
-                        selected = selectedQuality == DownloadQuality.PHOTO_SLIDE_ULTRA,
-                        fileSize = (metadata.images.size * 2_500_000L),
-                        badgeText = "8K HDR+ PHOTOS",
-                        badgeColor = Color(0xFF818CF8),
-                        onClick = { onQualitySelected(DownloadQuality.PHOTO_SLIDE_ULTRA) }
-                    )
-
-                    QualityOptionRow(
-                        quality = DownloadQuality.AUDIO_ONLY,
-                        selected = selectedQuality == DownloadQuality.AUDIO_ONLY,
-                        fileSize = 3_200_000L,
-                        badgeText = "MP3 SOUNDTRACK",
-                        badgeColor = NeonMagenta,
-                        onClick = { onQualitySelected(DownloadQuality.AUDIO_ONLY) }
-                    )
-
-                    QualityOptionRow(
-                        quality = DownloadQuality.COVER_IMAGE,
-                        selected = selectedQuality == DownloadQuality.COVER_IMAGE,
-                        fileSize = 1_500_000L,
-                        badgeText = "COVER POSTER",
-                        badgeColor = NeonCyan,
-                        onClick = { onQualitySelected(DownloadQuality.COVER_IMAGE) }
-                    )
-                } else {
-                    QualityOptionRow(
-                        quality = DownloadQuality.ULTRA_8K_120FPS,
-                        selected = selectedQuality == DownloadQuality.ULTRA_8K_120FPS,
-                        fileSize = metadata.ultra8kSize,
-                        badgeText = "8K 120FPS ULTRA",
-                        badgeColor = Color(0xFF00E5FF),
-                        onClick = { onQualitySelected(DownloadQuality.ULTRA_8K_120FPS) }
-                    )
-
-                    QualityOptionRow(
-                        quality = DownloadQuality.HDR_ULTRA,
-                        selected = selectedQuality == DownloadQuality.HDR_ULTRA,
-                        fileSize = metadata.ultraHdrSize,
-                        badgeText = "BEST QUALITY",
-                        badgeColor = HdrGold,
-                        onClick = { onQualitySelected(DownloadQuality.HDR_ULTRA) }
-                    )
-
-                    QualityOptionRow(
-                        quality = DownloadQuality.HD_STANDARD,
-                        selected = selectedQuality == DownloadQuality.HD_STANDARD,
-                        fileSize = metadata.standardHdSize,
-                        badgeText = "FAST SPEED",
-                        badgeColor = NeonCyan,
-                        onClick = { onQualitySelected(DownloadQuality.HD_STANDARD) }
-                    )
-
-                    QualityOptionRow(
-                        quality = DownloadQuality.AUDIO_ONLY,
-                        selected = selectedQuality == DownloadQuality.AUDIO_ONLY,
-                        fileSize = 3_200_000L,
-                        badgeText = "ORIGINAL SOUND",
-                        badgeColor = NeonMagenta,
-                        onClick = { onQualitySelected(DownloadQuality.AUDIO_ONLY) }
-                    )
-
-                    QualityOptionRow(
-                        quality = DownloadQuality.AUDIO_HIGH_SOUND,
-                        selected = selectedQuality == DownloadQuality.AUDIO_HIGH_SOUND,
-                        fileSize = 3_800_000L,
-                        badgeText = "HIGH SOUND BOOST",
-                        badgeColor = Color(0xFFF43F5E),
-                        onClick = { onQualitySelected(DownloadQuality.AUDIO_HIGH_SOUND) }
-                    )
-
-                    QualityOptionRow(
-                        quality = DownloadQuality.AUDIO_VFX_SOUND,
-                        selected = selectedQuality == DownloadQuality.AUDIO_VFX_SOUND,
-                        fileSize = 3_100_000L,
-                        badgeText = "VFX & VOCAL",
-                        badgeColor = Color(0xFFA855F7),
-                        onClick = { onQualitySelected(DownloadQuality.AUDIO_VFX_SOUND) }
-                    )
-                }
+                MetricItem(Icons.Default.Visibility, FormatUtils.formatCount(metadata.playCount))
+                MetricItem(Icons.Default.Favorite, FormatUtils.formatCount(metadata.likeCount), tint = NeonMagenta)
+                MetricItem(Icons.Default.ChatBubbleOutline, FormatUtils.formatCount(metadata.commentCount))
+                MetricItem(Icons.Default.Share, FormatUtils.formatCount(metadata.shareCount))
             }
 
-            // Dedicated TikTok Audio Extractor Card
-            if (metadata.audioUrl.isNotBlank()) {
-                Spacer(modifier = Modifier.height(14.dp))
-                Box(
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // ==========================================
+            // SPECIAL SECTION 1: YOUTUBE TO FACEBOOK REELS CLIPPER
+            // ==========================================
+            if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS) {
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFE11D48).copy(alpha = 0.12f), RoundedCornerShape(14.dp))
-                        .border(1.dp, Color(0xFFF43F5E).copy(alpha = 0.45f), RoundedCornerShape(14.dp))
-                        .padding(12.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .border(1.dp, Color(0xFF1877F2).copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
+                    color = Color(0xFF1877F2).copy(alpha = 0.12f)
                 ) {
-                    Column {
+                    Column(modifier = Modifier.padding(14.dp)) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Audiotrack, contentDescription = null, tint = Color(0xFFF43F5E), modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "🎵 AUDIO EXTRACTOR",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
-                                    color = Color(0xFFF43F5E),
-                                    letterSpacing = 1.sp
-                                )
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .background(Color(0xFFF43F5E).copy(alpha = 0.2f), RoundedCornerShape(6.dp))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = "STUDIO 320 KBPS",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = Color(0xFFFDA4AF),
-                                    fontSize = 9.sp
-                                )
-                            }
+                            Icon(Icons.Default.ContentCut, contentDescription = null, tint = Color(0xFF1877F2), modifier = Modifier.size(18.dp))
+                            Text(
+                                text = "YOUTUBE TO FACEBOOK REELS CLIPPER",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                color = Color(0xFF1877F2),
+                                letterSpacing = 0.5.sp
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "${metadata.musicTitle} • ${metadata.musicAuthor}",
+                            text = "Auto-formatted in 9:16 vertical ratio ready for Facebook Reels with high-CTR caption.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.8f),
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Clip Duration Chips
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            ClipPreset.values().forEach { preset ->
+                                val isSelected = selectedClip == preset
+                                Surface(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .border(1.dp, if (isSelected) Color(0xFF1877F2) else ObsidianCardBorder, RoundedCornerShape(8.dp))
+                                        .clickable { selectedClip = preset },
+                                    color = if (isSelected) Color(0xFF1877F2).copy(alpha = 0.3f) else ObsidianSurfaceVariant
+                                ) {
+                                    Text(
+                                        text = preset.label,
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal),
+                                        color = if (isSelected) Color.White else Color.White.copy(alpha = 0.7f),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Quick Actions
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = { shareDirectly(metadata.facebookReelsReadyCaption, "Post to Facebook Reels") },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1877F2)),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Post to FB Reels", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            OutlinedButton(
+                                onClick = { copyToClipboard(metadata.facebookReelsReadyCaption, "Facebook Reels Caption") },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Copy FB Caption", fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(14.dp))
+            }
+
+            // ==========================================
+            // SPECIAL SECTION 2: FACEBOOK TO TIKTOK & SHORTS CLIPPER
+            // ==========================================
+            if (metadata.platform == MediaPlatform.FACEBOOK_TO_SHORTS) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .border(1.dp, NeonMagenta.copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
+                    color = NeonMagenta.copy(alpha = 0.12f)
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Default.ContentCut, contentDescription = null, tint = NeonMagenta, modifier = Modifier.size(18.dp))
+                            Text(
+                                text = "FACEBOOK TO TIKTOK & YOUTUBE SHORTS CLIPPER",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                color = NeonMagenta,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Download Facebook video and export as 9:16 vertical clip ready for TikTok FYP and YouTube Shorts.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Quick Actions
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = { shareDirectly(metadata.tiktokShortsReadyCaption, "Share Clip to TikTok") },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = NeonMagenta),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Text("🎵 Post to TikTok", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = { shareDirectly(metadata.tiktokShortsReadyCaption, "Share Clip to YouTube Shorts") },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF0000)),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Text("▶️ Post to Shorts", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(14.dp))
+            }
+
+            // ==========================================
+            // DEDICATED AUDIO EXTRACTOR SECTION
+            // ==========================================
+            if (metadata.audioUrl.isNotBlank()) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .border(1.dp, NeonCyan.copy(alpha = 0.35f), RoundedCornerShape(16.dp)),
+                    color = ObsidianSurfaceVariant
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Audiotrack,
+                                    contentDescription = null,
+                                    tint = NeonCyan,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "AUDIO EXTRACTOR (320kbps MP3)",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                    color = NeonCyan,
+                                    letterSpacing = 0.5.sp
+                                )
+                            }
+                            Text(
+                                text = "Music/TikSave",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.5f),
+                                fontSize = 10.sp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = metadata.musicTitle.ifEmpty { "Original Sound Soundtrack" },
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = Color.White,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -416,342 +479,235 @@ fun ResultVideoCard(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Button(
+                            OutlinedButton(
                                 onClick = { onDownloadClick(metadata, DownloadQuality.AUDIO_ONLY) },
-                                modifier = Modifier.weight(1f).height(38.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = if (selectedQuality == DownloadQuality.AUDIO_ONLY) Color(0xFFF43F5E) else ObsidianSurfaceVariant),
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
                             ) {
-                                Text("🎵 Original", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("🎵 Original", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
 
                             Button(
                                 onClick = { onDownloadClick(metadata, DownloadQuality.AUDIO_HIGH_SOUND) },
-                                modifier = Modifier.weight(1f).height(38.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = if (selectedQuality == DownloadQuality.AUDIO_HIGH_SOUND) Color(0xFFF43F5E) else ObsidianSurfaceVariant),
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                                modifier = Modifier.weight(1.1f),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = NeonCyan, contentColor = Color.Black)
                             ) {
-                                Text("🔊 High Sound", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("🔊 High Sound", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
 
-                            Button(
+                            OutlinedButton(
                                 onClick = { onDownloadClick(metadata, DownloadQuality.AUDIO_VFX_SOUND) },
-                                modifier = Modifier.weight(1f).height(38.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = if (selectedQuality == DownloadQuality.AUDIO_VFX_SOUND) Color(0xFFF43F5E) else ObsidianSurfaceVariant),
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
                             ) {
-                                Text("🎙️ VFX / Voice", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("🎙️ VFX/Voice", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
                 }
-            }
-
-            if (metadata.isPhotoSlide) {
                 Spacer(modifier = Modifier.height(14.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFF6366F1).copy(alpha = 0.15f), RoundedCornerShape(14.dp))
-                        .border(1.dp, Color(0xFF818CF8).copy(alpha = 0.5f), RoundedCornerShape(14.dp))
-                        .padding(12.dp)
-                ) {
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "📸 PHOTO SLIDES (${metadata.images.size} Photos)",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
-                                color = Color(0xFF818CF8),
-                                letterSpacing = 1.sp
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .background(HdrGold.copy(alpha = 0.2f), RoundedCornerShape(6.dp))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = "8K HDR+ QUALITY",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = HdrGold,
-                                    fontSize = 9.sp
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            metadata.images.forEachIndexed { index, imgUrl ->
-                                Column(
-                                    modifier = Modifier
-                                        .width(130.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(ObsidianSurfaceVariant)
-                                        .border(1.dp, ObsidianCardBorder, RoundedCornerShape(12.dp))
-                                        .padding(6.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(140.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(Color.Black)
-                                            .clickable { onPreviewClick(imgUrl, "Slide #${index + 1}") }
-                                    ) {
-                                        AsyncImage(
-                                            model = imgUrl,
-                                            contentDescription = "Slide ${index + 1}",
-                                            modifier = Modifier.matchParentSize(),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                        Box(
-                                            modifier = Modifier
-                                                .align(Alignment.TopStart)
-                                                .padding(4.dp)
-                                                .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
-                                                .padding(horizontal = 4.dp, vertical = 2.dp)
-                                        ) {
-                                            Text(
-                                                text = "#${index + 1}",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = Color.White,
-                                                fontSize = 9.sp
-                                            )
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(6.dp))
-
-                                    Button(
-                                        onClick = { onDownloadPhotoSlide(imgUrl, index + 1) },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(30.dp),
-                                        colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
-                                        shape = RoundedCornerShape(6.dp),
-                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
-                                    ) {
-                                        Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(12.dp), tint = Color.Black)
-                                        Spacer(modifier = Modifier.width(2.dp))
-                                        Text("Save 8K", fontSize = 10.sp, color = Color.Black, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Button(
-                            onClick = { onDownloadClick(metadata, DownloadQuality.PHOTO_SLIDE_ULTRA) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(42.dp)
-                                .testTag("download_all_photos_carousel_button"),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "📥 Download All ${metadata.images.size} Photos (8K HDR+ Ultra)",
-                                fontSize = 12.sp,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
             }
+
+            // Quality Selection Header
+            Text(
+                text = "SELECT VIDEO RESOLUTION & BITRATE",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = NeonCyan,
+                letterSpacing = 1.sp
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Quality Options List (All resolutions requested by user: 8K, 4K HDR, 1080p, 720p, 480p)
+            QualityOptionRow(
+                quality = DownloadQuality.ULTRA_8K_120FPS,
+                isSelected = selectedQuality == DownloadQuality.ULTRA_8K_120FPS,
+                fileSize = metadata.ultra8kSize,
+                onSelect = { onQualitySelected(DownloadQuality.ULTRA_8K_120FPS) }
+            )
+
+            QualityOptionRow(
+                quality = DownloadQuality.HDR_ULTRA,
+                isSelected = selectedQuality == DownloadQuality.HDR_ULTRA,
+                fileSize = metadata.ultraHdrSize,
+                onSelect = { onQualitySelected(DownloadQuality.HDR_ULTRA) }
+            )
+
+            QualityOptionRow(
+                quality = DownloadQuality.HD_STANDARD,
+                isSelected = selectedQuality == DownloadQuality.HD_STANDARD,
+                fileSize = metadata.standardHdSize,
+                onSelect = { onQualitySelected(DownloadQuality.HD_STANDARD) }
+            )
+
+            QualityOptionRow(
+                quality = DownloadQuality.NORMAL_720P,
+                isSelected = selectedQuality == DownloadQuality.NORMAL_720P,
+                fileSize = metadata.normal720pSize,
+                onSelect = { onQualitySelected(DownloadQuality.NORMAL_720P) }
+            )
+
+            QualityOptionRow(
+                quality = DownloadQuality.LOW_480P,
+                isSelected = selectedQuality == DownloadQuality.LOW_480P,
+                fileSize = metadata.low480pSize,
+                onSelect = { onQualitySelected(DownloadQuality.LOW_480P) }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Download Button
+            // Main Download Button
             Button(
                 onClick = { onDownloadClick(metadata, selectedQuality) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
-                    .testTag("start_download_button"),
+                    .testTag("btn_download_selected"),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = when (selectedQuality) {
-                        DownloadQuality.ULTRA_8K_120FPS -> Color(0xFF00E5FF)
-                        DownloadQuality.HDR_ULTRA -> HdrGold
-                        DownloadQuality.AUDIO_ONLY, DownloadQuality.AUDIO_HIGH_SOUND, DownloadQuality.AUDIO_VFX_SOUND -> Color(0xFFF43F5E)
-                        DownloadQuality.PHOTO_SLIDE_ULTRA -> Color(0xFF818CF8)
-                        else -> NeonCyan
-                    },
+                    containerColor = NeonCyan,
                     contentColor = Color.Black
                 ),
                 shape = RoundedCornerShape(14.dp)
             ) {
-                Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(22.dp))
+                Icon(
+                    imageVector = Icons.Default.Download,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (metadata.isPhotoSlide && selectedQuality == DownloadQuality.PHOTO_SLIDE_ULTRA) {
-                        "Download All Photos (${metadata.images.size} Photos in 8K HDR+)"
-                    } else {
-                        "Download ${selectedQuality.badge} (No Watermark)"
-                    },
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.ExtraBold)
+                    text = "DOWNLOAD ${selectedQuality.badge.uppercase()}",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.5.sp
+                    )
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Preview Action
-            OutlinedButton(
-                onClick = { onPreviewClick(metadata.ultraHdrUrl.ifEmpty { metadata.standardHdUrl }, metadata.title) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp)
-                    .testTag("preview_video_button"),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                shape = RoundedCornerShape(12.dp)
+            // Secondary Actions Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Watch In-App Preview")
-            }
+                OutlinedButton(
+                    onClick = { onDownloadClick(metadata, DownloadQuality.COVER_IMAGE) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("btn_download_cover"),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                ) {
+                    Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("HD Cover", fontSize = 12.sp)
+                }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // AI Viral Generator Button
-            Button(
-                onClick = { onGenerateAiClick(metadata) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(46.dp)
-                    .testTag("ai_generate_from_card_button"),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF6366F1),
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "✨ AI Viral Generator (Hooks & Facebook Post)",
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
-                )
+                Button(
+                    onClick = { onGenerateAiClick(metadata) },
+                    modifier = Modifier
+                        .weight(1.3f)
+                        .testTag("btn_ai_viral_pack"),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF6366F1),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("AI Viral Hooks", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun StatItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    value: String,
-    label: String,
-    tint: Color = Color.White.copy(alpha = 0.7f)
-) {
+private fun MetricItem(icon: androidx.compose.ui.graphics.vector.ImageVector, value: String, tint: Color = Color.White.copy(alpha = 0.7f)) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(14.dp))
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(14.dp))
         Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-            color = Color.White
-        )
+        Text(value, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
     }
 }
 
 @Composable
 private fun QualityOptionRow(
     quality: DownloadQuality,
-    selected: Boolean,
+    isSelected: Boolean,
     fileSize: Long,
-    badgeText: String,
-    badgeColor: Color,
-    onClick: () -> Unit
+    onSelect: () -> Unit
 ) {
-    Box(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(vertical = 3.dp)
             .clip(RoundedCornerShape(12.dp))
             .border(
-                1.5.dp,
-                if (selected) badgeColor else ObsidianCardBorder,
+                1.dp,
+                if (isSelected) NeonCyan else ObsidianCardBorder,
                 RoundedCornerShape(12.dp)
             )
-            .background(if (selected) badgeColor.copy(alpha = 0.12f) else ObsidianSurfaceVariant)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 10.dp)
-            .testTag("quality_option_${quality.name}")
+            .clickable { onSelect() }
+            .testTag("quality_option_${quality.name}"),
+        color = if (isSelected) NeonCyan.copy(alpha = 0.12f) else ObsidianSurfaceVariant
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Radio indicator
-                Box(
-                    modifier = Modifier
-                        .size(18.dp)
-                        .border(2.dp, if (selected) badgeColor else Color.Gray, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (selected) {
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .background(badgeColor, CircleShape)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = quality.label,
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .background(badgeColor.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = badgeText,
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = badgeColor,
-                                fontSize = 9.sp
-                            )
-                        }
-                    }
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = quality.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.6f),
-                        fontSize = 11.sp
+                        text = quality.label,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = if (isSelected) NeonCyan else Color.White
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                if (isSelected) NeonCyan.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.1f),
+                                RoundedCornerShape(6.dp)
+                            )
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = quality.badge,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = if (isSelected) NeonCyan else Color.White.copy(alpha = 0.8f)
+                        )
+                    }
                 }
+                Text(
+                    text = quality.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.6f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontSize = 11.sp
+                )
             }
 
             if (fileSize > 0) {
                 Text(
                     text = FormatUtils.formatBytes(fileSize),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color.White.copy(alpha = 0.85f)
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = if (isSelected) NeonCyan else Color.White.copy(alpha = 0.7f)
                 )
             }
         }

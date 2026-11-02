@@ -43,11 +43,11 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -69,6 +69,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.ActiveDownload
 import com.example.data.model.DownloadQuality
 import com.example.data.model.ExtractionState
+import com.example.data.model.MediaPlatform
 import com.example.data.model.VideoMetadata
 import com.example.data.repository.DownloadRepository
 import com.example.ui.components.ActiveDownloadCard
@@ -86,6 +87,8 @@ import com.example.ui.theme.ObsidianSurfaceVariant
 fun DownloaderScreen(
     urlInput: String,
     onUrlChange: (String) -> Unit,
+    selectedPlatform: MediaPlatform,
+    onPlatformChange: (MediaPlatform) -> Unit,
     clipboardLink: String?,
     onUseClipboardLink: () -> Unit,
     onDismissClipboard: () -> Unit,
@@ -119,6 +122,70 @@ fun DownloaderScreen(
             HeroSpeedBanner()
         }
 
+        // Platform Switcher Bar (TikTok, YouTube to FB Reels, Facebook to Shorts)
+        item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .border(1.dp, ObsidianCardBorder, RoundedCornerShape(18.dp)),
+                colors = CardDefaults.cardColors(containerColor = ObsidianSurface)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(
+                        text = "CHOOSE DOWNLOADER & CLIPPER MODE",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = NeonCyan,
+                        letterSpacing = 0.5.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MediaPlatform.values().forEach { platform ->
+                            val isSelected = selectedPlatform == platform
+                            val activeColor = when (platform) {
+                                MediaPlatform.TIKTOK -> NeonMagenta
+                                MediaPlatform.YOUTUBE_TO_REELS -> Color(0xFFFF0000)
+                                MediaPlatform.FACEBOOK_TO_SHORTS -> Color(0xFF1877F2)
+                            }
+
+                            Surface(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .border(
+                                        1.dp,
+                                        if (isSelected) activeColor else ObsidianCardBorder,
+                                        RoundedCornerShape(12.dp)
+                                    )
+                                    .clickable { onPlatformChange(platform) }
+                                    .testTag("platform_tab_${platform.name}"),
+                                color = if (isSelected) activeColor.copy(alpha = 0.2f) else ObsidianSurfaceVariant
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = platform.badge,
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
+                                        ),
+                                        color = if (isSelected) Color.White else Color.White.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Clipboard auto-detect chip/banner
         if (clipboardLink != null) {
             item {
@@ -147,7 +214,7 @@ fun DownloaderScreen(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "TikTok link in clipboard",
+                                text = "Link detected in clipboard",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                 color = NeonCyan
                             )
@@ -161,25 +228,22 @@ fun DownloaderScreen(
                         }
                         Button(
                             onClick = onUseClipboardLink,
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = NeonCyan, contentColor = Color.Black),
-                            shape = RoundedCornerShape(10.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                            modifier = Modifier.testTag("paste_clipboard_action")
+                            modifier = Modifier.testTag("btn_paste_detected_link")
                         ) {
-                            Text("Paste", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text("Use Link", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
-                        IconButton(
-                            onClick = onDismissClipboard,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(Icons.Default.Clear, contentDescription = "Dismiss", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                        IconButton(onClick = onDismissClipboard) {
+                            Icon(Icons.Default.Clear, contentDescription = "Dismiss", tint = Color.Gray, modifier = Modifier.size(18.dp))
                         }
                     }
                 }
             }
         }
 
-        // Active Download in Progress
+        // Active Download in Progress Card
         if (activeDownload != null) {
             item {
                 ActiveDownloadCard(
@@ -191,24 +255,33 @@ fun DownloaderScreen(
             }
         }
 
-        // URL Input Card
+        // Main Link Input Card
         item {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
                     .border(1.dp, ObsidianCardBorder, RoundedCornerShape(20.dp)),
-                colors = CardDefaults.cardColors(containerColor = ObsidianSurface)
+                colors = CardDefaults.cardColors(containerColor = ObsidianSurface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    val promptTitle = when (selectedPlatform) {
+                        MediaPlatform.YOUTUBE_TO_REELS -> "PASTE YOUTUBE VIDEO / SHORTS LINK"
+                        MediaPlatform.FACEBOOK_TO_SHORTS -> "PASTE FACEBOOK VIDEO / REEL LINK"
+                        MediaPlatform.TIKTOK -> "PASTE TIKTOK VIDEO OR PHOTO SLIDES LINK"
+                    }
+
+                    val placeholderText = when (selectedPlatform) {
+                        MediaPlatform.YOUTUBE_TO_REELS -> "Paste YouTube link (auto-formats for Facebook Reels)..."
+                        MediaPlatform.FACEBOOK_TO_SHORTS -> "Paste Facebook video link (ready for TikTok & Shorts)..."
+                        MediaPlatform.TIKTOK -> "https://www.tiktok.com/@user/video/..."
+                    }
+
                     Text(
-                        text = "PASTE TIKTOK URL",
+                        text = promptTitle,
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White.copy(alpha = 0.6f),
+                        color = NeonCyan,
                         letterSpacing = 1.sp
                     )
 
@@ -219,35 +292,28 @@ fun DownloaderScreen(
                         onValueChange = onUrlChange,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .testTag("tiktok_url_input"),
+                            .testTag("video_url_input"),
                         placeholder = {
                             Text(
-                                "https://www.tiktok.com/@user/video/...",
-                                color = Color.White.copy(alpha = 0.35f),
-                                fontSize = 13.sp,
+                                placeholderText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.4f),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                         },
                         leadingIcon = {
-                            Icon(Icons.Default.Link, contentDescription = null, tint = NeonCyan)
+                            Icon(
+                                imageVector = Icons.Default.Link,
+                                contentDescription = null,
+                                tint = NeonCyan,
+                                modifier = Modifier.size(20.dp)
+                            )
                         },
                         trailingIcon = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (urlInput.isNotEmpty()) {
-                                    IconButton(
-                                        onClick = onClearClick,
-                                        modifier = Modifier.testTag("clear_input_button")
-                                    ) {
-                                        Icon(Icons.Default.Clear, contentDescription = "Clear", tint = Color.Gray)
-                                    }
-                                } else {
-                                    IconButton(
-                                        onClick = onPasteClick,
-                                        modifier = Modifier.testTag("paste_button")
-                                    ) {
-                                        Icon(Icons.Default.ContentPaste, contentDescription = "Paste", tint = NeonCyan)
-                                    }
+                            if (urlInput.isNotEmpty()) {
+                                IconButton(onClick = onClearClick) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear", tint = Color.Gray)
                                 }
                             }
                         },
@@ -262,7 +328,6 @@ fun DownloaderScreen(
                                 onExtractClick()
                             }
                         ),
-                        shape = RoundedCornerShape(14.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = NeonCyan,
                             unfocusedBorderColor = ObsidianCardBorder,
@@ -270,12 +335,13 @@ fun DownloaderScreen(
                             unfocusedTextColor = Color.White,
                             focusedContainerColor = ObsidianSurfaceVariant,
                             unfocusedContainerColor = ObsidianSurfaceVariant
-                        )
+                        ),
+                        shape = RoundedCornerShape(14.dp)
                     )
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Action Buttons Row: Paste & Turbo Extract
+                    // Action buttons (Paste & Fetch)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -285,13 +351,14 @@ fun DownloaderScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(50.dp)
-                                .testTag("paste_btn_secondary"),
+                                .testTag("paste_button"),
                             shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                            border = ButtonDefaults.outlinedButtonBorder.copy(brush = Brush.horizontalGradient(listOf(NeonCyan.copy(alpha = 0.5f), NeonMagenta.copy(alpha = 0.5f))))
                         ) {
                             Icon(Icons.Default.ContentPaste, contentDescription = null, modifier = Modifier.size(18.dp), tint = NeonCyan)
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Paste Link")
+                            Text("Paste Link", fontWeight = FontWeight.SemiBold)
                         }
 
                         Button(
@@ -333,7 +400,7 @@ fun DownloaderScreen(
                         letterSpacing = 1.sp
                     )
                     Text(
-                        text = "Instant 4K HDR",
+                        text = "Instant 8K/4K HDR",
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White.copy(alpha = 0.5f)
                     )
@@ -347,7 +414,7 @@ fun DownloaderScreen(
                         .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    DownloadRepository.SAMPLE_VIDEOS.forEachIndexed { index, sample ->
+                    DownloadRepository.ALL_SAMPLES.forEachIndexed { index, sample ->
                         Surface(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
@@ -363,7 +430,7 @@ fun DownloaderScreen(
                                 Box(
                                     modifier = Modifier
                                         .size(10.dp)
-                                        .background(if (index == 0) HdrGold else if (index == 1) NeonCyan else NeonMagenta, CircleShape)
+                                        .background(if (index == 0) NeonMagenta else if (index == 1) Color(0xFFFF0000) else Color(0xFF1877F2), CircleShape)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column {
@@ -449,22 +516,22 @@ fun DownloaderScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp),
-                        verticalAlignment = Alignment.Top
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            Icons.Default.ErrorOutline,
-                            contentDescription = "Error",
+                            imageVector = Icons.Default.ErrorOutline,
+                            contentDescription = null,
                             tint = ErrorRed,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Extraction Error",
+                                text = "Unable to Resolve Video",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                 color = ErrorRed
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = extractionState.message,
                                 style = MaterialTheme.typography.bodySmall,
@@ -476,7 +543,7 @@ fun DownloaderScreen(
             }
         }
 
-        // Extracted Result Card
+        // Success: Video Metadata and Quality Download Card
         if (extractionState is ExtractionState.Success) {
             item {
                 ResultVideoCard(
@@ -489,74 +556,6 @@ fun DownloaderScreen(
                     onDownloadPhotoSlide = onDownloadPhotoSlide
                 )
             }
-        }
-
-        // How to Use Step Guide
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .border(1.dp, ObsidianCardBorder, RoundedCornerShape(18.dp)),
-                colors = CardDefaults.cardColors(containerColor = ObsidianSurface)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.HelpOutline, contentDescription = null, tint = NeonCyan, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "HOW TO DOWNLOAD IN 3 STEPS",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White.copy(alpha = 0.7f),
-                            letterSpacing = 1.sp
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    StepRow(stepNumber = "1", title = "Copy Link in TikTok", desc = "Open TikTok, tap Share button on any video and select 'Copy Link'.")
-                    Spacer(modifier = Modifier.height(10.dp))
-                    StepRow(stepNumber = "2", title = "Paste & Process", desc = "Paste the link here. Our high-speed engine strips the watermark and unblocks HDR streams.")
-                    Spacer(modifier = Modifier.height(10.dp))
-                    StepRow(stepNumber = "3", title = "Download & Enjoy", desc = "Save HDR+ Ultra MP4 or HQ MP3 sound straight to your device gallery.")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun StepRow(stepNumber: String, title: String, desc: String) {
-    Row(verticalAlignment = Alignment.Top) {
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                .background(NeonCyan.copy(alpha = 0.15f), CircleShape)
-                .border(1.dp, NeonCyan.copy(alpha = 0.5f), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = stepNumber,
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = NeonCyan
-            )
-        }
-        Spacer(modifier = Modifier.width(10.dp))
-        Column {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = Color.White
-            )
-            Text(
-                text = desc,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.65f)
-            )
         }
     }
 }
