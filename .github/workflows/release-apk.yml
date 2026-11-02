@@ -15,13 +15,13 @@ on:
         type: boolean
         default: true
       tag_name:
-        description: 'Release Tag (e.g. v1.1.0)'
+        description: 'Release Tag (e.g. v1.1.1)'
         required: false
-        default: 'v1.1.0'
+        default: 'v1.1.1'
       release_title:
         description: 'Release Title'
         required: false
-        default: 'TikSave Ultimate Creator Suite v1.1.0 (YouTube & Facebook Clippers + Unlimited AI)'
+        default: 'TikSave v1.1.1 (Interactive Trimmer, Real FB Downloader & HTTP 403 Fix)'
 
 permissions:
   contents: write
@@ -157,22 +157,19 @@ jobs:
         shell: bash
         run: |
           cat << 'EOF' > release_body.md
-          ## 🚀 TikSave Ultimate Creator Suite (v1.1.0 Final Release)
+          ## 🚀 TikSave Creator Suite (v1.1.1 Production Release)
 
-          ### ✨ Major New Features in v1.1.0:
-          - **YouTube to Facebook Reels Clipper**: Input any YouTube video or Shorts link, pick clip duration presets (15s, 30s, 60s, 90s), format in 9:16 vertical ratio, and post directly to Facebook Reels with 1 tap.
-          - **Facebook Video Downloader to TikTok & Shorts**: Download Facebook videos in high resolution (8K Ultra 120FPS, 4K HDR 60FPS, 1080p Full HD, 720p Normal, 480p Low Fast) and export directly as clips for TikTok FYP and YouTube Shorts.
-          - **AI Viral Studio 2.0 (Unlimited Dynamic Generation)**:
-            - Generates infinite diverse, creative, non-repetitive captions and hashtags.
-            - Multi-variation engine (Viral Hook, Humor & Relatable, Storytelling, Aesthetic).
-            - Formatted ready-to-post copy for Facebook Reels, TikTok, and YouTube Shorts.
-            - "Randomize 🎲" button for endless fresh creative angles.
-          - **TikTok Audio Extractor (320kbps MP3)**: Original Sound, High Sound Boost (+6dB), and VFX/Dialogue isolation saving directly to `Music/TikSave`.
-          - **Scoped Storage & MediaStore Fix**: 100% compliant with Android 10 to 16, saving directly to Gallery (`Pictures/TikSave`, `Movies/TikSave`, `Music/TikSave`) with zero EPERM errors.
+          ### ✨ Major Updates in v1.1.1:
+          - **Interactive Video Trimmer & Clip Cutter**: Dual timestamp RangeSlider with -1s/+1s precision buttons to cut custom clips for 9:16 Facebook Reels & TikTok Shorts.
+          - **Fixed HTTP Error 403**: Resilient domain-aware download engine with 3-stage fallback eliminating 403 Forbidden on YouTube, Facebook, and CDN streams.
+          - **Real Facebook Video & Reel Downloader**: High-speed direct MP4 extraction from Facebook Watch & Reels without mock data.
+          - **Dynamic Unlimited AI Captions**: Truly fresh, non-generic hooks, viral body copy, and hashtags tailored for Nepali & global creators.
+          - **Audio Extractor (320kbps MP3)**: Original Sound, High Sound Boost (+6dB), and VFX/Dialogue isolation saving directly to `Music/TikSave`.
+          - **Scoped Storage & MediaStore Fix**: 100% compliant with Android 10 to 16, saving directly to Gallery with zero EPERM errors.
           - **Verified Production Release**: Signed with authentic keystore (`CN=TikSave, SHA-256: 83d53182b915648bea5c4ecba64317f56e97a90e91bcc0cec278dcead88352a1`).
 
           ### 📦 Download Links
-          - **[TikSave-Release.apk](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.0/TikSave-Release.apk)** (Official Production Release)
+          - **[TikSave-Release.apk](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.1/TikSave-Release.apk)** (Official Production Release)
           EOF
 
       - name: Publish GitHub Release

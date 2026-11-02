@@ -57,6 +57,7 @@ enum class ClipPreset(val label: String, val seconds: Int, val description: Stri
     SEC_30("30s Short Clip", 30, "Optimal TikTok & FB Reel duration"),
     SEC_60("60s Full Reel", 60, "Complete storytelling clip"),
     SEC_90("90s Max Reel", 90, "Extended Facebook Reel format"),
+    CUSTOM("Custom Cut", -1, "Custom selected start and end clip"),
     FULL("Full Length", 0, "Original full length video stream")
 }
 
@@ -102,6 +103,8 @@ data class VideoMetadata(
     val images: List<String> = emptyList(),
     val platform: MediaPlatform = MediaPlatform.TIKTOK,
     val clipPreset: ClipPreset = ClipPreset.FULL,
+    val trimStartSeconds: Int = 0,
+    val trimEndSeconds: Int = 0,
     val facebookReelsReadyCaption: String = "",
     val tiktokShortsReadyCaption: String = ""
 ) {

@@ -293,7 +293,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val cleanTitle = metadata.title.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(24)
-        val filename = "TikSave_${cleanTitle}_${quality.name}${audioProfileSuffix}_${System.currentTimeMillis()}.$ext"
+        val clipSuffix = if (metadata.clipPreset == ClipPreset.CUSTOM && metadata.trimEndSeconds > metadata.trimStartSeconds) {
+            "_Clip_${metadata.trimStartSeconds}s_to_${metadata.trimEndSeconds}s"
+        } else if (metadata.clipPreset != ClipPreset.FULL) {
+            "_${metadata.clipPreset.name}"
+        } else ""
+        val filename = "TikSave_${cleanTitle}_${quality.name}${clipSuffix}${audioProfileSuffix}_${System.currentTimeMillis()}.$ext"
 
         _activeDownload.value = ActiveDownload(
             videoId = metadata.id,

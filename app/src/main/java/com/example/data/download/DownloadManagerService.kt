@@ -71,19 +71,71 @@ class DownloadManagerService(private val context: Context) {
                 else -> "Movies/TikSave"
             }
 
-            val request = Request.Builder()
-                .url(url)
-                .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36")
-                .header("Referer", "https://www.tiktok.com/")
-                .header("Origin", "https://www.tiktok.com")
-                .header("Accept", "*/*")
-                .header("Connection", "keep-alive")
-                .header("Accept-Encoding", "identity")
-                .build()
+            val lowerUrl = url.lowercase()
+            val isTikTok = lowerUrl.contains("tiktok.com") || lowerUrl.contains("tikwm.com") || lowerUrl.contains("byteoversea") || lowerUrl.contains("ibytedtos")
+            val isYouTube = lowerUrl.contains("googlevideo.com") || lowerUrl.contains("youtube.com") || lowerUrl.contains("ytimg.com")
+            val isFacebook = lowerUrl.contains("fbcdn.net") || lowerUrl.contains("facebook.com")
 
-            val response = client.newCall(request).execute()
+            fun createCall(attempt: Int): okhttp3.Response {
+                val reqBuilder = Request.Builder().url(url)
+                when (attempt) {
+                    0 -> {
+                        // Stage 1: Domain-appropriate headers
+                        when {
+                            isTikTok -> {
+                                reqBuilder.header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36")
+                                reqBuilder.header("Referer", "https://www.tiktok.com/")
+                                reqBuilder.header("Origin", "https://www.tiktok.com")
+                            }
+                            isYouTube -> {
+                                reqBuilder.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
+                                reqBuilder.header("Referer", "https://www.youtube.com/")
+                            }
+                            isFacebook -> {
+                                reqBuilder.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
+                                reqBuilder.header("Referer", "https://www.facebook.com/")
+                            }
+                            else -> {
+                                reqBuilder.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
+                            }
+                        }
+                        reqBuilder.header("Accept", "*/*")
+                        reqBuilder.header("Connection", "keep-alive")
+                    }
+                    1 -> {
+                        // Stage 2 (Bypass 403 Forbidden): Desktop Chrome with NO Referer and NO Origin
+                        reqBuilder.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
+                        reqBuilder.header("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5")
+                        reqBuilder.header("Range", "bytes=0-")
+                        reqBuilder.header("Connection", "keep-alive")
+                    }
+                    else -> {
+                        // Stage 3 (ExoPlayer stream header)
+                        reqBuilder.header("User-Agent", "ExoPlayer/2.19.1 (Linux;Android 14) AndroidXMedia3/1.2.0")
+                        reqBuilder.header("Accept", "*/*")
+                        reqBuilder.header("Connection", "keep-alive")
+                    }
+                }
+                return client.newCall(reqBuilder.build()).execute()
+            }
+
+            var response = createCall(0)
+            if (response.code == 403 || response.code == 401 || !response.isSuccessful) {
+                response.close()
+                // Retry without Referer/Origin
+                response = createCall(1)
+                if (response.code == 403 || response.code == 401 || !response.isSuccessful) {
+                    response.close()
+                    // Retry with media player UA
+                    response = createCall(2)
+                }
+            }
+
             if (!response.isSuccessful) {
-                return@withContext Result.failure(Exception("HTTP Error ${response.code}: ${response.message}"))
+                val code = response.code
+                val msg = response.message
+                response.close()
+                return@withContext Result.failure(Exception("HTTP Error $code: $msg"))
             }
 
             val body = response.body ?: return@withContext Result.failure(Exception("Empty response body"))

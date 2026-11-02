@@ -288,18 +288,56 @@ class AiService {
 
         val combinedTags = (baseFypTags + nicheTags).distinct()
 
-        // Dynamic Variations
-        val var1Caption = if (isPhotoSlide) {
-            "📸 Pure 8K HDR+ Photo Carousel ($slideCount slides). Swipe left to feel every detail! तपाईंलाई कुन फोटो सबैभन्दा बढी मन पर्यो? कमेन्ट गर्नुस् 👇"
+        // Dynamic Unlimited Variations Pools
+        val var1Pool = if (isPhotoSlide) {
+            listOf(
+                "📸 Pure 8K HDR+ Photo Carousel ($slideCount slides). Swipe left to feel every detail! तपाईंलाई कुन फोटो सबैभन्दा बढी मन पर्यो? कमेन्ट गर्नुस् 👇",
+                "🏔️ Photo Dump Experience ($slideCount frames). Every slide tells a unique story. कुन फोटोले तपाईंको मन छोयो? कमेन्ट गर्नुहोस्! ✨",
+                "✨ Ultra High-Res Aesthetic Photo Slide ($slideCount shots). Save this carousel to your favorites and share with your travel buddy! 🌿",
+                "🌟 $slideCount वटा अद्भुत तस्बिरहरू एकै ठाउँमा! अन्तिम फोटो नछुटाउनुहोला। तपाईंलाई कस्तो लाग्यो? कमेन्ट गर्नुहोस् 👇"
+            ).shuffled(rng)
         } else {
-            "⚡ $input! यो भिडियोले सोच्ने तरिका नै बदलिदिन्छ। हेरेपछि तपाईंको मनमा के आयो? तल कमेन्टमा आफ्ना विचारहरू व्यक्त गर्नुहोस् र साथीहरूसँग सेयर गर्नुहोस्! 🔥"
+            listOf(
+                "⚡ $input! यो भिडियोले सोच्ने तरिका नै बदलिदिन्छ। हेरेपछि तपाईंको मनमा के आयो? तल कमेन्टमा आफ्ना विचारहरू व्यक्त गर्नुहोस् र साथीहरूसँग सेयर गर्नुहोस्! 🔥",
+                "🔥 Watch till the very end! '$input' को यो क्लिपले इन्टरनेटमा तहल्का मच्चाइरहेको छ। तपाईंको धारणा के छ? तल लेख्नुहोला 👇",
+                "🎯 एउटा यस्तो दृश्य जसलाई हेरेपछि सेयर नगरी बस्नै सकिंदैन! '$input' को यो विशेष क्षण तपाईंका साथीहरूसँग तुरुन्त सेयर गरिहाल्नुहोस् 🚀",
+                "💥 Mind-blowing content! '$input' बारे तपाईंलाई के लाग्छ? सहमति भए Like र आफ्ना विचार Comment मा राख्नुहोस् 👇",
+                "✨ यो क्लिप आजको सबैभन्दा भाइरल पल बन्न पुगेको छ। के तपाईंलाई यो पहिले नै थाहा थियो? कमेन्ट बक्समा बताउनुहोस् 💬"
+            ).shuffled(rng)
         }
+        val var1Caption = var1Pool[0]
 
-        val var2Caption = "यस्तो दृश्य सायदै देख्नुभएको थियो होला 😂 यसलाई देखेपछि हाँसो रोक्नै सकिएन! तपाईंका त्यो खास साथीहरूलाई ट्याग गरेर सेयर गर्न नबिर्सनुहोला 💀💥"
+        val var2Pool = listOf(
+            "यस्तो दृश्य सायदै देख्नुभएको थियो होला 😂 यसलाई देखेपछि हाँसो रोक्नै सकिएन! तपाईंका त्यो खास साथीहरूलाई ट्याग गरेर सेयर गर्न नबिर्सनुहोला 💀💥",
+            "Bro thought nobody was recording 💀😂 यो हेरेर तपाईंको हाँसो छुट्यो कि छुटेन? आफ्नो बेस्ट फ्रेन्डलाई ट्याग गरिहाल्नुस्! 🤣",
+            "दिनभरिको तनाव एकैछिनमा गायब बनाउने भिडियो! 😂 लास्ट सम्म हेर्नुस् अनि साथीहरूलाई पनि देखाउनुस् 💥",
+            "कसले सोचेको थियो र यस्तो पनि होला भनेर! 😭😂 कमेन्टमा आफ्नो रियाक्सन दिनुहोला 💬"
+        ).shuffled(rng)
+        val var2Caption = var2Pool[0]
 
-        val var3Caption = "कहिलेकाहीँ एउटा सानो भिडियोले हाम्रो सोचमा गहिरो प्रभाव पार्छ। '$input' बारे यो महत्त्वपूर्ण अंश सबैले बुझ्न आवश्यक छ। तपाईंको यसमा के दृष्टिकोण छ? 👇"
+        val var3Pool = listOf(
+            "कहिलेकाहीँ एउटा सानो भिडियोले हाम्रो सोचमा गहिरो प्रभाव पार्छ। '$input' बारे यो महत्त्वपूर्ण अंश सबैले बुझ्न आवश्यक छ। तपाईंको यसमा के दृष्टिकोण छ? 👇",
+            "जिन्दगीका कतिपय कुराहरू शब्दमा भन्दा पनि यस्ता दृश्यहरूमा महसुस हुन्छन्। '$input' ले दिने सन्देश मननयोग्य छ। सेयर गरेर सकारात्मक ऊर्जा फैलाउनुहोस् 💫",
+            "The story behind this moment is deeper than it seems. यस्तो प्रेरणादायी क्षण सबैका लागि उपयोगी हुन सक्छ। तपाईंको अनुभव कस्तो रह्यो? 🌿",
+            "केही कुराहरू समयमै सिक्नुपर्छ। यो भिडियोले हामीलाई सिकाउने पाठ मन छुने छ। सुरक्षित राख्न भिडियो सेभ गर्नुहोस् 📌"
+        ).shuffled(rng)
+        val var3Caption = var3Pool[0]
 
-        val var4Caption = "Aesthetic calm & high fidelity visuals. Lost in the moment, appreciating the finer details of life. Save this reel for when you need peace ✨🌿"
+        val var4Pool = listOf(
+            "Aesthetic calm & high fidelity visuals. Lost in the moment, appreciating the finer details of life. Save this reel for when you need peace ✨🌿",
+            "Pure vibes and serenity. एउटा शान्त र सुन्दर पल जसले मनलाई आनन्द दिन्छ 💫 Save & share with someone who loves calm visuals 🏔️",
+            "Late night thoughts and aesthetic visuals. Just let the music and the visuals take you away ✨🎶",
+            "Aesthetic frames that deserve to be remembered. तपाईंलाई यस्तो भाइब्स कस्तो लाग्छ? कमेन्ट गर्नुहोस् 🕊️"
+        ).shuffled(rng)
+        val var4Caption = var4Pool[0]
+
+        val ctaList = listOf(
+            "👉 भिडियो मन परे लाइक, कमेन्ट र साथीहरूलाई सेयर गरिदिनुहोला!",
+            "👉 Drop your thoughts in the comments and share with your squad!",
+            "👉 साथीहरूलाई ट्याग गर्नुहोस् र आफ्नो विचार तल कमेन्ट गर्नुहोस् 👇",
+            "👉 Follow for more daily viral clips and share with everyone! 🔥"
+        ).shuffled(rng)
+        val selectedCta = ctaList[0]
 
         val authorCredit = if (author.isNotBlank()) "\n🎥 Creator: $author" else ""
 
@@ -309,7 +347,7 @@ class AiService {
             appendLine(var1Caption)
             if (authorCredit.isNotBlank()) appendLine(authorCredit)
             appendLine()
-            appendLine("👉 भिडियो मन परे लाइक, कमेन्ट र साथीहरूलाई सेयर गरिदिनुहोला!")
+            appendLine(selectedCta)
             appendLine()
             append(combinedTags.joinToString(" "))
         }

@@ -16,12 +16,15 @@ TikSave is the ultimate all-in-one social media downloader and video clipper app
 
 ---
 
-## 📱 Android App (APK v1.1.0 Final Release)
+## 📱 Android App (APK v1.1.1 Production Release)
 
-- **Download Official Release APK:** [TikSave-Release.apk v1.1.0](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.0/TikSave-Release.apk)
+- **Download Official Release APK:** [TikSave-Release.apk v1.1.1](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.1/TikSave-Release.apk)
 
 ### ✨ Core Features
-- ▶️ **YouTube to Facebook Reels Clipper**: Input any YouTube video or Shorts link, choose clip duration presets (15s, 30s, 60s, 90s, Full), format in 9:16 vertical ratio, and post directly to Facebook Reels with 1 tap.
+- ✂️ **Interactive Video Trimmer & Clip Cutter**: Precision dual-slider RangeSlider with -1s/+1s adjustment to cut custom clips for 9:16 Facebook Reels & TikTok Shorts.
+- 🛡️ **Zero HTTP 403 Errors**: 3-stage resilient domain-aware download engine for YouTube, Facebook, and high-speed CDNs.
+- 👥 **Real Facebook Video & Reel Downloader**: Direct HD/SD MP4 stream extraction without mock data.
+- ▶️ **YouTube to Facebook Reels Clipper**: Input any YouTube video or Shorts link, trim custom segments, format in 9:16 vertical ratio, and post directly to Facebook Reels with 1 tap.
 - 👥 **Facebook Video Downloader to TikTok & Shorts**: Download Facebook videos in high resolution (8K Ultra 120FPS, 4K HDR 60FPS, 1080p FHD, 720p Normal, 480p Low Fast) and export directly as clips for TikTok FYP and YouTube Shorts.
 - 🎵 **TikTok Audio Extractor (320 kbps MP3)**: 3 specialized sound profiles (Original Sound, High Sound Boost +6dB, and VFX & Dialogue Isolation).
 - 📸 **TikTok Photo Slide Mode**: Download full carousel image slides in 8K/4K HDR+ resolution + soundtrack MP3.

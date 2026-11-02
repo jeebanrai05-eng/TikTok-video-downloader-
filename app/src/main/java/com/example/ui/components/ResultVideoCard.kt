@@ -44,6 +44,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -91,7 +93,33 @@ fun ResultVideoCard(
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
-    var selectedClip by remember { mutableStateOf(metadata.clipPreset) }
+    val maxDuration = metadata.durationSeconds.toFloat().coerceAtLeast(15f)
+    var trimStartSec by remember(metadata.id) { mutableStateOf(0f) }
+    var trimEndSec by remember(metadata.id) {
+        val initialEnd = when (metadata.clipPreset) {
+            ClipPreset.SEC_15 -> minOf(15f, maxDuration)
+            ClipPreset.SEC_30 -> minOf(30f, maxDuration)
+            ClipPreset.SEC_60 -> minOf(60f, maxDuration)
+            ClipPreset.SEC_90 -> minOf(90f, maxDuration)
+            else -> minOf(45f, maxDuration)
+        }
+        mutableStateOf(initialEnd)
+    }
+    var selectedClip by remember(metadata.id) { mutableStateOf(metadata.clipPreset) }
+
+    fun formatDurationTime(sec: Float): String {
+        val totalSec = sec.toInt().coerceAtLeast(0)
+        val m = totalSec / 60
+        val s = totalSec % 60
+        return "%02d:%02d".format(m, s)
+    }
+
+    val currentTrimmedMetadata = metadata.copy(
+        clipPreset = selectedClip,
+        trimStartSeconds = trimStartSec.toInt(),
+        trimEndSeconds = trimEndSec.toInt(),
+        durationSeconds = (trimEndSec - trimStartSec).toInt().coerceAtLeast(1)
+    )
 
     fun copyToClipboard(text: String, label: String) {
         clipboardManager.setText(AnnotatedString(text))
@@ -267,72 +295,266 @@ fun ResultVideoCard(
             Spacer(modifier = Modifier.height(14.dp))
 
             // ==========================================
-            // SPECIAL SECTION 1: YOUTUBE TO FACEBOOK REELS CLIPPER
+            // INTERACTIVE VIDEO TRIMMER & CLIP CUTTER
             // ==========================================
-            if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .border(1.dp, Color(0xFF1877F2).copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
-                    color = Color(0xFF1877F2).copy(alpha = 0.12f)
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(Icons.Default.ContentCut, contentDescription = null, tint = Color(0xFF1877F2), modifier = Modifier.size(18.dp))
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .border(
+                        1.dp,
+                        if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS) Color(0xFF1877F2).copy(alpha = 0.6f)
+                        else if (metadata.platform == MediaPlatform.FACEBOOK_TO_SHORTS) NeonMagenta.copy(alpha = 0.6f)
+                        else NeonCyan.copy(alpha = 0.4f),
+                        RoundedCornerShape(16.dp)
+                    ),
+                color = ObsidianSurfaceVariant
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(
+                                Icons.Default.ContentCut,
+                                contentDescription = null,
+                                tint = if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS) Color(0xFF1877F2) else NeonCyan,
+                                modifier = Modifier.size(18.dp)
+                            )
                             Text(
-                                text = "YOUTUBE TO FACEBOOK REELS CLIPPER",
+                                text = "INTERACTIVE VIDEO TRIMMER & CLIPPER",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-                                color = Color(0xFF1877F2),
+                                color = if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS) Color(0xFF1877F2) else NeonCyan,
                                 letterSpacing = 0.5.sp
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Auto-formatted in 9:16 vertical ratio ready for Facebook Reels with high-CTR caption.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        // Clip Duration Chips
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = NeonCyan.copy(alpha = 0.15f)
                         ) {
-                            ClipPreset.values().forEach { preset ->
-                                val isSelected = selectedClip == preset
-                                Surface(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .border(1.dp, if (isSelected) Color(0xFF1877F2) else ObsidianCardBorder, RoundedCornerShape(8.dp))
-                                        .clickable { selectedClip = preset },
-                                    color = if (isSelected) Color(0xFF1877F2).copy(alpha = 0.3f) else ObsidianSurfaceVariant
-                                ) {
-                                    Text(
-                                        text = preset.label,
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal),
-                                        color = if (isSelected) Color.White else Color.White.copy(alpha = 0.7f),
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                    )
-                                }
+                            Text(
+                                text = "9:16 Vertical Cut",
+                                color = NeonCyan,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "भिडियोको मनपर्ने ठाउँ कट गर्नुहोस् (Start & End Time Slider) - Facebook Reels, TikTok र Shorts को लागि तयार क्लिप!",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Start Time, Duration & End Time Badges
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Start Time Block
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .background(ObsidianSurface, RoundedCornerShape(8.dp))
+                                .border(1.dp, ObsidianCardBorder, RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text("START", style = MaterialTheme.typography.labelSmall, color = Color.Gray, fontSize = 9.sp)
+                            Text(formatDurationTime(trimStartSec), style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    "-1s",
+                                    color = NeonCyan,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.clickable {
+                                        trimStartSec = (trimStartSec - 1f).coerceAtLeast(0f)
+                                        selectedClip = ClipPreset.CUSTOM
+                                    }.padding(2.dp)
+                                )
+                                Text(
+                                    "+1s",
+                                    color = NeonCyan,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.clickable {
+                                        if (trimStartSec + 1f < trimEndSec - 2f) {
+                                            trimStartSec += 1f
+                                            selectedClip = ClipPreset.CUSTOM
+                                        }
+                                    }.padding(2.dp)
+                                )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        // Center Duration Badge
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = HdrGold.copy(alpha = 0.2f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, HdrGold.copy(alpha = 0.5f))
+                            ) {
+                                Text(
+                                    text = "✂️ ${formatDurationTime(trimEndSec - trimStartSec)} Clip",
+                                    color = HdrGold,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Max: ${formatDurationTime(maxDuration)}",
+                                color = Color.White.copy(alpha = 0.5f),
+                                fontSize = 10.sp
+                            )
+                        }
 
-                        // Quick Actions
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        // End Time Block
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .background(ObsidianSurface, RoundedCornerShape(8.dp))
+                                .border(1.dp, ObsidianCardBorder, RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
+                            Text("END", style = MaterialTheme.typography.labelSmall, color = Color.Gray, fontSize = 9.sp)
+                            Text(formatDurationTime(trimEndSec), style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    "-1s",
+                                    color = NeonCyan,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.clickable {
+                                        if (trimEndSec - 1f > trimStartSec + 2f) {
+                                            trimEndSec -= 1f
+                                            selectedClip = ClipPreset.CUSTOM
+                                        }
+                                    }.padding(2.dp)
+                                )
+                                Text(
+                                    "+1s",
+                                    color = NeonCyan,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.clickable {
+                                        trimEndSec = (trimEndSec + 1f).coerceAtMost(maxDuration)
+                                        selectedClip = ClipPreset.CUSTOM
+                                    }.padding(2.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // RangeSlider for interactive trimming
+                    RangeSlider(
+                        value = trimStartSec..trimEndSec,
+                        onValueChange = { range ->
+                            if (range.endInclusive - range.start >= 3f) {
+                                trimStartSec = range.start
+                                trimEndSec = range.endInclusive
+                                selectedClip = ClipPreset.CUSTOM
+                            }
+                        },
+                        valueRange = 0f..maxDuration,
+                        colors = SliderDefaults.colors(
+                            thumbColor = NeonCyan,
+                            activeTrackColor = NeonCyan,
+                            inactiveTrackColor = ObsidianCardBorder
+                        ),
+                        modifier = Modifier.fillMaxWidth().testTag("video_trimmer_slider")
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Quick Preset Chips
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf(
+                            ClipPreset.SEC_15 to "15s Viral Reel",
+                            ClipPreset.SEC_30 to "30s Short Clip",
+                            ClipPreset.SEC_60 to "60s Full Reel",
+                            ClipPreset.FULL to "Full Video"
+                        ).forEach { (preset, label) ->
+                            val isSelected = selectedClip == preset
+                            Surface(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .border(1.dp, if (isSelected) NeonCyan else ObsidianCardBorder, RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        selectedClip = preset
+                                        when (preset) {
+                                            ClipPreset.SEC_15 -> {
+                                                trimStartSec = 0f
+                                                trimEndSec = minOf(15f, maxDuration)
+                                            }
+                                            ClipPreset.SEC_30 -> {
+                                                trimStartSec = 0f
+                                                trimEndSec = minOf(30f, maxDuration)
+                                            }
+                                            ClipPreset.SEC_60 -> {
+                                                trimStartSec = 0f
+                                                trimEndSec = minOf(60f, maxDuration)
+                                            }
+                                            ClipPreset.FULL -> {
+                                                trimStartSec = 0f
+                                                trimEndSec = maxDuration
+                                            }
+                                            else -> {}
+                                        }
+                                    },
+                                color = if (isSelected) NeonCyan.copy(alpha = 0.25f) else ObsidianSurface
+                            ) {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal),
+                                    color = if (isSelected) Color.White else Color.White.copy(alpha = 0.7f),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Direct Cut & Download Button
+                    Button(
+                        onClick = { onDownloadClick(currentTrimmedMetadata, selectedQuality) },
+                        modifier = Modifier.fillMaxWidth().testTag("btn_cut_and_download"),
+                        colors = ButtonDefaults.buttonColors(containerColor = if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS) Color(0xFF1877F2) else NeonCyan),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+                    ) {
+                        Icon(Icons.Default.ContentCut, contentDescription = null, tint = if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS) Color.White else Color.Black, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "✂️ Cut & Download (${formatDurationTime(trimStartSec)} - ${formatDurationTime(trimEndSec)})",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS) Color.White else Color.Black
+                        )
+                    }
+
+                    // Platform Specific Sharing Buttons
+                    if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS || metadata.facebookReelsReadyCaption.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(
                                 onClick = { shareDirectly(metadata.facebookReelsReadyCaption, "Post to Facebook Reels") },
                                 modifier = Modifier.weight(1f),
@@ -342,9 +564,8 @@ fun ResultVideoCard(
                             ) {
                                 Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Post to FB Reels", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text("Post to FB Reels", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
-
                             OutlinedButton(
                                 onClick = { copyToClipboard(metadata.facebookReelsReadyCaption, "Facebook Reels Caption") },
                                 modifier = Modifier.weight(1f),
@@ -354,53 +575,14 @@ fun ResultVideoCard(
                             ) {
                                 Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Copy FB Caption", fontSize = 12.sp)
+                                Text("Copy Caption", fontSize = 11.sp)
                             }
                         }
                     }
-                }
-                Spacer(modifier = Modifier.height(14.dp))
-            }
 
-            // ==========================================
-            // SPECIAL SECTION 2: FACEBOOK TO TIKTOK & SHORTS CLIPPER
-            // ==========================================
-            if (metadata.platform == MediaPlatform.FACEBOOK_TO_SHORTS) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .border(1.dp, NeonMagenta.copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
-                    color = NeonMagenta.copy(alpha = 0.12f)
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(Icons.Default.ContentCut, contentDescription = null, tint = NeonMagenta, modifier = Modifier.size(18.dp))
-                            Text(
-                                text = "FACEBOOK TO TIKTOK & YOUTUBE SHORTS CLIPPER",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-                                color = NeonMagenta,
-                                letterSpacing = 0.5.sp
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Download Facebook video and export as 9:16 vertical clip ready for TikTok FYP and YouTube Shorts.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        // Quick Actions
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                    if (metadata.platform == MediaPlatform.FACEBOOK_TO_SHORTS || metadata.tiktokShortsReadyCaption.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(
                                 onClick = { shareDirectly(metadata.tiktokShortsReadyCaption, "Share Clip to TikTok") },
                                 modifier = Modifier.weight(1f),
@@ -408,9 +590,8 @@ fun ResultVideoCard(
                                 shape = RoundedCornerShape(10.dp),
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                             ) {
-                                Text("🎵 Post to TikTok", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text("🎵 Post to TikTok", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
-
                             Button(
                                 onClick = { shareDirectly(metadata.tiktokShortsReadyCaption, "Share Clip to YouTube Shorts") },
                                 modifier = Modifier.weight(1f),
@@ -418,13 +599,13 @@ fun ResultVideoCard(
                                 shape = RoundedCornerShape(10.dp),
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                             ) {
-                                Text("▶️ Post to Shorts", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text("▶️ Post to Shorts", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(14.dp))
             }
+            Spacer(modifier = Modifier.height(14.dp))
 
             // ==========================================
             // DEDICATED AUDIO EXTRACTOR SECTION
@@ -566,7 +747,7 @@ fun ResultVideoCard(
 
             // Main Download Button
             Button(
-                onClick = { onDownloadClick(metadata, selectedQuality) },
+                onClick = { onDownloadClick(currentTrimmedMetadata, selectedQuality) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)

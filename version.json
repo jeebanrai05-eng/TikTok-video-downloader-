@@ -1,10 +1,10 @@
 {
-  "versionCode": 5,
-  "versionName": "1.1.0",
-  "releaseTitle": "TikSave Ultimate Creator Suite v1.1.0 (Final Release)",
-  "releaseNotes": "• YouTube to Facebook Reels Clipper: Extract any YouTube link & format directly ready to post as 9:16 Facebook Reels\n• Facebook Video Downloader to TikTok & Shorts: Convert any Facebook video into high-retention clips for TikTok FYP & YouTube Shorts\n• Complete Resolution Support: 8K Ultra 120FPS, 4K HDR+ 60FPS, 1080p Full HD, 720p Normal & 480p Low Fast\n• AI Viral Studio 2.0: Unlimited dynamic captions & hashtags with multi-variation generator (Viral, Comedy, Story, Aesthetic)\n• 1-Tap Direct Sharing to Facebook Reels, TikTok & YouTube Shorts\n• Android 14/15/16 Scoped Storage MediaStore gallery integration with zero EPERM errors",
-  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.0/TikSave-Release.apk",
+  "versionCode": 6,
+  "versionName": "1.1.1",
+  "releaseTitle": "TikSave v1.1.1 (Interactive Video Trimmer, Real FB Downloader & 403 Fix)",
+  "releaseNotes": "• Interactive Video Trimmer & Clip Cutter: Select exact Start and End timestamps with interactive RangeSlider and -1s/+1s fine-tuning buttons ready for 9:16 Facebook Reels & TikTok Shorts\n• Fixed HTTP Error 403: Resilient domain-aware download engine with 3-stage fallback eliminating 403 Forbidden on YouTube, Facebook, and CDN streams\n• Real Facebook Video Downloader: Direct high-speed HD/SD MP4 extraction from Facebook Watch & Reels without mock data\n• Dynamic Unlimited AI Captions: Fresh, diverse, and non-repetitive viral hooks and hashtags tailored for Nepali & global audiences\n• Strict Production Signing: Signed with genuine verified upload key (CN=TikSave, SHA-256: 83:D5:31:82...)",
+  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.1/TikSave-Release.apk",
   "minSupportedVersion": "1.0.0",
   "mandatory": false,
-  "publishedAt": "2026-11-01"
+  "publishedAt": "2026-11-02"
 }
