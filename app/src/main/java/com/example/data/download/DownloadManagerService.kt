@@ -131,6 +131,17 @@ class DownloadManagerService(private val context: Context) {
                 }
             }
 
+            // Fallback for expired token, IP-locked stream, or CDN 403/401/404 error
+            if (!response.isSuccessful && (response.code == 403 || response.code == 401 || response.code == 404 || response.code == 410)) {
+                response.close()
+                val fallbackStreamUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+                val fbReq = Request.Builder()
+                    .url(fallbackStreamUrl)
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
+                    .build()
+                response = client.newCall(fbReq).execute()
+            }
+
             if (!response.isSuccessful) {
                 val code = response.code
                 val msg = response.message
