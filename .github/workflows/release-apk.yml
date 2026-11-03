@@ -157,19 +157,17 @@ jobs:
         shell: bash
         run: |
           cat << 'EOF' > release_body.md
-          ## 🚀 TikSave Creator Suite (v1.1.1 Production Release)
+          ## 🚀 TikSave Creator Suite (v1.1.3 Production Release)
 
-          ### ✨ Major Updates in v1.1.1:
-          - **Interactive Video Trimmer & Clip Cutter**: Dual timestamp RangeSlider with -1s/+1s precision buttons to cut custom clips for 9:16 Facebook Reels & TikTok Shorts.
-          - **Fixed HTTP Error 403**: Resilient domain-aware download engine with 3-stage fallback eliminating 403 Forbidden on YouTube, Facebook, and CDN streams.
-          - **Real Facebook Video & Reel Downloader**: High-speed direct MP4 extraction from Facebook Watch & Reels without mock data.
-          - **Dynamic Unlimited AI Captions**: Truly fresh, non-generic hooks, viral body copy, and hashtags tailored for Nepali & global creators.
-          - **Audio Extractor (320kbps MP3)**: Original Sound, High Sound Boost (+6dB), and VFX/Dialogue isolation saving directly to `Music/TikSave`.
-          - **Scoped Storage & MediaStore Fix**: 100% compliant with Android 10 to 16, saving directly to Gallery with zero EPERM errors.
-          - **Verified Production Release**: Signed with authentic keystore (`CN=TikSave, SHA-256: 83d53182b915648bea5c4ecba64317f56e97a90e91bcc0cec278dcead88352a1`).
+          ### ✨ Major Updates in v1.1.3:
+          - **Resilient YouTube Stream Resolver**: Direct metadata (title, author, cover, duration) extraction eliminating 'Unable to extract video stream' dialogs.
+          - **Resilient Facebook Reel & Video Downloader**: Extracts authentic HD/SD streams from Facebook Watch & Reels without login-block popups.
+          - **Fixed HTTP Error 403**: Smart automatic recovery ensuring downloads never fail with HTTP Error 403 Forbidden.
+          - **Professional Video Cutter & Editor**: Top video player, middle visual frame thumbnail timeline with draggable start/end handles, -0.1s/+0.1s frame navigation, and lossless hardware-accelerated MP4 export.
+          - **Original Production Keystore Preserved**: Signed with official certificate (`CN=TikSave, SHA-256: 83d53182b915648bea5c4ecba64317f56e97a90e91bcc0cec278dcead88352a1`).
 
           ### 📦 Download Links
-          - **[TikSave-Release.apk](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.1/TikSave-Release.apk)** (Official Production Release)
+          - **[TikSave-Release.apk](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.3/TikSave-Release.apk)** (Official Production Release)
           EOF
 
       - name: Publish GitHub Release
