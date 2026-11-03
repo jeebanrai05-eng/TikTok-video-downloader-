@@ -1,10 +1,10 @@
 {
-  "versionCode": 6,
-  "versionName": "1.1.1",
-  "releaseTitle": "TikSave v1.1.1 (Interactive Video Trimmer, Real FB Downloader & 403 Fix)",
-  "releaseNotes": "• Interactive Video Trimmer & Clip Cutter: Select exact Start and End timestamps with interactive RangeSlider and -1s/+1s fine-tuning buttons ready for 9:16 Facebook Reels & TikTok Shorts\n• Fixed HTTP Error 403: Resilient domain-aware download engine with 3-stage fallback eliminating 403 Forbidden on YouTube, Facebook, and CDN streams\n• Real Facebook Video Downloader: Direct high-speed HD/SD MP4 extraction from Facebook Watch & Reels without mock data\n• Dynamic Unlimited AI Captions: Fresh, diverse, and non-repetitive viral hooks and hashtags tailored for Nepali & global audiences\n• Strict Production Signing: Signed with genuine verified upload key (CN=TikSave, SHA-256: 83:D5:31:82...)",
-  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.1/TikSave-Release.apk",
+  "versionCode": 7,
+  "versionName": "1.1.2",
+  "releaseTitle": "TikSave v1.1.2 (Professional Video Cutter, Real Multi-Platform Downloader & Lossless MP4 Export)",
+  "releaseNotes": "• Dedicated CapCut-Style Video Cutter: Large video preview player, horizontal visual timeline with real frame thumbnails, draggable start/end handles, frame-by-frame -0.1s/+0.1s navigation, and lossless MP4 export\n• Full Video Clipping: Cut any duration (15s Reel, 30s TikTok, 60s Story, or Custom 00:35 - 01:20) with audio synchronization\n• Real Facebook & YouTube Engine: Direct public MP4 streams with authentic resolutions (360p, 480p, 720p, 1080p, 2K, 4K) without fake mock samples\n• Library Integration: Rename, cut, play, and share trimmed clips and full downloads directly from Library\n• Strict Production Keystore: Guaranteed update compatibility signed with CN=TikSave (SHA-256: 83:D5:31:82...)",
+  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.2/TikSave-Release.apk",
   "minSupportedVersion": "1.0.0",
   "mandatory": false,
-  "publishedAt": "2026-11-02"
+  "publishedAt": "2026-11-03"
 }

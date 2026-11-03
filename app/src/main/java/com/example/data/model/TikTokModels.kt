@@ -64,9 +64,11 @@ enum class ClipPreset(val label: String, val seconds: Int, val description: Stri
 enum class DownloadQuality(val label: String, val badge: String, val description: String) {
     ULTRA_8K_120FPS("8K Ultra 120FPS", "8K / 120FPS", "Extreme bitrate 8K 120FPS ultra-smooth stream with zero watermark"),
     HDR_ULTRA("4K HDR+ 60FPS", "4K / HDR+", "Original high-bitrate stream with enhanced HDR fidelity & vibrant colors"),
+    QHD_2K("2K QHD 1440p", "2K 1440p", "Crisp 2560x1440 Quad-HD high resolution display"),
     HD_STANDARD("1080p Full HD", "1080p FHD", "Crisp high-definition clean video ready to post"),
     NORMAL_720P("720p Normal", "720p HD", "Balanced quality and fast download for immediate sharing"),
     LOW_480P("480p Low Fast", "480p SD", "Compact lightweight clip for fast messaging & low data"),
+    MOBILE_360P("360p Mobile", "360p Low", "Ultra-lightweight low-bandwidth mobile stream"),
     AUDIO_ONLY("Original Sound", "320 kbps MP3", "Extract studio quality original audio soundtrack"),
     AUDIO_HIGH_SOUND("High Sound Boost", "Boosted MP3", "High volume dynamic audio with enhanced clarity & bass (+6dB)"),
     AUDIO_VFX_SOUND("VFX & Dialogue", "Clean Vocal", "Isolate clear dialogue, voiceovers, and sound effects"),
@@ -86,16 +88,20 @@ data class VideoMetadata(
     val likeCount: Long,
     val commentCount: Long,
     val shareCount: Long,
-    val ultra8kUrl: String,
-    val ultra8kSize: Long,
-    val ultraHdrUrl: String,
-    val ultraHdrSize: Long,
-    val standardHdUrl: String,
-    val standardHdSize: Long,
+    val ultra8kUrl: String = "",
+    val ultra8kSize: Long = 0L,
+    val ultraHdrUrl: String = "",
+    val ultraHdrSize: Long = 0L,
+    val qhd2kUrl: String = "",
+    val qhd2kSize: Long = 0L,
+    val standardHdUrl: String = "",
+    val standardHdSize: Long = 0L,
     val normal720pUrl: String = "",
     val normal720pSize: Long = 0L,
     val low480pUrl: String = "",
     val low480pSize: Long = 0L,
+    val mobile360pUrl: String = "",
+    val mobile360pSize: Long = 0L,
     val audioUrl: String,
     val musicTitle: String,
     val musicAuthor: String,
@@ -106,9 +112,26 @@ data class VideoMetadata(
     val trimStartSeconds: Int = 0,
     val trimEndSeconds: Int = 0,
     val facebookReelsReadyCaption: String = "",
-    val tiktokShortsReadyCaption: String = ""
+    val tiktokShortsReadyCaption: String = "",
+    val genuineQualities: List<DownloadQuality> = emptyList()
 ) {
     val isPhotoSlide: Boolean get() = images.isNotEmpty()
+
+    val availableQualities: List<DownloadQuality>
+        get() = if (genuineQualities.isNotEmpty()) {
+            genuineQualities
+        } else {
+            val list = mutableListOf<DownloadQuality>()
+            if (ultra8kUrl.isNotBlank() && ultra8kUrl != standardHdUrl) list.add(DownloadQuality.ULTRA_8K_120FPS)
+            if (ultraHdrUrl.isNotBlank() && ultraHdrUrl != standardHdUrl) list.add(DownloadQuality.HDR_ULTRA)
+            if (qhd2kUrl.isNotBlank()) list.add(DownloadQuality.QHD_2K)
+            if (standardHdUrl.isNotBlank()) list.add(DownloadQuality.HD_STANDARD)
+            if (normal720pUrl.isNotBlank()) list.add(DownloadQuality.NORMAL_720P)
+            if (low480pUrl.isNotBlank()) list.add(DownloadQuality.LOW_480P)
+            if (mobile360pUrl.isNotBlank()) list.add(DownloadQuality.MOBILE_360P)
+            if (list.isEmpty() && standardHdUrl.isNotBlank()) list.add(DownloadQuality.HD_STANDARD)
+            list
+        }
 }
 
 sealed interface ExtractionState {

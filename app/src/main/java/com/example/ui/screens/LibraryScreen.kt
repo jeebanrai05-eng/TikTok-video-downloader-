@@ -24,9 +24,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.DownloadDone
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FolderOpen
@@ -43,6 +45,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -91,11 +94,15 @@ fun LibraryScreen(
     onToggleFavorite: (id: Long) -> Unit,
     onClearAll: () -> Unit,
     onGoToDownloader: () -> Unit,
+    onOpenInEditor: (DownloadItem) -> Unit = {},
+    onRenameItem: (DownloadItem, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf(LibraryFilter.ALL) }
+    var itemToRename by remember { mutableStateOf<DownloadItem?>(null) }
+    var renameInput by remember { mutableStateOf("") }
 
     val filteredList = downloads.filter { item ->
         val matchesQuery = searchQuery.isBlank() ||
@@ -288,11 +295,78 @@ fun LibraryScreen(
                             )
                         },
                         onToggleFavorite = { onToggleFavorite(item.id) },
-                        onDelete = { onDeleteItem(item) }
+                        onDelete = { onDeleteItem(item) },
+                        onOpenInEditor = { onOpenInEditor(item) },
+                        onRename = {
+                            itemToRename = item
+                            renameInput = item.title
+                        }
                     )
                 }
             }
         }
+    }
+
+    // Rename Dialog
+    itemToRename?.let { item ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { itemToRename = null },
+            title = {
+                Text(
+                    text = "Rename Video / Clip",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "Enter a new title for this item in your library:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = renameInput,
+                        onValueChange = { renameInput = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = NeonCyan,
+                            unfocusedBorderColor = ObsidianCardBorder,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        )
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val trimmed = renameInput.trim()
+                        if (trimmed.isNotBlank()) {
+                            onRenameItem(item, trimmed)
+                        }
+                        itemToRename = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan, contentColor = Color.Black),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Save", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { itemToRename = null },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Cancel")
+                }
+            },
+            containerColor = ObsidianSurface,
+            shape = RoundedCornerShape(18.dp)
+        )
     }
 }
 
@@ -328,7 +402,9 @@ private fun LibraryDownloadCard(
     onPlay: () -> Unit,
     onShare: () -> Unit,
     onToggleFavorite: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onOpenInEditor: () -> Unit = {},
+    onRename: () -> Unit = {}
 ) {
     val context = LocalContext.current
     Card(
@@ -401,8 +477,12 @@ private fun LibraryDownloadCard(
                 // Quality badge
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val (badgeText, badgeColor) = when (item.quality) {
+                        "TRIMMED_CLIP" -> "CLIP REEL" to NeonMagenta
                         "HDR_ULTRA" -> "HDR+ ULTRA" to HdrGold
+                        "QHD_2K" -> "2K QHD" to NeonCyan
                         "AUDIO_ONLY" -> "MP3 AUDIO" to NeonMagenta
+                        "MOBILE_360P" -> "360p SD" to Color.Gray
+                        "LOW_480P" -> "480p SD" to Color.Gray
                         else -> "FULL HD" to NeonCyan
                     }
                     Box(
@@ -452,48 +532,72 @@ private fun LibraryDownloadCard(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                if (item.quality != "AUDIO_ONLY") {
+                    IconButton(
+                        onClick = onOpenInEditor,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCut,
+                            contentDescription = "Edit in Video Cutter",
+                            tint = NeonCyan,
+                            modifier = Modifier.size(17.dp)
+                        )
+                    }
+                }
+                IconButton(
+                    onClick = onRename,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Rename",
+                        tint = Color.White.copy(alpha = 0.8f),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
                 IconButton(
                     onClick = onToggleFavorite,
-                    modifier = Modifier.size(34.dp)
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "Favorite",
                         tint = if (item.isFavorite) NeonMagenta else Color.Gray,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(17.dp)
                     )
                 }
                 IconButton(
                     onClick = { FormatUtils.openDeviceGallery(context, item.localFilePath) },
-                    modifier = Modifier.size(34.dp)
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.FolderOpen,
                         contentDescription = "Open in Device Gallery",
                         tint = SuccessGreen,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(17.dp)
                     )
                 }
                 IconButton(
                     onClick = onShare,
-                    modifier = Modifier.size(34.dp)
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Share,
                         contentDescription = "Share",
                         tint = Color.White.copy(alpha = 0.8f),
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(17.dp)
                     )
                 }
                 IconButton(
                     onClick = onDelete,
-                    modifier = Modifier.size(34.dp)
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete",
                         tint = ErrorRed.copy(alpha = 0.7f),
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(17.dp)
                     )
                 }
             }

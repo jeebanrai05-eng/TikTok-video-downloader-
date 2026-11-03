@@ -67,11 +67,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.ExtractionState
+import androidx.compose.material.icons.filled.ContentCut
+import androidx.compose.material.icons.outlined.ContentCut
 import com.example.ui.components.ModernDownloadModal
 import com.example.ui.components.UpdateDialog
 import com.example.ui.components.VideoPlayerDialog
 import com.example.ui.screens.AiStudioScreen
 import com.example.ui.screens.DownloaderScreen
+import com.example.ui.screens.EditorScreen
 import com.example.ui.screens.LibraryScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.theme.HdrGold
@@ -147,6 +150,11 @@ fun TikSaveApp(viewModel: MainViewModel) {
     val aiInputText by viewModel.aiInputText.collectAsStateWithLifecycle()
     val aiSelectedTone by viewModel.aiSelectedTone.collectAsStateWithLifecycle()
     val aiGenerationState by viewModel.aiGenerationState.collectAsStateWithLifecycle()
+    val editorSourceUriOrPath by viewModel.editorSourceUriOrPath.collectAsStateWithLifecycle()
+    val editorVideoTitle by viewModel.editorVideoTitle.collectAsStateWithLifecycle()
+    val isExportingClip by viewModel.isExportingClip.collectAsStateWithLifecycle()
+    val clipExportProgress by viewModel.clipExportProgress.collectAsStateWithLifecycle()
+    val clipExportResult by viewModel.clipExportResult.collectAsStateWithLifecycle()
 
     val notificationLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -251,6 +259,26 @@ fun TikSaveApp(viewModel: MainViewModel) {
                         unselectedTextColor = Color.White.copy(alpha = 0.6f)
                     ),
                     modifier = Modifier.testTag("nav_tab_downloader")
+                )
+
+                NavigationBarItem(
+                    selected = currentTab == AppTab.EDITOR,
+                    onClick = { viewModel.setTab(AppTab.EDITOR) },
+                    icon = {
+                        Icon(
+                            imageVector = if (currentTab == AppTab.EDITOR) Icons.Filled.ContentCut else Icons.Outlined.ContentCut,
+                            contentDescription = "Editor"
+                        )
+                    },
+                    label = { Text("Editor") },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color.Black,
+                        selectedTextColor = NeonCyan,
+                        indicatorColor = NeonCyan,
+                        unselectedIconColor = Color.White.copy(alpha = 0.6f),
+                        unselectedTextColor = Color.White.copy(alpha = 0.6f)
+                    ),
+                    modifier = Modifier.testTag("nav_tab_editor")
                 )
 
                 NavigationBarItem(
@@ -361,6 +389,20 @@ fun TikSaveApp(viewModel: MainViewModel) {
                     onDismissActiveDownload = viewModel::dismissActiveDownload
                 )
 
+                AppTab.EDITOR -> EditorScreen(
+                    videoSourceUriOrPath = editorSourceUriOrPath,
+                    videoTitle = editorVideoTitle,
+                    allDownloads = allDownloads,
+                    onSelectVideo = viewModel::selectEditorVideo,
+                    onExportClip = viewModel::exportClip,
+                    isExporting = isExportingClip,
+                    exportProgress = clipExportProgress,
+                    exportResult = clipExportResult,
+                    onCancelExport = viewModel::cancelClipExport,
+                    onDismissExportResult = viewModel::dismissExportResult,
+                    onPlayExportedClip = { path, title -> viewModel.previewMedia(path, title) }
+                )
+
                 AppTab.AI_STUDIO -> AiStudioScreen(
                     inputText = aiInputText,
                     onInputChange = viewModel::setAiInputText,
@@ -377,7 +419,9 @@ fun TikSaveApp(viewModel: MainViewModel) {
                     onDeleteItem = viewModel::deleteItem,
                     onToggleFavorite = { id -> viewModel.toggleFavorite(id) },
                     onClearAll = viewModel::clearAllHistory,
-                    onGoToDownloader = { viewModel.setTab(AppTab.DOWNLOADER) }
+                    onGoToDownloader = { viewModel.setTab(AppTab.DOWNLOADER) },
+                    onOpenInEditor = { item -> viewModel.openInEditor(item.localFilePath.ifEmpty { item.videoUrl }, item.title) },
+                    onRenameItem = { item, newTitle -> viewModel.renameDownloadItem(item.id, newTitle) }
                 )
 
                 AppTab.SETTINGS -> SettingsScreen(

@@ -707,41 +707,27 @@ fun ResultVideoCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Quality Options List (All resolutions requested by user: 8K, 4K HDR, 1080p, 720p, 480p)
-            QualityOptionRow(
-                quality = DownloadQuality.ULTRA_8K_120FPS,
-                isSelected = selectedQuality == DownloadQuality.ULTRA_8K_120FPS,
-                fileSize = metadata.ultra8kSize,
-                onSelect = { onQualitySelected(DownloadQuality.ULTRA_8K_120FPS) }
-            )
-
-            QualityOptionRow(
-                quality = DownloadQuality.HDR_ULTRA,
-                isSelected = selectedQuality == DownloadQuality.HDR_ULTRA,
-                fileSize = metadata.ultraHdrSize,
-                onSelect = { onQualitySelected(DownloadQuality.HDR_ULTRA) }
-            )
-
-            QualityOptionRow(
-                quality = DownloadQuality.HD_STANDARD,
-                isSelected = selectedQuality == DownloadQuality.HD_STANDARD,
-                fileSize = metadata.standardHdSize,
-                onSelect = { onQualitySelected(DownloadQuality.HD_STANDARD) }
-            )
-
-            QualityOptionRow(
-                quality = DownloadQuality.NORMAL_720P,
-                isSelected = selectedQuality == DownloadQuality.NORMAL_720P,
-                fileSize = metadata.normal720pSize,
-                onSelect = { onQualitySelected(DownloadQuality.NORMAL_720P) }
-            )
-
-            QualityOptionRow(
-                quality = DownloadQuality.LOW_480P,
-                isSelected = selectedQuality == DownloadQuality.LOW_480P,
-                fileSize = metadata.low480pSize,
-                onSelect = { onQualitySelected(DownloadQuality.LOW_480P) }
-            )
+            // Quality Options List (Genuine resolutions available for this video only)
+            val qualitiesToDisplay = metadata.availableQualities
+            qualitiesToDisplay.forEach { q ->
+                val size = when (q) {
+                    DownloadQuality.ULTRA_8K_120FPS -> metadata.ultra8kSize
+                    DownloadQuality.HDR_ULTRA -> metadata.ultraHdrSize
+                    DownloadQuality.QHD_2K -> metadata.qhd2kSize
+                    DownloadQuality.HD_STANDARD -> metadata.standardHdSize
+                    DownloadQuality.NORMAL_720P -> metadata.normal720pSize
+                    DownloadQuality.LOW_480P -> metadata.low480pSize
+                    DownloadQuality.MOBILE_360P -> metadata.mobile360pSize
+                    DownloadQuality.AUDIO_ONLY, DownloadQuality.AUDIO_HIGH_SOUND, DownloadQuality.AUDIO_VFX_SOUND -> 4_200_000L
+                    DownloadQuality.PHOTO_SLIDE_ULTRA, DownloadQuality.COVER_IMAGE -> 1_500_000L
+                }
+                QualityOptionRow(
+                    quality = q,
+                    isSelected = selectedQuality == q,
+                    fileSize = size,
+                    onSelect = { onQualitySelected(q) }
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 

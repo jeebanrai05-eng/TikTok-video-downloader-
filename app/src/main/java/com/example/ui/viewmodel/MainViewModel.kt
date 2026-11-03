@@ -36,8 +36,12 @@ import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.random.Random
 
+import com.example.data.video.RealVideoTrimmer
+import com.example.data.video.TrimResult
+
 enum class AppTab {
     DOWNLOADER,
+    EDITOR,
     AI_STUDIO,
     LIBRARY,
     SETTINGS
@@ -98,6 +102,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _toastEvents = MutableSharedFlow<String>()
     val toastEvents: SharedFlow<String> = _toastEvents.asSharedFlow()
+
+    // Professional Video Editor State
+    private val _editorSourceUriOrPath = MutableStateFlow<String?>(null)
+    val editorSourceUriOrPath: StateFlow<String?> = _editorSourceUriOrPath.asStateFlow()
+
+    private val _editorVideoTitle = MutableStateFlow("TikSave Video")
+    val editorVideoTitle: StateFlow<String> = _editorVideoTitle.asStateFlow()
+
+    private val _isExportingClip = MutableStateFlow(false)
+    val isExportingClip: StateFlow<Boolean> = _isExportingClip.asStateFlow()
+
+    private val _clipExportProgress = MutableStateFlow(0f)
+    val clipExportProgress: StateFlow<Float> = _clipExportProgress.asStateFlow()
+
+    private val _clipExportResult = MutableStateFlow<TrimResult?>(null)
+    val clipExportResult: StateFlow<TrimResult?> = _clipExportResult.asStateFlow()
+
+    private var clipExportJob: Job? = null
 
     // Download history & favorites
     val allDownloads: StateFlow<List<DownloadItem>> = repository.allDownloads
@@ -265,9 +287,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val downloadUrl = when (quality) {
             DownloadQuality.ULTRA_8K_120FPS -> if (metadata.isPhotoSlide && metadata.ultra8kUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.ultra8kUrl
             DownloadQuality.HDR_ULTRA -> if (metadata.isPhotoSlide && metadata.ultraHdrUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.ultraHdrUrl
+            DownloadQuality.QHD_2K -> metadata.qhd2kUrl.ifEmpty { metadata.standardHdUrl }
             DownloadQuality.HD_STANDARD -> if (metadata.isPhotoSlide && metadata.standardHdUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.standardHdUrl
             DownloadQuality.NORMAL_720P -> metadata.normal720pUrl.ifEmpty { metadata.standardHdUrl }
             DownloadQuality.LOW_480P -> metadata.low480pUrl.ifEmpty { metadata.standardHdUrl }
+            DownloadQuality.MOBILE_360P -> metadata.mobile360pUrl.ifEmpty { metadata.low480pUrl }
             DownloadQuality.AUDIO_ONLY, DownloadQuality.AUDIO_HIGH_SOUND, DownloadQuality.AUDIO_VFX_SOUND -> metadata.audioUrl
             DownloadQuality.COVER_IMAGE -> metadata.coverUrl
             DownloadQuality.PHOTO_SLIDE_ULTRA -> metadata.ultraHdrUrl.ifBlank { metadata.images.firstOrNull() ?: metadata.coverUrl }
@@ -309,9 +333,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             totalBytes = when (quality) {
                 DownloadQuality.ULTRA_8K_120FPS -> metadata.ultra8kSize
                 DownloadQuality.HDR_ULTRA -> metadata.ultraHdrSize
+                DownloadQuality.QHD_2K -> metadata.qhd2kSize
                 DownloadQuality.HD_STANDARD -> metadata.standardHdSize
                 DownloadQuality.NORMAL_720P -> metadata.normal720pSize
                 DownloadQuality.LOW_480P -> metadata.low480pSize
+                DownloadQuality.MOBILE_360P -> metadata.mobile360pSize
                 DownloadQuality.AUDIO_ONLY, DownloadQuality.AUDIO_HIGH_SOUND, DownloadQuality.AUDIO_VFX_SOUND -> 4_500_000L
                 DownloadQuality.COVER_IMAGE, DownloadQuality.PHOTO_SLIDE_ULTRA -> 2_500_000L
             },
@@ -596,6 +622,75 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         startDownload(slideMeta, DownloadQuality.PHOTO_SLIDE_ULTRA)
         viewModelScope.launch {
             _toastEvents.emit("📸 Saving Slide #$slideNumber in 8K HDR+ Ultra...")
+        }
+    }
+
+    // Video Editor Actions
+    fun openInEditor(sourceUriOrPath: String, title: String) {
+        _editorSourceUriOrPath.value = sourceUriOrPath
+        _editorVideoTitle.value = title
+        _currentTab.value = AppTab.EDITOR
+    }
+
+    fun selectEditorVideo(sourceUriOrPath: String, title: String) {
+        _editorSourceUriOrPath.value = sourceUriOrPath
+        _editorVideoTitle.value = title
+    }
+
+    fun exportClip(startSec: Float, endSec: Float, clipTitle: String) {
+        val source = _editorSourceUriOrPath.value ?: return
+        if (_isExportingClip.value) return
+
+        clipExportJob = viewModelScope.launch {
+            _isExportingClip.value = true
+            _clipExportProgress.value = 0.05f
+            try {
+                val res = RealVideoTrimmer.trimVideo(
+                    context = getApplication(),
+                    sourceUriOrPath = source,
+                    startSeconds = startSec,
+                    endSeconds = endSec,
+                    exportTitle = clipTitle,
+                    onProgress = { p -> _clipExportProgress.value = p }
+                )
+                _isExportingClip.value = false
+                res.onSuccess { trimResult ->
+                    _clipExportResult.value = trimResult
+                    repository.saveTrimmedClipRecord(
+                        clipTitle = clipTitle,
+                        author = "TikSave Editor",
+                        localFile = trimResult.file,
+                        durationSeconds = trimResult.durationSeconds
+                    )
+                    _toastEvents.emit("Lossless MP4 clip exported to Movies/TikSave and Library!")
+                }.onFailure { err ->
+                    _toastEvents.emit("Export failed: ${err.localizedMessage}")
+                }
+            } catch (e: Exception) {
+                _isExportingClip.value = false
+                _toastEvents.emit("Export error: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun cancelClipExport() {
+        clipExportJob?.cancel()
+        clipExportJob = null
+        _isExportingClip.value = false
+    }
+
+    fun dismissExportResult() {
+        _clipExportResult.value = null
+    }
+
+    fun renameDownloadItem(id: Long, newTitle: String) {
+        viewModelScope.launch {
+            try {
+                repository.renameDownload(id, newTitle)
+                _toastEvents.emit("Item renamed successfully")
+            } catch (e: Exception) {
+                _toastEvents.emit("Failed to rename: ${e.localizedMessage}")
+            }
         }
     }
 

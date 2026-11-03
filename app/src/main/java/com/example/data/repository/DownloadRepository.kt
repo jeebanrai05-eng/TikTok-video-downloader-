@@ -15,8 +15,10 @@ import com.example.data.model.VideoMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.File
 import java.net.URLEncoder
@@ -225,16 +227,20 @@ class DownloadRepository(private val context: Context) {
         targetUrl: String,
         onProgress: (String, Float) -> Unit
     ): ExtractionState = withContext(Dispatchers.IO) {
-        onProgress("Analyzing YouTube link & video stream...", 0.25f)
+        onProgress("Analyzing YouTube link & video stream...", 0.20f)
         val matcher = YOUTUBE_URL_REGEX.matcher(targetUrl)
-        val videoId = if (matcher.find()) matcher.group(1) else "dQw4w9WgXcQ"
+        val videoId = if (matcher.find()) matcher.group(1) else null
 
-        onProgress("Extracting stream metadata & 9:16 Facebook Reels formatting...", 0.60f)
-        var realTitle = if (targetUrl.contains("shorts")) "YouTube Shorts Clip ($videoId)" else "YouTube High-Res Clip to Facebook Reels ($videoId)"
+        if (videoId.isNullOrBlank()) {
+            return@withContext ExtractionState.Error("Invalid YouTube URL. Please provide a valid YouTube video or shorts link.")
+        }
+
+        var realTitle = if (targetUrl.contains("shorts")) "YouTube Shorts ($videoId)" else "YouTube Video ($videoId)"
         var authorName = "YouTube Creator"
-        var cover = "https://img.youtube.com/vi/$videoId/maxresdefault.jpg"
+        var cover = "https://img.youtube.com/vi/$videoId/hqdefault.jpg"
+        var durationSec = 0
 
-        // Fetch official YouTube oEmbed metadata for real video title and author
+        // 1. Fetch official YouTube oEmbed metadata for real video title and author
         try {
             val oembedUrl = "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=$videoId&format=json"
             val req = Request.Builder().url(oembedUrl).build()
@@ -247,18 +253,136 @@ class DownloadRepository(private val context: Context) {
                 if (thumb.isNotBlank()) cover = thumb
             }
             resp.close()
-        } catch (ignored: Exception) {}
+        } catch (_: Exception) {}
+
+        onProgress("Contacting stream nodes for genuine resolutions...", 0.45f)
+
+        var stream1080p: String? = null
+        var stream720p: String? = null
+        var stream480p: String? = null
+        var stream360p: String? = null
+        var audioStream: String? = null
+
+        // 2. Query public Invidious instances for live unexpired MP4 formatStreams
+        val invidiousInstances = listOf(
+            "https://inv.nadeko.net",
+            "https://invidious.nerdvpn.de",
+            "https://yewtu.be",
+            "https://invidious.jing.rocks"
+        )
+
+        for (instance in invidiousInstances) {
+            try {
+                val invReq = Request.Builder()
+                    .url("$instance/api/v1/videos/$videoId")
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+                    .build()
+                val invResp = httpClient.newCall(invReq).execute()
+                if (invResp.isSuccessful) {
+                    val bodyStr = invResp.body?.string() ?: ""
+                    if (bodyStr.isNotBlank()) {
+                        val invJson = JSONObject(bodyStr)
+                        if (invJson.has("title")) realTitle = invJson.optString("title", realTitle)
+                        if (invJson.has("author")) authorName = invJson.optString("author", authorName)
+                        val dur = invJson.optInt("lengthSeconds", 0)
+                        if (dur > 0) durationSec = dur
+
+                        val formatStreams = invJson.optJSONArray("formatStreams")
+                        if (formatStreams != null && formatStreams.length() > 0) {
+                            for (i in 0 until formatStreams.length()) {
+                                val s = formatStreams.getJSONObject(i)
+                                val q = s.optString("qualityLabel", "")
+                                val u = s.optString("url", "")
+                                if (u.isNotBlank()) {
+                                    when {
+                                        q.contains("1080") -> stream1080p = u
+                                        q.contains("720") -> stream720p = u
+                                        q.contains("480") -> stream480p = u
+                                        q.contains("360") -> stream360p = u
+                                        else -> if (stream720p == null) stream720p = u
+                                    }
+                                }
+                            }
+                        }
+
+                        val adaptiveFormats = invJson.optJSONArray("adaptiveFormats")
+                        if (adaptiveFormats != null && adaptiveFormats.length() > 0) {
+                            for (i in 0 until adaptiveFormats.length()) {
+                                val a = adaptiveFormats.getJSONObject(i)
+                                val type = a.optString("type", "")
+                                val u = a.optString("url", "")
+                                if (type.startsWith("audio/") && audioStream == null && u.isNotBlank()) {
+                                    audioStream = u
+                                }
+                            }
+                        }
+
+                        if (stream720p != null || stream360p != null || stream1080p != null) {
+                            invResp.close()
+                            break
+                        }
+                    }
+                }
+                invResp.close()
+            } catch (_: Exception) {}
+        }
+
+        // 3. Fallback: Query public Cobalt stream endpoint if Invidious instances are restricted
+        if (stream720p == null && stream360p == null && stream1080p == null) {
+            try {
+                onProgress("Connecting to authorized video processing relay...", 0.65f)
+                val cobaltPayload = JSONObject().apply {
+                    put("url", "https://www.youtube.com/watch?v=$videoId")
+                }
+                val body = cobaltPayload.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+                val cobaltReq = Request.Builder()
+                    .url("https://api.cobalt.tools/api/json")
+                    .post(body)
+                    .header("Accept", "application/json")
+                    .header("Content-Type", "application/json")
+                    .header("User-Agent", "TikSave/1.1.2")
+                    .build()
+                val cobaltResp = httpClient.newCall(cobaltReq).execute()
+                if (cobaltResp.isSuccessful) {
+                    val cJson = JSONObject(cobaltResp.body?.string() ?: "")
+                    val st = cJson.optString("status")
+                    if (st == "stream" || st == "redirect") {
+                        val sUrl = cJson.optString("url")
+                        if (sUrl.isNotBlank()) {
+                            stream720p = sUrl
+                        }
+                    }
+                }
+                cobaltResp.close()
+            } catch (_: Exception) {}
+        }
+
+        // Check if any genuine stream was resolved
+        val primaryStream = stream1080p ?: stream720p ?: stream480p ?: stream360p
+        if (primaryStream == null) {
+            return@withContext ExtractionState.Error(
+                "Unable to extract video stream. This YouTube video may be private, age-restricted, or DRM protected. Only public authorized YouTube videos can be processed."
+            )
+        }
+
+        val genuineList = mutableListOf<DownloadQuality>()
+        if (stream1080p != null) genuineList.add(DownloadQuality.HD_STANDARD)
+        if (stream720p != null) genuineList.add(DownloadQuality.NORMAL_720P)
+        if (stream480p != null) genuineList.add(DownloadQuality.LOW_480P)
+        if (stream360p != null) genuineList.add(DownloadQuality.MOBILE_360P)
+        if (genuineList.isEmpty()) genuineList.add(DownloadQuality.NORMAL_720P)
+        genuineList.add(DownloadQuality.AUDIO_ONLY)
+
+        val soundTrack = audioStream ?: primaryStream
+        val totalDuration = if (durationSec > 0) durationSec else 30
 
         val fbCaption = buildString {
             appendLine("🔥 $realTitle")
             appendLine()
-            appendLine("👉 Facebook Reels को लागि तयार पारिएको विशेष क्लिप! मन परे कमेन्ट र सेयर गरिदिनुहोला 👇")
+            appendLine("👉 Facebook Reels क्लिप! हेर्नुहोस् र प्रतिक्रिया दिनुहोस् 👇")
             appendLine()
             appendLine("#FacebookReels #ReelsViral #TrendingReels #FBReelsNepal #ViralClip #YouTubeToReels")
         }
-
-        // Direct stream URL
-        val streamUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
 
         val metadata = VideoMetadata(
             id = "yt_$videoId",
@@ -267,31 +391,30 @@ class DownloadRepository(private val context: Context) {
             authorUsername = "@${authorName.replace(" ", "").lowercase()}",
             authorAvatar = "https://picsum.photos/seed/yt_${videoId.hashCode()}/200/200",
             coverUrl = cover,
-            durationSeconds = 45,
+            durationSeconds = totalDuration,
             playCount = 1250000L,
             likeCount = 89000L,
             commentCount = 4500L,
             shareCount = 12300L,
-            ultra8kUrl = streamUrl,
-            ultra8kSize = 42_000_000L,
-            ultraHdrUrl = streamUrl,
-            ultraHdrSize = 26_000_000L,
-            standardHdUrl = streamUrl,
+            standardHdUrl = stream1080p ?: stream720p ?: primaryStream,
             standardHdSize = 16_000_000L,
-            normal720pUrl = streamUrl,
+            normal720pUrl = stream720p ?: primaryStream,
             normal720pSize = 9_500_000L,
-            low480pUrl = streamUrl,
-            low480pSize = 4_800_000L,
-            audioUrl = streamUrl,
-            musicTitle = "$realTitle (Original Sound)",
+            low480pUrl = stream480p ?: primaryStream,
+            low480pSize = 5_000_000L,
+            mobile360pUrl = stream360p ?: primaryStream,
+            mobile360pSize = 2_800_000L,
+            audioUrl = soundTrack,
+            musicTitle = "$realTitle (Soundtrack)",
             musicAuthor = authorName,
             originalTikTokUrl = targetUrl,
             platform = MediaPlatform.YOUTUBE_TO_REELS,
-            clipPreset = ClipPreset.SEC_30,
+            clipPreset = ClipPreset.FULL,
             facebookReelsReadyCaption = fbCaption,
-            tiktokShortsReadyCaption = "$realTitle 🔥 #Shorts #YouTubeShorts #viral #trending"
+            tiktokShortsReadyCaption = "$realTitle 🔥 #Shorts #YouTubeShorts #viral #trending",
+            genuineQualities = genuineList
         )
-        onProgress("Ready to clip to Facebook Reels!", 1.0f)
+        onProgress("Ready for download and editing!", 1.0f)
         ExtractionState.Success(metadata)
     }
 
@@ -361,7 +484,7 @@ class DownloadRepository(private val context: Context) {
                 }
             }
             fbResp.close()
-        } catch (ignored: Exception) {}
+        } catch (_: Exception) {}
 
         // 2. High-speed public Facebook API resolver fallback if direct HTML was walled
         if (realHdStream.isNullOrBlank() && realSdStream.isNullOrBlank()) {
@@ -381,12 +504,25 @@ class DownloadRepository(private val context: Context) {
                     if (realThumbnail.isNullOrBlank()) realThumbnail = data.optString("thumbnail").takeIf { it.isNotBlank() }
                 }
                 apiResp.close()
-            } catch (ignored: Exception) {}
+            } catch (_: Exception) {}
         }
 
-        val finalStream = realHdStream ?: realSdStream ?: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
-        val finalTitle = realTitle ?: "Facebook Video / Reel ($videoId)"
+        // If no real stream was resolved, return an honest error rather than fake sample video
+        if (realHdStream.isNullOrBlank() && realSdStream.isNullOrBlank()) {
+            return@withContext ExtractionState.Error(
+                "This Facebook video is private, restricted, or requires Facebook login. Only publicly accessible Facebook videos and reels can be downloaded."
+            )
+        }
+
+        val finalStream = realHdStream ?: realSdStream!!
+        val finalTitle = realTitle ?: "Facebook Video ($videoId)"
         val finalCover = realThumbnail ?: "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop&q=80"
+
+        val genuineList = mutableListOf<DownloadQuality>()
+        if (!realHdStream.isNullOrBlank()) genuineList.add(DownloadQuality.HD_STANDARD)
+        if (!realSdStream.isNullOrBlank()) genuineList.add(DownloadQuality.NORMAL_720P)
+        if (genuineList.isEmpty()) genuineList.add(DownloadQuality.HD_STANDARD)
+        genuineList.add(DownloadQuality.AUDIO_ONLY)
 
         val ttCaption = buildString {
             appendLine("🔥 $finalTitle")
@@ -406,26 +542,25 @@ class DownloadRepository(private val context: Context) {
             likeCount = 64000L,
             commentCount = 3200L,
             shareCount = 9400L,
-            ultra8kUrl = finalStream,
-            ultra8kSize = 38_000_000L,
-            ultraHdrUrl = finalStream,
-            ultraHdrSize = 24_000_000L,
-            standardHdUrl = finalStream,
+            standardHdUrl = realHdStream ?: finalStream,
             standardHdSize = 15_000_000L,
             normal720pUrl = realSdStream ?: finalStream,
             normal720pSize = 8_800_000L,
             low480pUrl = realSdStream ?: finalStream,
             low480pSize = 4_500_000L,
+            mobile360pUrl = realSdStream ?: finalStream,
+            mobile360pSize = 2_500_000L,
             audioUrl = finalStream,
             musicTitle = "$finalTitle (Original Sound)",
             musicAuthor = "Facebook Page",
             originalTikTokUrl = targetUrl,
             platform = MediaPlatform.FACEBOOK_TO_SHORTS,
-            clipPreset = ClipPreset.SEC_30,
+            clipPreset = ClipPreset.FULL,
             facebookReelsReadyCaption = "Facebook Viral Video Clip 🔥 $finalTitle #FacebookReels #Viral",
-            tiktokShortsReadyCaption = ttCaption
+            tiktokShortsReadyCaption = ttCaption,
+            genuineQualities = genuineList
         )
-        onProgress("Ready to clip to TikTok & Shorts!", 1.0f)
+        onProgress("Ready for download and editing!", 1.0f)
         ExtractionState.Success(metadata)
     }
 
@@ -517,11 +652,13 @@ class DownloadRepository(private val context: Context) {
         localFile: File
     ): Long {
         val streamUrl = when (quality) {
-            DownloadQuality.ULTRA_8K_120FPS -> metadata.ultra8kUrl
-            DownloadQuality.HDR_ULTRA -> metadata.ultraHdrUrl
+            DownloadQuality.ULTRA_8K_120FPS -> metadata.ultra8kUrl.ifEmpty { metadata.standardHdUrl }
+            DownloadQuality.HDR_ULTRA -> metadata.ultraHdrUrl.ifEmpty { metadata.standardHdUrl }
+            DownloadQuality.QHD_2K -> metadata.qhd2kUrl.ifEmpty { metadata.standardHdUrl }
             DownloadQuality.HD_STANDARD -> metadata.standardHdUrl
             DownloadQuality.NORMAL_720P -> metadata.normal720pUrl.ifEmpty { metadata.standardHdUrl }
             DownloadQuality.LOW_480P -> metadata.low480pUrl.ifEmpty { metadata.standardHdUrl }
+            DownloadQuality.MOBILE_360P -> metadata.mobile360pUrl.ifEmpty { metadata.low480pUrl }
             DownloadQuality.AUDIO_ONLY, DownloadQuality.AUDIO_HIGH_SOUND, DownloadQuality.AUDIO_VFX_SOUND -> metadata.audioUrl
             DownloadQuality.COVER_IMAGE -> metadata.coverUrl
             DownloadQuality.PHOTO_SLIDE_ULTRA -> metadata.images.firstOrNull() ?: metadata.coverUrl
@@ -543,6 +680,35 @@ class DownloadRepository(private val context: Context) {
             isFavorite = false
         )
         return downloadDao.insertDownload(item)
+    }
+
+    suspend fun saveTrimmedClipRecord(
+        clipTitle: String,
+        author: String,
+        localFile: File,
+        durationSeconds: Int,
+        coverUrl: String = ""
+    ): Long {
+        val item = DownloadItem(
+            videoId = "clip_${System.currentTimeMillis()}",
+            title = clipTitle,
+            authorNickname = author.ifEmpty { "TikSave Video Editor" },
+            authorUsername = "@tiksave_editor",
+            authorAvatar = "",
+            coverUrl = coverUrl,
+            videoUrl = localFile.absolutePath,
+            localFilePath = localFile.absolutePath,
+            quality = "TRIMMED_CLIP",
+            fileSizeBytes = localFile.length(),
+            durationSeconds = durationSeconds,
+            downloadedAtMillis = System.currentTimeMillis(),
+            isFavorite = false
+        )
+        return downloadDao.insertDownload(item)
+    }
+
+    suspend fun renameDownload(id: Long, newTitle: String) {
+        downloadDao.renameDownload(id, newTitle)
     }
 
     suspend fun deleteDownload(id: Long, filePath: String) {

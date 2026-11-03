@@ -15,13 +15,13 @@ on:
         type: boolean
         default: true
       tag_name:
-        description: 'Release Tag (e.g. v1.1.1)'
+        description: 'Release Tag (e.g. v1.1.2)'
         required: false
-        default: 'v1.1.1'
+        default: 'v1.1.2'
       release_title:
         description: 'Release Title'
         required: false
-        default: 'TikSave v1.1.1 (Interactive Trimmer, Real FB Downloader & HTTP 403 Fix)'
+        default: 'TikSave v1.1.2 (Professional Video Cutter, Real Multi-Platform Downloader & Lossless MP4 Export)'
 
 permissions:
   contents: write

@@ -1,10 +1,10 @@
 # TikSave - Ultra HDR Multi-Platform Video Downloader & Creator Suite
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v1.1.0-ff0050.svg)](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases)
+[![Release](https://img.shields.io/badge/Release-v1.1.2-ff0050.svg)](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-00C853?style=flat-square)](https://jeebanrai05-eng.github.io/TikTok-video-downloader-/)
 
-TikSave is the ultimate all-in-one social media downloader and video clipper application for content creators. Download TikTok videos without watermarks in pristine 8K 120FPS, HDR+ Ultra, and photo slides. Clip YouTube videos directly formatted for **Facebook Reels (9:16 vertical)**. Download Facebook videos and export as high-retention clips ready for **TikTok and YouTube Shorts**. Integrated with **AI Viral Creator Studio 2.0** for unlimited, dynamic, creative captions and high-reach hashtags.
+TikSave is the ultimate all-in-one social media downloader and professional video editor application for content creators. Download TikTok videos without watermarks in pristine 8K 120FPS, HDR+ Ultra, and photo slides. Clip YouTube and Facebook videos with a dedicated CapCut-style visual timeline, frame-by-frame precision, and lossless MP4 export for **Facebook Reels (9:16 vertical)**, **TikTok**, and **YouTube Shorts**.
 
 ---
 
@@ -16,12 +16,12 @@ TikSave is the ultimate all-in-one social media downloader and video clipper app
 
 ---
 
-## 📱 Android App (APK v1.1.1 Production Release)
+## 📱 Android App (APK v1.1.2 Production Release)
 
-- **Download Official Release APK:** [TikSave-Release.apk v1.1.1](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.1/TikSave-Release.apk)
+- **Download Official Release APK:** [TikSave-Release.apk v1.1.2](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.2/TikSave-Release.apk)
 
 ### ✨ Core Features
-- ✂️ **Interactive Video Trimmer & Clip Cutter**: Precision dual-slider RangeSlider with -1s/+1s adjustment to cut custom clips for 9:16 Facebook Reels & TikTok Shorts.
+- ✂️ **Dedicated CapCut-Style Video Editor**: Full visual frame thumbnail timeline, draggable start/end handles, frame-by-frame -0.1s/+0.1s navigation, and lossless hardware MP4 muxing.
 - 🛡️ **Zero HTTP 403 Errors**: 3-stage resilient domain-aware download engine for YouTube, Facebook, and high-speed CDNs.
 - 👥 **Real Facebook Video & Reel Downloader**: Direct HD/SD MP4 stream extraction without mock data.
 - ▶️ **YouTube to Facebook Reels Clipper**: Input any YouTube video or Shorts link, trim custom segments, format in 9:16 vertical ratio, and post directly to Facebook Reels with 1 tap.

@@ -30,6 +30,9 @@ interface DownloadDao {
     @Query("UPDATE downloads SET isFavorite = CASE WHEN isFavorite = 1 THEN 0 ELSE 1 END WHERE id = :id")
     suspend fun toggleFavorite(id: Long)
 
+    @Query("UPDATE downloads SET title = :newTitle WHERE id = :id")
+    suspend fun renameDownload(id: Long, newTitle: String)
+
     @Query("DELETE FROM downloads")
     suspend fun clearAll()
 }
