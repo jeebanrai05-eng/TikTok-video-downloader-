@@ -1,6 +1,5 @@
 package com.example.ui.util
 
-import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -37,8 +36,9 @@ object FormatUtils {
     }
 
     fun formatDuration(seconds: Int): String {
-        val m = seconds / 60
-        val s = seconds % 60
+        val safeSec = seconds.coerceAtLeast(0)
+        val m = safeSec / 60
+        val s = safeSec % 60
         return String.format(Locale.US, "%02d:%02d", m, s)
     }
 
@@ -47,11 +47,23 @@ object FormatUtils {
         return sdf.format(Date(timeMillis))
     }
 
-    fun shareFile(context: Context, filePath: String, mimeType: String = "video/mp4") {
+    fun detectMimeType(filePath: String, qualityName: String = ""): String {
+        val lower = filePath.lowercase(Locale.US)
+        return when {
+            lower.endsWith(".mp3") || lower.endsWith(".m4a") || lower.endsWith(".wav") ||
+                    qualityName.startsWith("AUDIO_") -> "audio/mpeg"
+            lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") ||
+                    lower.endsWith(".webp") || qualityName == "COVER_IMAGE" || qualityName == "PHOTO_SLIDE_ULTRA" -> "image/jpeg"
+            else -> "video/mp4"
+        }
+    }
+
+    fun shareFile(context: Context, filePath: String, mimeType: String? = null) {
         try {
             val file = File(filePath)
             if (!file.exists()) return
 
+            val resolvedMime = mimeType ?: detectMimeType(filePath)
             val contentUri: Uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
@@ -59,7 +71,7 @@ object FormatUtils {
             )
 
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = mimeType
+                type = resolvedMime
                 putExtra(Intent.EXTRA_STREAM, contentUri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
@@ -92,7 +104,12 @@ object FormatUtils {
     }
 
     fun openDeviceGallery(context: Context, filePath: String) {
-        val mimeType = if (filePath.endsWith(".mp3", ignoreCase = true)) "audio/*" else "video/*"
+        val lower = filePath.lowercase(Locale.US)
+        val mimeType = when {
+            lower.endsWith(".mp3") || lower.endsWith(".m4a") || lower.endsWith(".wav") -> "audio/*"
+            lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp") -> "image/*"
+            else -> "video/*"
+        }
         openFileExternally(context, filePath, mimeType)
     }
 }

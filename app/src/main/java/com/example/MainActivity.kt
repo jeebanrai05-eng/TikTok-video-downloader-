@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -13,7 +12,18 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.core.content.ContextCompat
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -31,7 +41,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.outlined.AutoAwesome
@@ -59,31 +68,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.ExtractionState
-import androidx.compose.material.icons.filled.ContentCut
-import androidx.compose.material.icons.outlined.ContentCut
 import com.example.ui.components.ModernDownloadModal
 import com.example.ui.components.UpdateDialog
 import com.example.ui.components.VideoPlayerDialog
 import com.example.ui.screens.AiStudioScreen
 import com.example.ui.screens.DownloaderScreen
-import com.example.ui.screens.EditorScreen
 import com.example.ui.screens.LibraryScreen
 import com.example.ui.screens.SettingsScreen
-import com.example.ui.theme.HdrGold
+import com.example.ui.theme.ElectricIndigo
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.NeonCyan
 import com.example.ui.theme.NeonMagenta
 import com.example.ui.theme.ObsidianBg
 import com.example.ui.theme.ObsidianSurface
-import com.example.ui.theme.ObsidianSurfaceVariant
+import com.example.ui.theme.UltraPurple
 import com.example.ui.viewmodel.AppTab
 import com.example.ui.viewmodel.MainViewModel
 
@@ -133,7 +142,6 @@ fun TikSaveApp(viewModel: MainViewModel) {
     val snackbarHostState = remember { SnackbarHostState() }
 
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
-    val selectedPlatform by viewModel.selectedPlatform.collectAsStateWithLifecycle()
     val urlInput by viewModel.urlInput.collectAsStateWithLifecycle()
     val clipboardLink by viewModel.clipboardDetectedUrl.collectAsStateWithLifecycle()
     val extractionState by viewModel.extractionState.collectAsStateWithLifecycle()
@@ -150,15 +158,27 @@ fun TikSaveApp(viewModel: MainViewModel) {
     val aiInputText by viewModel.aiInputText.collectAsStateWithLifecycle()
     val aiSelectedTone by viewModel.aiSelectedTone.collectAsStateWithLifecycle()
     val aiGenerationState by viewModel.aiGenerationState.collectAsStateWithLifecycle()
-    val editorSourceUriOrPath by viewModel.editorSourceUriOrPath.collectAsStateWithLifecycle()
-    val editorVideoTitle by viewModel.editorVideoTitle.collectAsStateWithLifecycle()
-    val isExportingClip by viewModel.isExportingClip.collectAsStateWithLifecycle()
-    val clipExportProgress by viewModel.clipExportProgress.collectAsStateWithLifecycle()
-    val clipExportResult by viewModel.clipExportResult.collectAsStateWithLifecycle()
+
+    val ultra8kEnabled by viewModel.ultra8k120FpsEnabled.collectAsStateWithLifecycle()
+    val hdrBoostEnabled by viewModel.hdrBoostEnabled.collectAsStateWithLifecycle()
+    val turboSpeedEnabled by viewModel.turboSpeedEnabled.collectAsStateWithLifecycle()
+    val autoClipboardEnabled by viewModel.autoClipboardEnabled.collectAsStateWithLifecycle()
+    val wifiOnlyEnabled by viewModel.wifiOnlyEnabled.collectAsStateWithLifecycle()
+
+    val logoTransition = rememberInfiniteTransition(label = "logo_pulse")
+    val logoScale by logoTransition.animateFloat(
+        initialValue = 0.92f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "logo_scale"
+    )
 
     val notificationLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { /* Handled gracefully */ }
+    ) { }
 
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -168,12 +188,10 @@ fun TikSaveApp(viewModel: MainViewModel) {
         }
     }
 
-    // Handle back button when in sub-screens
     BackHandler(enabled = currentTab != AppTab.DOWNLOADER) {
         viewModel.setTab(AppTab.DOWNLOADER)
     }
 
-    // Observe toasts
     LaunchedEffect(Unit) {
         viewModel.toastEvents.collect { message ->
             snackbarHostState.showSnackbar(message)
@@ -187,12 +205,19 @@ fun TikSaveApp(viewModel: MainViewModel) {
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Glowing logo dot
                         Box(
                             modifier = Modifier
-                                .size(28.dp)
-                                .background(NeonCyan.copy(alpha = 0.2f), CircleShape)
-                                .border(1.5.dp, NeonCyan, CircleShape),
+                                .size(30.dp)
+                                .scale(logoScale)
+                                .background(
+                                    Brush.radialGradient(listOf(NeonCyan.copy(alpha = 0.28f), Color.Transparent)),
+                                    CircleShape
+                                )
+                                .border(
+                                    1.5.dp,
+                                    Brush.linearGradient(listOf(NeonCyan, NeonMagenta)),
+                                    CircleShape
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
@@ -210,18 +235,18 @@ fun TikSaveApp(viewModel: MainViewModel) {
                             ),
                             color = Color.White
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color(0xFF00E5FF).copy(alpha = 0.2f))
-                                .border(1.dp, Color(0xFF00E5FF).copy(alpha = 0.7f), RoundedCornerShape(6.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .clip(RoundedCornerShape(7.dp))
+                                .background(NeonCyan.copy(alpha = 0.16f))
+                                .border(1.dp, NeonCyan.copy(alpha = 0.65f), RoundedCornerShape(7.dp))
+                                .padding(horizontal = 7.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = "8K 120FPS ULTRA",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = Color(0xFF00E5FF),
+                                text = "v${BuildConfig.VERSION_NAME} ULTRA",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                color = NeonCyan,
                                 fontSize = 9.sp
                             )
                         }
@@ -262,26 +287,6 @@ fun TikSaveApp(viewModel: MainViewModel) {
                 )
 
                 NavigationBarItem(
-                    selected = currentTab == AppTab.EDITOR,
-                    onClick = { viewModel.setTab(AppTab.EDITOR) },
-                    icon = {
-                        Icon(
-                            imageVector = if (currentTab == AppTab.EDITOR) Icons.Filled.ContentCut else Icons.Outlined.ContentCut,
-                            contentDescription = "Editor"
-                        )
-                    },
-                    label = { Text("Editor") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Black,
-                        selectedTextColor = NeonCyan,
-                        indicatorColor = NeonCyan,
-                        unselectedIconColor = Color.White.copy(alpha = 0.6f),
-                        unselectedTextColor = Color.White.copy(alpha = 0.6f)
-                    ),
-                    modifier = Modifier.testTag("nav_tab_editor")
-                )
-
-                NavigationBarItem(
                     selected = currentTab == AppTab.AI_STUDIO,
                     onClick = { viewModel.setTab(AppTab.AI_STUDIO) },
                     icon = {
@@ -292,9 +297,9 @@ fun TikSaveApp(viewModel: MainViewModel) {
                     },
                     label = { Text("AI Studio") },
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Black,
-                        selectedTextColor = Color(0xFF818CF8),
-                        indicatorColor = Color(0xFF6366F1),
+                        selectedIconColor = Color.White,
+                        selectedTextColor = UltraPurple,
+                        indicatorColor = ElectricIndigo,
                         unselectedIconColor = Color.White.copy(alpha = 0.6f),
                         unselectedTextColor = Color.White.copy(alpha = 0.6f)
                     ),
@@ -354,17 +359,22 @@ fun TikSaveApp(viewModel: MainViewModel) {
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        Box(
+        AnimatedContent(
+            targetState = currentTab,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            when (currentTab) {
+                .padding(innerPadding),
+            transitionSpec = {
+                val direction = if (targetState.ordinal >= initialState.ordinal) 1 else -1
+                (fadeIn(tween(220)) + slideInHorizontally(tween(240)) { it / 10 * direction })
+                    .togetherWith(fadeOut(tween(180)) + slideOutHorizontally(tween(200)) { -it / 10 * direction })
+            },
+            label = "main_tab_transition"
+        ) { tab ->
+            when (tab) {
                 AppTab.DOWNLOADER -> DownloaderScreen(
                     urlInput = urlInput,
                     onUrlChange = viewModel::onUrlChange,
-                    selectedPlatform = selectedPlatform,
-                    onPlatformChange = viewModel::setSelectedPlatform,
                     clipboardLink = clipboardLink,
                     onUseClipboardLink = viewModel::useClipboardUrl,
                     onDismissClipboard = viewModel::dismissClipboardPrompt,
@@ -389,20 +399,6 @@ fun TikSaveApp(viewModel: MainViewModel) {
                     onDismissActiveDownload = viewModel::dismissActiveDownload
                 )
 
-                AppTab.EDITOR -> EditorScreen(
-                    videoSourceUriOrPath = editorSourceUriOrPath,
-                    videoTitle = editorVideoTitle,
-                    allDownloads = allDownloads,
-                    onSelectVideo = viewModel::selectEditorVideo,
-                    onExportClip = viewModel::exportClip,
-                    isExporting = isExportingClip,
-                    exportProgress = clipExportProgress,
-                    exportResult = clipExportResult,
-                    onCancelExport = viewModel::cancelClipExport,
-                    onDismissExportResult = viewModel::dismissExportResult,
-                    onPlayExportedClip = { path, title -> viewModel.previewMedia(path, title) }
-                )
-
                 AppTab.AI_STUDIO -> AiStudioScreen(
                     inputText = aiInputText,
                     onInputChange = viewModel::setAiInputText,
@@ -420,24 +416,28 @@ fun TikSaveApp(viewModel: MainViewModel) {
                     onToggleFavorite = { id -> viewModel.toggleFavorite(id) },
                     onClearAll = viewModel::clearAllHistory,
                     onGoToDownloader = { viewModel.setTab(AppTab.DOWNLOADER) },
-                    onOpenInEditor = { item -> viewModel.openInEditor(item.localFilePath.ifEmpty { item.videoUrl }, item.title) },
                     onRenameItem = { item, newTitle -> viewModel.renameDownloadItem(item.id, newTitle) }
                 )
 
                 AppTab.SETTINGS -> SettingsScreen(
-                    onClearCache = {
-                        Toast.makeText(context, "Stream cache cleaned successfully", Toast.LENGTH_SHORT).show()
-                    },
-                    onCheckForUpdates = {
-                        viewModel.checkForAppUpdates(silent = false)
-                    },
+                    ultra8k120FpsEnabled = ultra8kEnabled,
+                    onUltra8k120FpsChange = viewModel::setUltra8k120FpsEnabled,
+                    hdrBoostEnabled = hdrBoostEnabled,
+                    onHdrBoostChange = viewModel::setHdrBoostEnabled,
+                    turboSpeedEnabled = turboSpeedEnabled,
+                    onTurboSpeedChange = viewModel::setTurboSpeedEnabled,
+                    autoClipboardEnabled = autoClipboardEnabled,
+                    onAutoClipboardChange = viewModel::setAutoClipboardEnabled,
+                    wifiOnlyEnabled = wifiOnlyEnabled,
+                    onWifiOnlyChange = viewModel::setWifiOnlyEnabled,
+                    onClearCache = viewModel::clearCache,
+                    onCheckForUpdates = { viewModel.checkForAppUpdates(silent = false) },
                     isCheckingForUpdates = isCheckingForUpdates
                 )
             }
         }
     }
 
-    // Modern High-Tech Download Overlay Modal
     if (isDownloadModalVisible && activeDownload != null) {
         ModernDownloadModal(
             download = activeDownload!!,
@@ -448,7 +448,6 @@ fun TikSaveApp(viewModel: MainViewModel) {
         )
     }
 
-    // Video preview dialog overlay
     previewingMedia?.let { (mediaPath, title) ->
         VideoPlayerDialog(
             mediaUrlOrPath = mediaPath,
@@ -457,7 +456,6 @@ fun TikSaveApp(viewModel: MainViewModel) {
         )
     }
 
-    // Self Update Dialog (Loading radar, downloading progress, and installing animations)
     if (updateInfo != null || isCheckingForUpdates) {
         UpdateDialog(
             updateInfo = updateInfo,

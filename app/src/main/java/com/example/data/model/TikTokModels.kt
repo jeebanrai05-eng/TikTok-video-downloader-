@@ -5,75 +5,58 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class TikWmResponse(
-    @Json(name = "code") val code: Int? = null,
-    @Json(name = "msg") val msg: String? = null,
-    @Json(name = "data") val data: TikWmData? = null
+    @param:Json(name = "code") val code: Int? = null,
+    @param:Json(name = "msg") val msg: String? = null,
+    @param:Json(name = "data") val data: TikWmData? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class TikWmData(
-    @Json(name = "id") val id: String? = null,
-    @Json(name = "title") val title: String? = null,
-    @Json(name = "cover") val cover: String? = null,
-    @Json(name = "play") val play: String? = null,
-    @Json(name = "hdplay") val hdplay: String? = null,
-    @Json(name = "wmplay") val wmplay: String? = null,
-    @Json(name = "size") val size: Long? = null,
-    @Json(name = "hd_size") val hdSize: Long? = null,
-    @Json(name = "music") val music: String? = null,
-    @Json(name = "music_info") val musicInfo: TikWmMusicInfo? = null,
-    @Json(name = "play_count") val playCount: Long? = null,
-    @Json(name = "digg_count") val diggCount: Long? = null,
-    @Json(name = "comment_count") val commentCount: Long? = null,
-    @Json(name = "share_count") val shareCount: Long? = null,
-    @Json(name = "duration") val duration: Int? = null,
-    @Json(name = "author") val author: TikWmAuthor? = null,
-    @Json(name = "images") val images: List<String>? = null
+    @param:Json(name = "id") val id: String? = null,
+    @param:Json(name = "title") val title: String? = null,
+    @param:Json(name = "cover") val cover: String? = null,
+    @param:Json(name = "play") val play: String? = null,
+    @param:Json(name = "hdplay") val hdplay: String? = null,
+    @param:Json(name = "wmplay") val wmplay: String? = null,
+    @param:Json(name = "size") val size: Long? = null,
+    @param:Json(name = "hd_size") val hdSize: Long? = null,
+    @param:Json(name = "music") val music: String? = null,
+    @param:Json(name = "music_info") val musicInfo: TikWmMusicInfo? = null,
+    @param:Json(name = "play_count") val playCount: Long? = null,
+    @param:Json(name = "digg_count") val diggCount: Long? = null,
+    @param:Json(name = "comment_count") val commentCount: Long? = null,
+    @param:Json(name = "share_count") val shareCount: Long? = null,
+    @param:Json(name = "duration") val duration: Int? = null,
+    @param:Json(name = "author") val author: TikWmAuthor? = null,
+    @param:Json(name = "images") val images: List<String>? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class TikWmAuthor(
-    @Json(name = "id") val id: String? = null,
-    @Json(name = "unique_id") val uniqueId: String? = null,
-    @Json(name = "nickname") val nickname: String? = null,
-    @Json(name = "avatar") val avatar: String? = null
+    @param:Json(name = "id") val id: String? = null,
+    @param:Json(name = "unique_id") val uniqueId: String? = null,
+    @param:Json(name = "nickname") val nickname: String? = null,
+    @param:Json(name = "avatar") val avatar: String? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class TikWmMusicInfo(
-    @Json(name = "title") val title: String? = null,
-    @Json(name = "author") val author: String? = null,
-    @Json(name = "play") val play: String? = null
+    @param:Json(name = "title") val title: String? = null,
+    @param:Json(name = "author") val author: String? = null,
+    @param:Json(name = "play") val play: String? = null
 )
 
-enum class MediaPlatform(val label: String, val badge: String, val destination: String) {
-    TIKTOK("TikTok Downloader", "🎵 TikTok", "No Watermark HD"),
-    YOUTUBE_TO_REELS("YouTube to Facebook Reels", "▶️ YouTube", "Ready for Facebook Reels"),
-    FACEBOOK_TO_SHORTS("Facebook to TikTok / Shorts", "👥 Facebook", "Ready for TikTok & Shorts")
-}
-
-enum class ClipPreset(val label: String, val seconds: Int, val description: String) {
-    SEC_15("15s Viral Reel", 15, "Fast-paced high-retention reel"),
-    SEC_30("30s Short Clip", 30, "Optimal TikTok & FB Reel duration"),
-    SEC_60("60s Full Reel", 60, "Complete storytelling clip"),
-    SEC_90("90s Max Reel", 90, "Extended Facebook Reel format"),
-    CUSTOM("Custom Cut", -1, "Custom selected start and end clip"),
-    FULL("Full Length", 0, "Original full length video stream")
-}
-
 enum class DownloadQuality(val label: String, val badge: String, val description: String) {
-    ULTRA_8K_120FPS("8K Ultra 120FPS", "8K / 120FPS", "Extreme bitrate 8K 120FPS ultra-smooth stream with zero watermark"),
-    HDR_ULTRA("4K HDR+ 60FPS", "4K / HDR+", "Original high-bitrate stream with enhanced HDR fidelity & vibrant colors"),
-    QHD_2K("2K QHD 1440p", "2K 1440p", "Crisp 2560x1440 Quad-HD high resolution display"),
-    HD_STANDARD("1080p Full HD", "1080p FHD", "Crisp high-definition clean video ready to post"),
-    NORMAL_720P("720p Normal", "720p HD", "Balanced quality and fast download for immediate sharing"),
-    LOW_480P("480p Low Fast", "480p SD", "Compact lightweight clip for fast messaging & low data"),
-    MOBILE_360P("360p Mobile", "360p Low", "Ultra-lightweight low-bandwidth mobile stream"),
-    AUDIO_ONLY("Original Sound", "320 kbps MP3", "Extract studio quality original audio soundtrack"),
-    AUDIO_HIGH_SOUND("High Sound Boost", "Boosted MP3", "High volume dynamic audio with enhanced clarity & bass (+6dB)"),
-    AUDIO_VFX_SOUND("VFX & Dialogue", "Clean Vocal", "Isolate clear dialogue, voiceovers, and sound effects"),
-    COVER_IMAGE("HD Cover", "JPG Poster", "Download original full-resolution video cover poster"),
-    PHOTO_SLIDE_ULTRA("Photo Slide HDR+", "4K / 8K Photo", "Download photo slides in pristine HDR+ ultra high resolution")
+    ULTRA_8K_120FPS("8K Ultra 120FPS", "8K / 120FPS", "Extreme bitrate watermark-free TikTok master stream"),
+    HDR_ULTRA("4K HDR+ 60FPS", "4K / HDR+", "Original high-bitrate stream with crisp HDR clarity"),
+    HD_STANDARD("1080p Full HD", "1080p FHD", "Clean watermark-free TikTok HD stream"),
+    NORMAL_720P("720p Fast HD", "720p HD", "Balanced quality & super-fast CDN download"),
+    LOW_480P("480p Compact", "480p SD", "Lightweight file size for quick chat sharing"),
+    AUDIO_ONLY("Original Sound", "320 kbps MP3", "Extract clean original TikTok soundtrack"),
+    AUDIO_HIGH_SOUND("High Sound Boost", "Boosted MP3", "Enhanced dynamic range & bass clarity"),
+    AUDIO_VFX_SOUND("VFX & Dialogue", "Clean Vocal", "Voiceover and sound-effect ready soundtrack"),
+    COVER_IMAGE("HD Cover", "JPG Poster", "Save original full-resolution TikTok cover poster"),
+    PHOTO_SLIDE_ULTRA("Photo Slide HDR+", "4K / 8K Photo", "Download TikTok photo carousel in full resolution")
 }
 
 data class VideoMetadata(
@@ -92,45 +75,37 @@ data class VideoMetadata(
     val ultra8kSize: Long = 0L,
     val ultraHdrUrl: String = "",
     val ultraHdrSize: Long = 0L,
-    val qhd2kUrl: String = "",
-    val qhd2kSize: Long = 0L,
     val standardHdUrl: String = "",
     val standardHdSize: Long = 0L,
     val normal720pUrl: String = "",
     val normal720pSize: Long = 0L,
     val low480pUrl: String = "",
     val low480pSize: Long = 0L,
-    val mobile360pUrl: String = "",
-    val mobile360pSize: Long = 0L,
-    val audioUrl: String,
-    val musicTitle: String,
-    val musicAuthor: String,
+    val audioUrl: String = "",
+    val musicTitle: String = "",
+    val musicAuthor: String = "",
     val originalTikTokUrl: String,
-    val images: List<String> = emptyList(),
-    val platform: MediaPlatform = MediaPlatform.TIKTOK,
-    val clipPreset: ClipPreset = ClipPreset.FULL,
-    val trimStartSeconds: Int = 0,
-    val trimEndSeconds: Int = 0,
-    val facebookReelsReadyCaption: String = "",
-    val tiktokShortsReadyCaption: String = "",
-    val genuineQualities: List<DownloadQuality> = emptyList()
+    val images: List<String> = emptyList()
 ) {
     val isPhotoSlide: Boolean get() = images.isNotEmpty()
 
     val availableQualities: List<DownloadQuality>
-        get() = if (genuineQualities.isNotEmpty()) {
-            genuineQualities
-        } else {
+        get() {
+            if (isPhotoSlide && standardHdUrl.isBlank() && ultraHdrUrl.isBlank()) {
+                return buildList {
+                    add(DownloadQuality.PHOTO_SLIDE_ULTRA)
+                    if (audioUrl.isNotBlank()) add(DownloadQuality.AUDIO_ONLY)
+                }
+            }
             val list = mutableListOf<DownloadQuality>()
-            if (ultra8kUrl.isNotBlank() && ultra8kUrl != standardHdUrl) list.add(DownloadQuality.ULTRA_8K_120FPS)
-            if (ultraHdrUrl.isNotBlank() && ultraHdrUrl != standardHdUrl) list.add(DownloadQuality.HDR_ULTRA)
-            if (qhd2kUrl.isNotBlank()) list.add(DownloadQuality.QHD_2K)
+            if (ultra8kUrl.isNotBlank()) list.add(DownloadQuality.ULTRA_8K_120FPS)
+            if (ultraHdrUrl.isNotBlank()) list.add(DownloadQuality.HDR_ULTRA)
             if (standardHdUrl.isNotBlank()) list.add(DownloadQuality.HD_STANDARD)
             if (normal720pUrl.isNotBlank()) list.add(DownloadQuality.NORMAL_720P)
             if (low480pUrl.isNotBlank()) list.add(DownloadQuality.LOW_480P)
-            if (mobile360pUrl.isNotBlank()) list.add(DownloadQuality.MOBILE_360P)
-            if (list.isEmpty() && standardHdUrl.isNotBlank()) list.add(DownloadQuality.HD_STANDARD)
-            list
+            if (isPhotoSlide) list.add(0, DownloadQuality.PHOTO_SLIDE_ULTRA)
+            if (list.isEmpty() && coverUrl.isNotBlank()) list.add(DownloadQuality.COVER_IMAGE)
+            return list
         }
 }
 
@@ -145,7 +120,7 @@ data class ActiveDownload(
     val videoId: String,
     val title: String,
     val quality: DownloadQuality,
-    val progress: Float, // 0.0 to 1.0
+    val progress: Float,
     val bytesDownloaded: Long,
     val totalBytes: Long,
     val speedBytesPerSec: Long,

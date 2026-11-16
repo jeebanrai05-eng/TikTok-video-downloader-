@@ -1,10 +1,10 @@
-# TikSave - Ultra HDR Multi-Platform Video Downloader & Creator Suite
+# TikSave - Ultra HDR TikTok Downloader & AI Viral Studio
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v1.1.2-ff0050.svg)](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases)
+[![Release](https://img.shields.io/badge/Release-v1.1.4-ff0050.svg)](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-00C853?style=flat-square)](https://jeebanrai05-eng.github.io/TikTok-video-downloader-/)
 
-TikSave is the ultimate all-in-one social media downloader and professional video editor application for content creators. Download TikTok videos without watermarks in pristine 8K 120FPS, HDR+ Ultra, and photo slides. Clip YouTube and Facebook videos with a dedicated CapCut-style visual timeline, frame-by-frame precision, and lossless MP4 export for **Facebook Reels (9:16 vertical)**, **TikTok**, and **YouTube Shorts**.
+TikSave is a streamlined, high-speed TikTok media downloader and AI creator companion. Download TikTok videos without watermarks in pristine 8K 120FPS, HDR+ Ultra, HD 1080p, Photo Carousel Slides, and 320 kbps MP3 audio—all wrapped in an **Electric Midnight** Material 3 interface with fluid animations.
 
 ---
 
@@ -16,26 +16,19 @@ TikSave is the ultimate all-in-one social media downloader and professional vide
 
 ---
 
-## 📱 Android App (APK v1.1.2 Production Release)
+## 📱 Android App (APK v1.1.4 Production Release)
 
-- **Download Official Release APK:** [TikSave-Release.apk v1.1.2](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.2/TikSave-Release.apk)
+- **Download Official Release APK:** [TikSave-Release.apk v1.1.4](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.4/TikSave-Release.apk)
 
 ### ✨ Core Features
-- ✂️ **Dedicated CapCut-Style Video Editor**: Full visual frame thumbnail timeline, draggable start/end handles, frame-by-frame -0.1s/+0.1s navigation, and lossless hardware MP4 muxing.
-- 🛡️ **Zero HTTP 403 Errors**: 3-stage resilient domain-aware download engine for YouTube, Facebook, and high-speed CDNs.
-- 👥 **Real Facebook Video & Reel Downloader**: Direct HD/SD MP4 stream extraction without mock data.
-- ▶️ **YouTube to Facebook Reels Clipper**: Input any YouTube video or Shorts link, trim custom segments, format in 9:16 vertical ratio, and post directly to Facebook Reels with 1 tap.
-- 👥 **Facebook Video Downloader to TikTok & Shorts**: Download Facebook videos in high resolution (8K Ultra 120FPS, 4K HDR 60FPS, 1080p FHD, 720p Normal, 480p Low Fast) and export directly as clips for TikTok FYP and YouTube Shorts.
-- 🎵 **TikTok Audio Extractor (320 kbps MP3)**: 3 specialized sound profiles (Original Sound, High Sound Boost +6dB, and VFX & Dialogue Isolation).
-- 📸 **TikTok Photo Slide Mode**: Download full carousel image slides in 8K/4K HDR+ resolution + soundtrack MP3.
-- ✨ **AI Viral Creator Studio 2.0 (Unlimited Dynamic Generation)**:
-  - Generates infinite diverse, creative, non-repetitive captions and hashtags.
-  - Multi-variation engine (Viral Hook, Humor & Relatable, Storytelling, Aesthetic).
-  - Ready-to-post copy formatted for Facebook Reels, TikTok, and YouTube Shorts.
-  - "Randomize 🎲" button for endless fresh creative angles.
-- 💾 **Scoped Storage & MediaStore Compliant**: Zero EPERM errors, saves directly to Gallery (`Pictures/TikSave`, `Movies/TikSave`, `Music/TikSave`).
-- 📺 **In-App Video & Audio Preview Player**: High-definition playback before downloading.
-- 🔄 **In-App Self-Updater**: Background check and 1-tap installation using official verified signing key.
+- ⚡ **100% Focused TikTok Engine**: Supports `tiktok.com`, `vt.tiktok.com`, `vm.tiktok.com`, and `/photo/` slide links with short-URL redirect resolution.
+- 🎨 **Electric Midnight UI & Smooth Animations**: Deep obsidian theme with TikTok Aqua, Neon Coral, Ultra Violet, and Solar Gold accents plus directional tab transitions and spring state cards.
+- 🎬 **8K 120FPS & HDR+ No-Watermark Downloads**: Resilient multi-header CDN streaming with automatic retry fallback recovery.
+- 📸 **TikTok Photo Slide Mode**: Interactive horizontal photo slide gallery with 1-tap individual and batch HD image saves.
+- 🎵 **TikTok Audio Extractor (320 kbps MP3)**: Specialized sound profiles (Original Sound, High Sound Boost +6dB, and VFX & Dialogue Isolation).
+- ✨ **TikTok AI Viral Studio (Unlimited Dynamic Generation)**: Generates infinite non-repetitive FYP hooks, captions, and trending hashtags tailored for TikTok creators.
+- 💾 **Scoped Storage & MediaStore Compliant**: Saves directly to Device Gallery (`Pictures/TikSave`, `Movies/TikSave`, `Music/TikSave`) with accurate MIME handling.
+- 🔄 **In-App Self-Updater**: Background update checker and 1-tap installation signed with the verified production `CN=TikSave` certificate.
 
 ---
 

@@ -1,16 +1,17 @@
 package com.example.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,29 +20,27 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material.icons.filled.HighQuality
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -58,12 +57,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -83,6 +82,7 @@ enum class LibraryFilter {
     ALL,
     HDR,
     AUDIO,
+    PHOTOS,
     FAVORITES
 }
 
@@ -94,7 +94,6 @@ fun LibraryScreen(
     onToggleFavorite: (id: Long) -> Unit,
     onClearAll: () -> Unit,
     onGoToDownloader: () -> Unit,
-    onOpenInEditor: (DownloadItem) -> Unit = {},
     onRenameItem: (DownloadItem, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
@@ -103,21 +102,25 @@ fun LibraryScreen(
     var selectedFilter by remember { mutableStateOf(LibraryFilter.ALL) }
     var itemToRename by remember { mutableStateOf<DownloadItem?>(null) }
     var renameInput by remember { mutableStateOf("") }
+    var showClearConfirm by remember { mutableStateOf(false) }
 
-    val filteredList = downloads.filter { item ->
-        val matchesQuery = searchQuery.isBlank() ||
-                item.title.contains(searchQuery, ignoreCase = true) ||
-                item.authorNickname.contains(searchQuery, ignoreCase = true) ||
-                item.authorUsername.contains(searchQuery, ignoreCase = true)
+    val filteredList = remember(downloads, searchQuery, selectedFilter) {
+        downloads.filter { item ->
+            val matchesQuery = searchQuery.isBlank() ||
+                    item.title.contains(searchQuery, ignoreCase = true) ||
+                    item.authorNickname.contains(searchQuery, ignoreCase = true) ||
+                    item.authorUsername.contains(searchQuery, ignoreCase = true)
 
-        val matchesFilter = when (selectedFilter) {
-            LibraryFilter.ALL -> true
-            LibraryFilter.HDR -> item.quality == "HDR_ULTRA"
-            LibraryFilter.AUDIO -> item.quality == "AUDIO_ONLY"
-            LibraryFilter.FAVORITES -> item.isFavorite
+            val matchesFilter = when (selectedFilter) {
+                LibraryFilter.ALL -> true
+                LibraryFilter.HDR -> item.quality == "HDR_ULTRA" || item.quality == "ULTRA_8K_120FPS"
+                LibraryFilter.AUDIO -> item.quality.startsWith("AUDIO_")
+                LibraryFilter.PHOTOS -> item.quality == "PHOTO_SLIDE_ULTRA" || item.quality == "COVER_IMAGE"
+                LibraryFilter.FAVORITES -> item.isFavorite
+            }
+
+            matchesQuery && matchesFilter
         }
-
-        matchesQuery && matchesFilter
     }
 
     Column(
@@ -127,7 +130,6 @@ fun LibraryScreen(
     ) {
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Top bar
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -140,7 +142,7 @@ fun LibraryScreen(
                     color = Color.White
                 )
                 Text(
-                    text = "${downloads.size} items downloaded without watermark",
+                    text = "${downloads.size} TikTok items saved without watermark",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.6f)
                 )
@@ -148,13 +150,13 @@ fun LibraryScreen(
 
             if (downloads.isNotEmpty()) {
                 IconButton(
-                    onClick = onClearAll,
+                    onClick = { showClearConfirm = true },
                     modifier = Modifier.testTag("clear_all_library_button")
                 ) {
                     Icon(
                         imageVector = Icons.Default.DeleteOutline,
                         contentDescription = "Clear All Library",
-                        tint = Color.White.copy(alpha = 0.6f)
+                        tint = Color.White.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -162,7 +164,6 @@ fun LibraryScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Search Bar
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -192,9 +193,10 @@ fun LibraryScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Filter chips row
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             FilterChipItem(
@@ -203,7 +205,7 @@ fun LibraryScreen(
                 onClick = { selectedFilter = LibraryFilter.ALL }
             )
             FilterChipItem(
-                label = "🌟 HDR Ultra",
+                label = "🌟 8K / HDR",
                 selected = selectedFilter == LibraryFilter.HDR,
                 onClick = { selectedFilter = LibraryFilter.HDR }
             )
@@ -211,6 +213,11 @@ fun LibraryScreen(
                 label = "🎵 Audio",
                 selected = selectedFilter == LibraryFilter.AUDIO,
                 onClick = { selectedFilter = LibraryFilter.AUDIO }
+            )
+            FilterChipItem(
+                label = "📸 Photos",
+                selected = selectedFilter == LibraryFilter.PHOTOS,
+                onClick = { selectedFilter = LibraryFilter.PHOTOS }
             )
             FilterChipItem(
                 label = "❤️ Favorites",
@@ -221,7 +228,6 @@ fun LibraryScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Downloads List or Empty State
         if (filteredList.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -251,7 +257,11 @@ fun LibraryScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = if (searchQuery.isNotEmpty()) "No matching downloads found" else "No saved videos yet",
+                        text = if (searchQuery.isNotEmpty() || selectedFilter != LibraryFilter.ALL) {
+                            "No matching downloads found"
+                        } else {
+                            "No saved TikToks yet"
+                        },
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = Color.White
                     )
@@ -259,10 +269,10 @@ fun LibraryScreen(
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = "Paste a TikTok link to download HDR videos or extract audio without any watermark.",
+                        text = "Paste any TikTok link to download 8K HDR+ videos, photo slides, or 320kbps MP3 audio without any watermark.",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.6f),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        textAlign = TextAlign.Center
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -273,7 +283,7 @@ fun LibraryScreen(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.testTag("empty_state_download_now_button")
                     ) {
-                        Text("Download A Video", fontWeight = FontWeight.Bold)
+                        Text("Download A TikTok", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -286,17 +296,24 @@ fun LibraryScreen(
                 items(filteredList, key = { it.id }) { item ->
                     LibraryDownloadCard(
                         item = item,
-                        onPlay = { onPlayItem(item.localFilePath, item.title) },
+                        modifier = Modifier.animateItem(),
+                        onPlay = {
+                            val isPhoto = item.quality == "PHOTO_SLIDE_ULTRA" || item.quality == "COVER_IMAGE"
+                            if (isPhoto) {
+                                FormatUtils.openDeviceGallery(context, item.localFilePath)
+                            } else {
+                                onPlayItem(item.localFilePath, item.title)
+                            }
+                        },
                         onShare = {
                             FormatUtils.shareFile(
                                 context = context,
                                 filePath = item.localFilePath,
-                                mimeType = if (item.quality == "AUDIO_ONLY") "audio/mp3" else "video/mp4"
+                                mimeType = FormatUtils.detectMimeType(item.localFilePath, item.quality)
                             )
                         },
                         onToggleFavorite = { onToggleFavorite(item.id) },
                         onDelete = { onDeleteItem(item) },
-                        onOpenInEditor = { onOpenInEditor(item) },
                         onRename = {
                             itemToRename = item
                             renameInput = item.title
@@ -309,11 +326,11 @@ fun LibraryScreen(
 
     // Rename Dialog
     itemToRename?.let { item ->
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { itemToRename = null },
             title = {
                 Text(
-                    text = "Rename Video / Clip",
+                    text = "Rename Saved Item",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = Color.White
                 )
@@ -368,6 +385,50 @@ fun LibraryScreen(
             shape = RoundedCornerShape(18.dp)
         )
     }
+
+    // Clear All Confirmation Dialog
+    if (showClearConfirm) {
+        AlertDialog(
+            onDismissRequest = { showClearConfirm = false },
+            title = {
+                Text(
+                    text = "Clear Library History?",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White
+                )
+            },
+            text = {
+                Text(
+                    text = "This removes all ${downloads.size} records from your TikSave history. Files already saved to your device Gallery will stay intact.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.75f)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showClearConfirm = false
+                        onClearAll()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = ErrorRed, contentColor = Color.White),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Clear All", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showClearConfirm = false },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Cancel")
+                }
+            },
+            containerColor = ObsidianSurface,
+            shape = RoundedCornerShape(18.dp)
+        )
+    }
 }
 
 @Composable
@@ -376,21 +437,28 @@ private fun FilterChipItem(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val borderColor by animateColorAsState(
+        targetValue = if (selected) NeonCyan else ObsidianCardBorder,
+        animationSpec = tween(180),
+        label = "chip_border"
+    )
+    val bgColor by animateColorAsState(
+        targetValue = if (selected) NeonCyan.copy(alpha = 0.16f) else ObsidianSurface,
+        animationSpec = tween(180),
+        label = "chip_bg"
+    )
+
     Surface(
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
-            .border(
-                1.dp,
-                if (selected) NeonCyan else ObsidianCardBorder,
-                RoundedCornerShape(20.dp)
-            )
+            .border(1.dp, borderColor, RoundedCornerShape(20.dp))
             .clickable(onClick = onClick),
-        color = if (selected) NeonCyan.copy(alpha = 0.15f) else ObsidianSurface
+        color = bgColor
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal),
-            color = if (selected) NeonCyan else Color.White.copy(alpha = 0.7f),
+            color = if (selected) NeonCyan else Color.White.copy(alpha = 0.72f),
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
         )
     }
@@ -403,12 +471,15 @@ private fun LibraryDownloadCard(
     onShare: () -> Unit,
     onToggleFavorite: () -> Unit,
     onDelete: () -> Unit,
-    onOpenInEditor: () -> Unit = {},
-    onRename: () -> Unit = {}
+    onRename: () -> Unit = {},
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val isAudio = item.quality.startsWith("AUDIO_")
+    val isPhoto = item.quality == "PHOTO_SLIDE_ULTRA" || item.quality == "COVER_IMAGE"
+
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .border(1.dp, ObsidianCardBorder, RoundedCornerShape(16.dp))
@@ -421,7 +492,6 @@ private fun LibraryDownloadCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Thumbnail with Play overlay
             Box(
                 modifier = Modifier
                     .size(width = 72.dp, height = 96.dp)
@@ -444,15 +514,18 @@ private fun LibraryDownloadCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = if (item.quality == "AUDIO_ONLY") Icons.Default.Audiotrack else Icons.Default.PlayArrow,
-                        contentDescription = "Play",
+                        imageVector = when {
+                            isAudio -> Icons.Default.Audiotrack
+                            isPhoto -> Icons.Default.Image
+                            else -> Icons.Default.PlayArrow
+                        },
+                        contentDescription = "Open",
                         tint = Color.Black,
                         modifier = Modifier.size(18.dp)
                     )
                 }
 
-                // Duration badge
-                if (item.durationSeconds > 0) {
+                if (item.durationSeconds > 0 && !isPhoto) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
@@ -472,18 +545,17 @@ private fun LibraryDownloadCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Details
             Column(modifier = Modifier.weight(1f)) {
-                // Quality badge
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val (badgeText, badgeColor) = when (item.quality) {
-                        "TRIMMED_CLIP" -> "CLIP REEL" to NeonMagenta
+                        "ULTRA_8K_120FPS" -> "8K 120FPS" to NeonCyan
                         "HDR_ULTRA" -> "HDR+ ULTRA" to HdrGold
-                        "QHD_2K" -> "2K QHD" to NeonCyan
-                        "AUDIO_ONLY" -> "MP3 AUDIO" to NeonMagenta
-                        "MOBILE_360P" -> "360p SD" to Color.Gray
+                        "PHOTO_SLIDE_ULTRA" -> "8K PHOTO" to HdrGold
+                        "COVER_IMAGE" -> "HD COVER" to NeonCyan
+                        "AUDIO_ONLY", "AUDIO_HIGH_SOUND", "AUDIO_VFX_SOUND" -> "MP3 AUDIO" to NeonMagenta
                         "LOW_480P" -> "480p SD" to Color.Gray
-                        else -> "FULL HD" to NeonCyan
+                        "NORMAL_720P" -> "720p HD" to NeonCyan
+                        else -> "1080p FHD" to NeonCyan
                     }
                     Box(
                         modifier = Modifier
@@ -527,27 +599,13 @@ private fun LibraryDownloadCard(
                 )
             }
 
-            // Quick actions
             Column(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (item.quality != "AUDIO_ONLY") {
-                    IconButton(
-                        onClick = onOpenInEditor,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ContentCut,
-                            contentDescription = "Edit in Video Cutter",
-                            tint = NeonCyan,
-                            modifier = Modifier.size(17.dp)
-                        )
-                    }
-                }
                 IconButton(
                     onClick = onRename,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(34.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,
@@ -558,7 +616,7 @@ private fun LibraryDownloadCard(
                 }
                 IconButton(
                     onClick = onToggleFavorite,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(34.dp)
                 ) {
                     Icon(
                         imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -569,7 +627,7 @@ private fun LibraryDownloadCard(
                 }
                 IconButton(
                     onClick = { FormatUtils.openDeviceGallery(context, item.localFilePath) },
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(34.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.FolderOpen,
@@ -580,7 +638,7 @@ private fun LibraryDownloadCard(
                 }
                 IconButton(
                     onClick = onShare,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(34.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Share,
@@ -591,12 +649,12 @@ private fun LibraryDownloadCard(
                 }
                 IconButton(
                     onClick = onDelete,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(34.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete",
-                        tint = ErrorRed.copy(alpha = 0.7f),
+                        tint = ErrorRed.copy(alpha = 0.75f),
                         modifier = Modifier.size(17.dp)
                     )
                 }

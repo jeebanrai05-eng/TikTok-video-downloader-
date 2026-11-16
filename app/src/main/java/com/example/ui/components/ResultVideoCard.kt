@@ -1,8 +1,8 @@
 package com.example.ui.components
 
-import android.content.Context
-import android.content.Intent
-import android.widget.Toast
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -26,16 +25,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ChatBubbleOutline
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.ContentCut
+import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,34 +39,26 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.RangeSlider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.data.model.ClipPreset
 import com.example.data.model.DownloadQuality
-import com.example.data.model.MediaPlatform
 import com.example.data.model.VideoMetadata
+import com.example.ui.theme.ElectricIndigo
 import com.example.ui.theme.HdrGold
 import com.example.ui.theme.NeonCyan
 import com.example.ui.theme.NeonMagenta
@@ -91,49 +78,6 @@ fun ResultVideoCard(
     onDownloadPhotoSlide: (url: String, index: Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
-    val maxDuration = metadata.durationSeconds.toFloat().coerceAtLeast(15f)
-    var trimStartSec by remember(metadata.id) { mutableStateOf(0f) }
-    var trimEndSec by remember(metadata.id) {
-        val initialEnd = when (metadata.clipPreset) {
-            ClipPreset.SEC_15 -> minOf(15f, maxDuration)
-            ClipPreset.SEC_30 -> minOf(30f, maxDuration)
-            ClipPreset.SEC_60 -> minOf(60f, maxDuration)
-            ClipPreset.SEC_90 -> minOf(90f, maxDuration)
-            else -> minOf(45f, maxDuration)
-        }
-        mutableStateOf(initialEnd)
-    }
-    var selectedClip by remember(metadata.id) { mutableStateOf(metadata.clipPreset) }
-
-    fun formatDurationTime(sec: Float): String {
-        val totalSec = sec.toInt().coerceAtLeast(0)
-        val m = totalSec / 60
-        val s = totalSec % 60
-        return "%02d:%02d".format(m, s)
-    }
-
-    val currentTrimmedMetadata = metadata.copy(
-        clipPreset = selectedClip,
-        trimStartSeconds = trimStartSec.toInt(),
-        trimEndSeconds = trimEndSec.toInt(),
-        durationSeconds = (trimEndSec - trimStartSec).toInt().coerceAtLeast(1)
-    )
-
-    fun copyToClipboard(text: String, label: String) {
-        clipboardManager.setText(AnnotatedString(text))
-        Toast.makeText(context, "$label copied to clipboard!", Toast.LENGTH_SHORT).show()
-    }
-
-    fun shareDirectly(caption: String, chooserTitle: String) {
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, caption)
-        }
-        context.startActivity(Intent.createChooser(intent, chooserTitle))
-    }
-
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -148,7 +92,7 @@ fun ResultVideoCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Platform & Author Header
+            // Creator & TikTok Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -180,21 +124,14 @@ fun ResultVideoCard(
                     )
                 }
 
-                // Platform Badge
-                val badgeColor = when (metadata.platform) {
-                    MediaPlatform.YOUTUBE_TO_REELS -> Color(0xFFFF0000)
-                    MediaPlatform.FACEBOOK_TO_SHORTS -> Color(0xFF1877F2)
-                    MediaPlatform.TIKTOK -> NeonMagenta
-                }
-
                 Box(
                     modifier = Modifier
-                        .background(badgeColor.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                        .border(1.dp, badgeColor.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
+                        .background(NeonMagenta.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                        .border(1.dp, NeonMagenta.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = metadata.platform.badge,
+                        text = if (metadata.isPhotoSlide) "📸 Photo Slides" else "🎵 TikTok HD",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
                         color = Color.White,
                         fontSize = 10.sp
@@ -208,20 +145,24 @@ fun ResultVideoCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
+                    .height(190.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color.Black)
-                    .clickable { onPreviewClick(metadata.ultraHdrUrl.ifEmpty { metadata.standardHdUrl }, metadata.title) }
+                    .clickable {
+                        val previewUrl = metadata.ultraHdrUrl.ifEmpty { metadata.standardHdUrl }
+                        if (previewUrl.isNotBlank()) {
+                            onPreviewClick(previewUrl, metadata.title)
+                        }
+                    }
                     .testTag("preview_thumbnail_box")
             ) {
                 AsyncImage(
-                    model = metadata.coverUrl.ifEmpty { "https://picsum.photos/seed/vid/600/400" },
+                    model = metadata.coverUrl.ifEmpty { metadata.images.firstOrNull() ?: "https://picsum.photos/seed/vid/600/400" },
                     contentDescription = "Video Thumbnail",
                     modifier = Modifier.matchParentSize(),
                     contentScale = ContentScale.Crop
                 )
 
-                // Dark gradient
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -232,24 +173,24 @@ fun ResultVideoCard(
                         )
                 )
 
-                // Center Play Button
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(54.dp)
-                        .background(Color.Black.copy(alpha = 0.6f), CircleShape)
-                        .border(1.5.dp, NeonCyan, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Play preview",
-                        tint = NeonCyan,
-                        modifier = Modifier.size(32.dp)
-                    )
+                if (!metadata.isPhotoSlide || metadata.standardHdUrl.isNotBlank()) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .size(54.dp)
+                            .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                            .border(1.5.dp, NeonCyan, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = "Play preview",
+                            tint = NeonCyan,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 }
 
-                // Duration badge
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
@@ -258,7 +199,7 @@ fun ResultVideoCard(
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = FormatUtils.formatDuration(metadata.durationSeconds),
+                        text = if (metadata.isPhotoSlide) "${metadata.images.size} Photos" else FormatUtils.formatDuration(metadata.durationSeconds),
                         color = Color.White,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
@@ -294,322 +235,85 @@ fun ResultVideoCard(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // ==========================================
-            // INTERACTIVE VIDEO TRIMMER & CLIP CUTTER
-            // ==========================================
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .border(
-                        1.dp,
-                        if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS) Color(0xFF1877F2).copy(alpha = 0.6f)
-                        else if (metadata.platform == MediaPlatform.FACEBOOK_TO_SHORTS) NeonMagenta.copy(alpha = 0.6f)
-                        else NeonCyan.copy(alpha = 0.4f),
-                        RoundedCornerShape(16.dp)
-                    ),
-                color = ObsidianSurfaceVariant
-            ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(
-                                Icons.Default.ContentCut,
-                                contentDescription = null,
-                                tint = if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS) Color(0xFF1877F2) else NeonCyan,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text(
-                                text = "INTERACTIVE VIDEO TRIMMER & CLIPPER",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-                                color = if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS) Color(0xFF1877F2) else NeonCyan,
-                                letterSpacing = 0.5.sp
-                            )
-                        }
-
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = NeonCyan.copy(alpha = 0.15f)
+            // Photo Carousel Slides Gallery (when TikTok photo post detected)
+            if (metadata.isPhotoSlide) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .border(1.dp, HdrGold.copy(alpha = 0.45f), RoundedCornerShape(16.dp)),
+                    color = ObsidianSurfaceVariant
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(
-                                text = "9:16 Vertical Cut",
-                                color = NeonCyan,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "भिडियोको मनपर्ने ठाउँ कट गर्नुहोस् (Start & End Time Slider) - Facebook Reels, TikTok र Shorts को लागि तयार क्लिप!",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Start Time, Duration & End Time Badges
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Start Time Block
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .background(ObsidianSurface, RoundedCornerShape(8.dp))
-                                .border(1.dp, ObsidianCardBorder, RoundedCornerShape(8.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text("START", style = MaterialTheme.typography.labelSmall, color = Color.Gray, fontSize = 9.sp)
-                            Text(formatDurationTime(trimStartSec), style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(
-                                    "-1s",
-                                    color = NeonCyan,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.clickable {
-                                        trimStartSec = (trimStartSec - 1f).coerceAtLeast(0f)
-                                        selectedClip = ClipPreset.CUSTOM
-                                    }.padding(2.dp)
-                                )
-                                Text(
-                                    "+1s",
-                                    color = NeonCyan,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.clickable {
-                                        if (trimStartSec + 1f < trimEndSec - 2f) {
-                                            trimStartSec += 1f
-                                            selectedClip = ClipPreset.CUSTOM
-                                        }
-                                    }.padding(2.dp)
-                                )
-                            }
-                        }
-
-                        // Center Duration Badge
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = HdrGold.copy(alpha = 0.2f),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, HdrGold.copy(alpha = 0.5f))
-                            ) {
-                                Text(
-                                    text = "✂️ ${formatDurationTime(trimEndSec - trimStartSec)} Clip",
-                                    color = HdrGold,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Max: ${formatDurationTime(maxDuration)}",
-                                color = Color.White.copy(alpha = 0.5f),
-                                fontSize = 10.sp
-                            )
-                        }
-
-                        // End Time Block
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .background(ObsidianSurface, RoundedCornerShape(8.dp))
-                                .border(1.dp, ObsidianCardBorder, RoundedCornerShape(8.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text("END", style = MaterialTheme.typography.labelSmall, color = Color.Gray, fontSize = 9.sp)
-                            Text(formatDurationTime(trimEndSec), style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(
-                                    "-1s",
-                                    color = NeonCyan,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.clickable {
-                                        if (trimEndSec - 1f > trimStartSec + 2f) {
-                                            trimEndSec -= 1f
-                                            selectedClip = ClipPreset.CUSTOM
-                                        }
-                                    }.padding(2.dp)
-                                )
-                                Text(
-                                    "+1s",
-                                    color = NeonCyan,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.clickable {
-                                        trimEndSec = (trimEndSec + 1f).coerceAtMost(maxDuration)
-                                        selectedClip = ClipPreset.CUSTOM
-                                    }.padding(2.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // RangeSlider for interactive trimming
-                    RangeSlider(
-                        value = trimStartSec..trimEndSec,
-                        onValueChange = { range ->
-                            if (range.endInclusive - range.start >= 3f) {
-                                trimStartSec = range.start
-                                trimEndSec = range.endInclusive
-                                selectedClip = ClipPreset.CUSTOM
-                            }
-                        },
-                        valueRange = 0f..maxDuration,
-                        colors = SliderDefaults.colors(
-                            thumbColor = NeonCyan,
-                            activeTrackColor = NeonCyan,
-                            inactiveTrackColor = ObsidianCardBorder
-                        ),
-                        modifier = Modifier.fillMaxWidth().testTag("video_trimmer_slider")
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Quick Preset Chips
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        listOf(
-                            ClipPreset.SEC_15 to "15s Viral Reel",
-                            ClipPreset.SEC_30 to "30s Short Clip",
-                            ClipPreset.SEC_60 to "60s Full Reel",
-                            ClipPreset.FULL to "Full Video"
-                        ).forEach { (preset, label) ->
-                            val isSelected = selectedClip == preset
-                            Surface(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .border(1.dp, if (isSelected) NeonCyan else ObsidianCardBorder, RoundedCornerShape(8.dp))
-                                    .clickable {
-                                        selectedClip = preset
-                                        when (preset) {
-                                            ClipPreset.SEC_15 -> {
-                                                trimStartSec = 0f
-                                                trimEndSec = minOf(15f, maxDuration)
-                                            }
-                                            ClipPreset.SEC_30 -> {
-                                                trimStartSec = 0f
-                                                trimEndSec = minOf(30f, maxDuration)
-                                            }
-                                            ClipPreset.SEC_60 -> {
-                                                trimStartSec = 0f
-                                                trimEndSec = minOf(60f, maxDuration)
-                                            }
-                                            ClipPreset.FULL -> {
-                                                trimStartSec = 0f
-                                                trimEndSec = maxDuration
-                                            }
-                                            else -> {}
-                                        }
-                                    },
-                                color = if (isSelected) NeonCyan.copy(alpha = 0.25f) else ObsidianSurface
-                            ) {
-                                Text(
-                                    text = label,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal),
-                                    color = if (isSelected) Color.White else Color.White.copy(alpha = 0.7f),
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Direct Cut & Download Button
-                    Button(
-                        onClick = { onDownloadClick(currentTrimmedMetadata, selectedQuality) },
-                        modifier = Modifier.fillMaxWidth().testTag("btn_cut_and_download"),
-                        colors = ButtonDefaults.buttonColors(containerColor = if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS) Color(0xFF1877F2) else NeonCyan),
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
-                    ) {
-                        Icon(Icons.Default.ContentCut, contentDescription = null, tint = if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS) Color.White else Color.Black, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "✂️ Cut & Download (${formatDurationTime(trimStartSec)} - ${formatDurationTime(trimEndSec)})",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            color = if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS) Color.White else Color.Black
-                        )
-                    }
-
-                    // Platform Specific Sharing Buttons
-                    if (metadata.platform == MediaPlatform.YOUTUBE_TO_REELS || metadata.facebookReelsReadyCaption.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(
-                                onClick = { shareDirectly(metadata.facebookReelsReadyCaption, "Post to Facebook Reels") },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1877F2)),
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
-                            ) {
-                                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Collections, contentDescription = null, tint = HdrGold, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Post to FB Reels", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(
+                                    text = "PHOTO CAROUSEL (${metadata.images.size} SLIDES)",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                    color = HdrGold
+                                )
                             }
-                            OutlinedButton(
-                                onClick = { copyToClipboard(metadata.facebookReelsReadyCaption, "Facebook Reels Caption") },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                            Button(
+                                onClick = { onDownloadClick(metadata, DownloadQuality.PHOTO_SLIDE_ULTRA) },
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = HdrGold, contentColor = Color.Black)
                             ) {
-                                Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Copy Caption", fontSize = 11.sp)
+                                Text("Save All", fontSize = 11.sp, fontWeight = FontWeight.Black)
                             }
                         }
-                    }
 
-                    if (metadata.platform == MediaPlatform.FACEBOOK_TO_SHORTS || metadata.tiktokShortsReadyCaption.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(
-                                onClick = { shareDirectly(metadata.tiktokShortsReadyCaption, "Share Clip to TikTok") },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = NeonMagenta),
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
-                            ) {
-                                Text("🎵 Post to TikTok", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            }
-                            Button(
-                                onClick = { shareDirectly(metadata.tiktokShortsReadyCaption, "Share Clip to YouTube Shorts") },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF0000)),
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
-                            ) {
-                                Text("▶️ Post to Shorts", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            metadata.images.forEachIndexed { idx, imgUrl ->
+                                val slideNumber = idx + 1
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .width(96.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(ObsidianSurface)
+                                        .border(1.dp, ObsidianCardBorder, RoundedCornerShape(12.dp))
+                                        .clickable { onDownloadPhotoSlide(imgUrl, slideNumber) }
+                                        .padding(6.dp)
+                                ) {
+                                    AsyncImage(
+                                        model = imgUrl,
+                                        contentDescription = "Photo Slide $slideNumber",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(110.dp)
+                                            .clip(RoundedCornerShape(8.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = "Save #$slideNumber",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = NeonCyan,
+                                        fontSize = 10.sp
+                                    )
+                                }
                             }
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(14.dp))
             }
-            Spacer(modifier = Modifier.height(14.dp))
 
-            // ==========================================
-            // DEDICATED AUDIO EXTRACTOR SECTION
-            // ==========================================
+            // Dedicated Audio Extractor Section
             if (metadata.audioUrl.isNotBlank()) {
                 Surface(
                     modifier = Modifier
@@ -667,7 +371,8 @@ fun ResultVideoCard(
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(10.dp),
                                 contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                                border = BorderStroke(1.dp, ObsidianCardBorder)
                             ) {
                                 Text("🎵 Original", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
@@ -687,7 +392,8 @@ fun ResultVideoCard(
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(10.dp),
                                 contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                                border = BorderStroke(1.dp, ObsidianCardBorder)
                             ) {
                                 Text("🎙️ VFX/Voice", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
@@ -699,7 +405,7 @@ fun ResultVideoCard(
 
             // Quality Selection Header
             Text(
-                text = "SELECT VIDEO RESOLUTION & BITRATE",
+                text = "SELECT DOWNLOAD RESOLUTION",
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 color = NeonCyan,
                 letterSpacing = 1.sp
@@ -707,19 +413,15 @@ fun ResultVideoCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Quality Options List (Genuine resolutions available for this video only)
-            val qualitiesToDisplay = metadata.availableQualities
-            qualitiesToDisplay.forEach { q ->
+            metadata.availableQualities.forEach { q ->
                 val size = when (q) {
                     DownloadQuality.ULTRA_8K_120FPS -> metadata.ultra8kSize
                     DownloadQuality.HDR_ULTRA -> metadata.ultraHdrSize
-                    DownloadQuality.QHD_2K -> metadata.qhd2kSize
                     DownloadQuality.HD_STANDARD -> metadata.standardHdSize
                     DownloadQuality.NORMAL_720P -> metadata.normal720pSize
                     DownloadQuality.LOW_480P -> metadata.low480pSize
-                    DownloadQuality.MOBILE_360P -> metadata.mobile360pSize
                     DownloadQuality.AUDIO_ONLY, DownloadQuality.AUDIO_HIGH_SOUND, DownloadQuality.AUDIO_VFX_SOUND -> 4_200_000L
-                    DownloadQuality.PHOTO_SLIDE_ULTRA, DownloadQuality.COVER_IMAGE -> 1_500_000L
+                    DownloadQuality.PHOTO_SLIDE_ULTRA, DownloadQuality.COVER_IMAGE -> 1_800_000L
                 }
                 QualityOptionRow(
                     quality = q,
@@ -733,14 +435,14 @@ fun ResultVideoCard(
 
             // Main Download Button
             Button(
-                onClick = { onDownloadClick(currentTrimmedMetadata, selectedQuality) },
+                onClick = { onDownloadClick(metadata, selectedQuality) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
                     .testTag("btn_download_selected"),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = NeonCyan,
-                    contentColor = Color.Black
+                    contentColor = Color(0xFF041417)
                 ),
                 shape = RoundedCornerShape(14.dp)
             ) {
@@ -770,9 +472,11 @@ fun ResultVideoCard(
                     onClick = { onDownloadClick(metadata, DownloadQuality.COVER_IMAGE) },
                     modifier = Modifier
                         .weight(1f)
+                        .height(48.dp)
                         .testTag("btn_download_cover"),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                    border = BorderStroke(1.dp, ObsidianCardBorder)
                 ) {
                     Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
@@ -783,10 +487,11 @@ fun ResultVideoCard(
                     onClick = { onGenerateAiClick(metadata) },
                     modifier = Modifier
                         .weight(1.3f)
+                        .height(48.dp)
                         .testTag("btn_ai_viral_pack"),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF6366F1),
+                        containerColor = ElectricIndigo,
                         contentColor = Color.White
                     )
                 ) {
@@ -800,11 +505,15 @@ fun ResultVideoCard(
 }
 
 @Composable
-private fun MetricItem(icon: androidx.compose.ui.graphics.vector.ImageVector, value: String, tint: Color = Color.White.copy(alpha = 0.7f)) {
+private fun MetricItem(
+    icon: ImageVector,
+    value: String,
+    tint: Color = Color.White.copy(alpha = 0.7f)
+) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(14.dp))
         Spacer(modifier = Modifier.width(4.dp))
-        Text(value, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
+        Text(value, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.85f))
     }
 }
 
@@ -815,19 +524,26 @@ private fun QualityOptionRow(
     fileSize: Long,
     onSelect: () -> Unit
 ) {
+    val borderColor by animateColorAsState(
+        targetValue = if (isSelected) NeonCyan else ObsidianCardBorder,
+        animationSpec = tween(200),
+        label = "quality_border"
+    )
+    val bgColor by animateColorAsState(
+        targetValue = if (isSelected) NeonCyan.copy(alpha = 0.13f) else ObsidianSurfaceVariant,
+        animationSpec = tween(200),
+        label = "quality_bg"
+    )
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 3.dp)
             .clip(RoundedCornerShape(12.dp))
-            .border(
-                1.dp,
-                if (isSelected) NeonCyan else ObsidianCardBorder,
-                RoundedCornerShape(12.dp)
-            )
+            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
             .clickable { onSelect() }
             .testTag("quality_option_${quality.name}"),
-        color = if (isSelected) NeonCyan.copy(alpha = 0.12f) else ObsidianSurfaceVariant
+        color = bgColor
     ) {
         Row(
             modifier = Modifier

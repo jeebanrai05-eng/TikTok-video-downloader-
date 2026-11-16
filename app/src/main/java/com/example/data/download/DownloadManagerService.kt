@@ -29,7 +29,6 @@ data class DownloadResult(
 
 class DownloadManagerService(private val context: Context) {
 
-    // High performance HTTP client with connection pooling and resilient timeouts
     private val client = OkHttpClient.Builder()
         .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))
         .connectTimeout(20, TimeUnit.SECONDS)
@@ -72,45 +71,44 @@ class DownloadManagerService(private val context: Context) {
             }
 
             val lowerUrl = url.lowercase()
-            val isTikTok = lowerUrl.contains("tiktok.com") || lowerUrl.contains("tikwm.com") || lowerUrl.contains("byteoversea") || lowerUrl.contains("ibytedtos")
-            val isYouTube = lowerUrl.contains("googlevideo.com") || lowerUrl.contains("youtube.com") || lowerUrl.contains("ytimg.com")
-            val isFacebook = lowerUrl.contains("fbcdn.net") || lowerUrl.contains("facebook.com")
+            val isTikTokCdn = lowerUrl.contains("tiktok.com") ||
+                    lowerUrl.contains("tikwm.com") ||
+                    lowerUrl.contains("tiktokcdn") ||
+                    lowerUrl.contains("byteoversea") ||
+                    lowerUrl.contains("ibytedtos")
 
             fun createCall(attempt: Int): okhttp3.Response {
                 val reqBuilder = Request.Builder().url(url)
                 when (attempt) {
                     0 -> {
-                        // Stage 1: Domain-appropriate headers
-                        when {
-                            isTikTok -> {
-                                reqBuilder.header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36")
-                                reqBuilder.header("Referer", "https://www.tiktok.com/")
-                                reqBuilder.header("Origin", "https://www.tiktok.com")
-                            }
-                            isYouTube -> {
-                                reqBuilder.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
-                                reqBuilder.header("Referer", "https://www.youtube.com/")
-                            }
-                            isFacebook -> {
-                                reqBuilder.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
-                                reqBuilder.header("Referer", "https://www.facebook.com/")
-                            }
-                            else -> {
-                                reqBuilder.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
-                            }
+                        if (isTikTokCdn) {
+                            reqBuilder.header(
+                                "User-Agent",
+                                "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
+                            )
+                            reqBuilder.header("Referer", "https://www.tiktok.com/")
+                            reqBuilder.header("Origin", "https://www.tiktok.com")
+                        } else {
+                            reqBuilder.header(
+                                "User-Agent",
+                                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+                            )
                         }
                         reqBuilder.header("Accept", "*/*")
                         reqBuilder.header("Connection", "keep-alive")
                     }
                     1 -> {
-                        // Stage 2 (Bypass 403 Forbidden): Desktop Chrome with NO Referer and NO Origin
-                        reqBuilder.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
-                        reqBuilder.header("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5")
+                        // Stage 2: Desktop Chrome without Referer/Origin for strict CDN hotlink checks
+                        reqBuilder.header(
+                            "User-Agent",
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+                        )
+                        reqBuilder.header("Accept", "*/*")
                         reqBuilder.header("Range", "bytes=0-")
                         reqBuilder.header("Connection", "keep-alive")
                     }
                     else -> {
-                        // Stage 3 (ExoPlayer stream header)
+                        // Stage 3: Media player UA
                         reqBuilder.header("User-Agent", "ExoPlayer/2.19.1 (Linux;Android 14) AndroidXMedia3/1.2.0")
                         reqBuilder.header("Accept", "*/*")
                         reqBuilder.header("Connection", "keep-alive")
@@ -120,81 +118,67 @@ class DownloadManagerService(private val context: Context) {
             }
 
             var response = createCall(0)
-            if (response.code == 403 || response.code == 401 || !response.isSuccessful) {
+            if (!response.isSuccessful) {
                 response.close()
-                // Retry without Referer/Origin
                 response = createCall(1)
-                if (response.code == 403 || response.code == 401 || !response.isSuccessful) {
+                if (!response.isSuccessful) {
                     response.close()
-                    // Retry with media player UA
                     response = createCall(2)
                 }
             }
 
-            // Fallback for expired token, IP-locked stream, or CDN 403/401/404 error
-            if (!response.isSuccessful && (response.code == 403 || response.code == 401 || response.code == 404 || response.code == 410)) {
-                response.close()
-                val fallbackStreamUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
-                val fbReq = Request.Builder()
-                    .url(fallbackStreamUrl)
-                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
-                    .build()
-                response = client.newCall(fbReq).execute()
-            }
-
             if (!response.isSuccessful) {
                 val code = response.code
-                val msg = response.message
+                val msg = response.message.ifBlank { "Unable to fetch stream" }
                 response.close()
-                return@withContext Result.failure(Exception("HTTP Error $code: $msg"))
+                return@withContext Result.failure(Exception("Stream error ($code): $msg. Please re-fetch the TikTok link."))
             }
 
-            val body = response.body ?: return@withContext Result.failure(Exception("Empty response body"))
-            val totalBytes = body.contentLength()
-            var downloadedBytes = 0L
-
-            var lastSpeedCheckTime = System.currentTimeMillis()
-            var bytesSinceLastCheck = 0L
-            var currentSpeed = 0L
-
-            val buffer = ByteArray(128 * 1024)
-            var read = 0
-
-            // 1. Download to safe application cache directory first.
-            // This guarantees zero EPERM errors during download and prevents incomplete files in the Gallery.
             val tempCacheFile = File(context.cacheDir, "dl_${System.currentTimeMillis()}_$targetFilename")
             if (tempCacheFile.exists()) tempCacheFile.delete()
 
-            body.byteStream().use { inputStream: InputStream ->
-                FileOutputStream(tempCacheFile).use { outputStream ->
-                    while (coroutineContext.isActive) {
-                        read = inputStream.read(buffer)
-                        if (read == -1) break
-                        outputStream.write(buffer, 0, read)
-                        downloadedBytes += read
-                        bytesSinceLastCheck += read
+            var downloadedBytes = 0L
+            var totalBytes = -1L
 
-                        val currentTime = System.currentTimeMillis()
-                        val elapsed = currentTime - lastSpeedCheckTime
-                        if (elapsed >= 200) {
-                            currentSpeed = ((bytesSinceLastCheck * 1000L) / elapsed.coerceAtLeast(1L))
-                            lastSpeedCheckTime = currentTime
-                            bytesSinceLastCheck = 0L
+            response.use { okResp ->
+                val body = okResp.body ?: return@withContext Result.failure(Exception("Empty response body from TikTok CDN"))
+                totalBytes = body.contentLength()
+                var lastSpeedCheckTime = System.currentTimeMillis()
+                var bytesSinceLastCheck = 0L
+                val buffer = ByteArray(128 * 1024)
 
-                            val progressFraction = if (totalBytes > 0) {
-                                (downloadedBytes.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
-                            } else {
-                                0.5f
+                body.byteStream().use { inputStream: InputStream ->
+                    FileOutputStream(tempCacheFile).use { outputStream ->
+                        var read: Int
+                        while (coroutineContext.isActive) {
+                            read = inputStream.read(buffer)
+                            if (read == -1) break
+                            outputStream.write(buffer, 0, read)
+                            downloadedBytes += read
+                            bytesSinceLastCheck += read
+
+                            val currentTime = System.currentTimeMillis()
+                            val elapsed = currentTime - lastSpeedCheckTime
+                            if (elapsed >= 160) {
+                                val currentSpeed = (bytesSinceLastCheck * 1000L) / elapsed.coerceAtLeast(1L)
+                                lastSpeedCheckTime = currentTime
+                                bytesSinceLastCheck = 0L
+
+                                val progressFraction = if (totalBytes > 0) {
+                                    (downloadedBytes.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
+                                } else {
+                                    0.5f
+                                }
+
+                                val etaSeconds = if (currentSpeed > 0 && totalBytes > downloadedBytes) {
+                                    ((totalBytes - downloadedBytes) / currentSpeed).toInt()
+                                } else 0
+
+                                onProgress(progressFraction, downloadedBytes, totalBytes, currentSpeed, etaSeconds)
                             }
-
-                            val etaSeconds = if (currentSpeed > 0 && totalBytes > downloadedBytes) {
-                                ((totalBytes - downloadedBytes) / currentSpeed).toInt()
-                            } else 0
-
-                            onProgress(progressFraction, downloadedBytes, totalBytes, currentSpeed, etaSeconds)
                         }
+                        outputStream.flush()
                     }
-                    outputStream.flush()
                 }
             }
 
@@ -203,13 +187,15 @@ class DownloadManagerService(private val context: Context) {
                 return@withContext Result.failure(Exception("Download cancelled"))
             }
 
-            // 2. Commit file to Android MediaStore (Android 10+ / Scoped Storage) or Public Directory
+            if (downloadedBytes <= 0L) {
+                if (tempCacheFile.exists()) tempCacheFile.delete()
+                return@withContext Result.failure(Exception("Downloaded file was empty. Please try fetching again."))
+            }
+
             var mediaUri: Uri? = null
-            var finalLibraryFile: File = tempCacheFile
+            var finalLibraryFile: File
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // Official MediaStore API for Android 10, 11, 12, 13, 14, 15, 16
-                // Zero permission required, zero EPERM errors, instantly visible in phone Gallery & Music players
                 val values = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, targetFilename)
                     put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
@@ -231,21 +217,18 @@ class DownloadManagerService(private val context: Context) {
                         }
                         outStream.flush()
                     }
-
                     values.clear()
                     values.put(MediaStore.MediaColumns.IS_PENDING, 0)
                     context.contentResolver.update(insertedUri, values, null, null)
                     mediaUri = insertedUri
                 }
 
-                // Also save persistent copy in app external files directory for local DB and built-in player
                 val persistentDir = File(context.getExternalFilesDir(null), relativeFolder)
                 if (!persistentDir.exists()) persistentDir.mkdirs()
                 finalLibraryFile = File(persistentDir, targetFilename)
                 tempCacheFile.copyTo(finalLibraryFile, overwrite = true)
                 tempCacheFile.delete()
             } else {
-                // Android 9 and lower: Direct public directory
                 val publicType = when {
                     isAudio -> Environment.DIRECTORY_MUSIC
                     isImage -> Environment.DIRECTORY_PICTURES
@@ -263,6 +246,7 @@ class DownloadManagerService(private val context: Context) {
                     arrayOf(mimeType)
                 ) { _, uri -> mediaUri = uri }
 
+                @Suppress("DEPRECATION")
                 val scanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
                     data = Uri.fromFile(finalLibraryFile)
                 }

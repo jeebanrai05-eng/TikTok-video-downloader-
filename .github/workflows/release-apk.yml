@@ -15,13 +15,13 @@ on:
         type: boolean
         default: true
       tag_name:
-        description: 'Release Tag (e.g. v1.1.3)'
+        description: 'Release Tag (e.g. v1.1.4)'
         required: false
-        default: 'v1.1.3'
+        default: 'v1.1.4'
       release_title:
         description: 'Release Title'
         required: false
-        default: 'TikSave v1.1.3 (Fixed YouTube & Facebook Resolvers, No 403 Errors & Enhanced Video Cutter)'
+        default: 'TikSave v1.1.4 (Pure TikTok Engine, Electric Midnight UI & Smooth Animations)'
 
 permissions:
   contents: write
@@ -117,7 +117,7 @@ jobs:
         shell: bash
         run: |
           # Extract version from version.json or fallback
-          VER_NAME="1.0.2"
+          VER_NAME="1.1.4"
           if [ -f "version.json" ]; then
             PARSED_VER=$(grep -o '"versionName"[[:space:]]*:[[:space:]]*"[^"]*"' version.json | head -n 1 | cut -d'"' -f4)
             if [ -n "$PARSED_VER" ]; then
@@ -157,17 +157,18 @@ jobs:
         shell: bash
         run: |
           cat << 'EOF' > release_body.md
-          ## 🚀 TikSave Creator Suite (v1.1.3 Production Release)
+          ## 🚀 TikSave Ultra (v1.1.4 Big Update)
 
-          ### ✨ Major Updates in v1.1.3:
-          - **Resilient YouTube Stream Resolver**: Direct metadata (title, author, cover, duration) extraction eliminating 'Unable to extract video stream' dialogs.
-          - **Resilient Facebook Reel & Video Downloader**: Extracts authentic HD/SD streams from Facebook Watch & Reels without login-block popups.
-          - **Fixed HTTP Error 403**: Smart automatic recovery ensuring downloads never fail with HTTP Error 403 Forbidden.
-          - **Professional Video Cutter & Editor**: Top video player, middle visual frame thumbnail timeline with draggable start/end handles, -0.1s/+0.1s frame navigation, and lossless hardware-accelerated MP4 export.
+          ### ✨ Major Updates in v1.1.4:
+          - **Focused 100% TikTok Engine**: Completely removed Facebook, YouTube, and Video Cutter/Editor components for faster, smoother, and ultra-reliable TikTok media extraction.
+          - **Electric Midnight Color Theme**: Refined dark obsidian palette with TikTok Aqua, Neon Coral, Ultra Violet, and Solar Gold accents.
+          - **Smooth Jetpack Compose Animations**: Directional tab transitions, pulsing live CDN beacons, spring state cards, and animated library items.
+          - **Photo Carousel Slides & HD Audio**: Interactive horizontal photo slide gallery with 1-tap individual/batch saves + 320 kbps MP3 audio extraction.
+          - **Bug Fixes & Stability**: Fixed HTTP resource leaks, short link redirect resolution (`vt.tiktok.com` / `vm.tiktok.com`), MediaStore MIME handling, persisted settings toggles, working cache clean, and library filter chips.
           - **Original Production Keystore Preserved**: Signed with official certificate (`CN=TikSave, SHA-256: 83d53182b915648bea5c4ecba64317f56e97a90e91bcc0cec278dcead88352a1`).
 
           ### 📦 Download Links
-          - **[TikSave-Release.apk](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.3/TikSave-Release.apk)** (Official Production Release)
+          - **[TikSave-Release.apk](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.4/TikSave-Release.apk)** (Official Production Release)
           EOF
 
       - name: Publish GitHub Release

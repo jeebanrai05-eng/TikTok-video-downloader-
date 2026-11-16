@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.example.BuildConfig
 import com.example.MainActivity
 import com.example.R
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +31,7 @@ data class AppUpdateInfo(
     val releaseNotes: String,
     val apkDownloadUrl: String,
     val isUpdateAvailable: Boolean,
-    val versionCode: Int = 2
+    val versionCode: Int = BuildConfig.VERSION_CODE
 )
 
 class UpdateManager(private val context: Context) {
@@ -44,14 +45,17 @@ class UpdateManager(private val context: Context) {
     companion object {
         const val UPDATE_CHANNEL_ID = "tiksave_updates"
         const val UPDATE_NOTIFICATION_ID = 9001
-        private const val RAW_VERSION_MAIN = "https://raw.githubusercontent.com/jeebanrai05-eng/TikTok-video-downloader-/main/version.json"
-        private const val RAW_VERSION_MASTER = "https://raw.githubusercontent.com/jeebanrai05-eng/TikTok-video-downloader-/master/version.json"
-        private const val GITHUB_API_LATEST = "https://api.github.com/repos/jeebanrai05-eng/TikTok-video-downloader-/releases/latest"
+        private const val RAW_VERSION_MAIN =
+            "https://raw.githubusercontent.com/jeebanrai05-eng/TikTok-video-downloader-/main/version.json"
+        private const val RAW_VERSION_MASTER =
+            "https://raw.githubusercontent.com/jeebanrai05-eng/TikTok-video-downloader-/master/version.json"
+        private const val GITHUB_API_LATEST =
+            "https://api.github.com/repos/jeebanrai05-eng/TikTok-video-downloader-/releases/latest"
     }
 
     suspend fun checkForUpdates(
-        currentVersion: String = com.example.BuildConfig.VERSION_NAME,
-        currentVersionCode: Int = com.example.BuildConfig.VERSION_CODE
+        currentVersion: String = BuildConfig.VERSION_NAME,
+        currentVersionCode: Int = BuildConfig.VERSION_CODE
     ): Result<AppUpdateInfo> = withContext(Dispatchers.IO) {
         try {
             // Step 1: Check raw version.json from repository
@@ -62,28 +66,38 @@ class UpdateManager(private val context: Context) {
                         .url(endpoint)
                         .header("Cache-Control", "no-cache")
                         .build()
-                    val resp = client.newCall(req).execute()
-                    if (resp.isSuccessful) {
-                        val body = resp.body?.string() ?: ""
-                        if (body.isNotBlank()) {
-                            val json = JSONObject(body)
-                            val vName = json.optString("versionName", "1.0.3")
-                            val vCode = json.optInt("versionCode", 3)
-                            val title = json.optString("releaseTitle", "TikSave AI Studio & Photo Slides v$vName")
-                            val notes = json.optString("releaseNotes", "• TikTok Photo Slides (8K HDR+ Ultra)\n• AI Creator Studio (Hooks & Facebook Post)\n• Performance & stability updates")
-                            val apk = json.optString("apkUrl", "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v$vName/TikSave-Release.apk")
-
-                            val hasNewer = isNewerVersion(currentVersion, vName) || vCode > currentVersionCode
-                            return@withContext Result.success(
-                                AppUpdateInfo(
-                                    latestVersion = "v$vName",
-                                    releaseTitle = title,
-                                    releaseNotes = notes,
-                                    apkDownloadUrl = apk,
-                                    isUpdateAvailable = hasNewer,
-                                    versionCode = vCode
+                    client.newCall(req).execute().use { resp ->
+                        if (resp.isSuccessful) {
+                            val body = resp.body?.string() ?: ""
+                            if (body.isNotBlank()) {
+                                val json = JSONObject(body)
+                                val vName = json.optString("versionName", BuildConfig.VERSION_NAME)
+                                val vCode = json.optInt("versionCode", BuildConfig.VERSION_CODE)
+                                val title = json.optString(
+                                    "releaseTitle",
+                                    "TikSave v$vName (TikTok Ultra 8K & Smooth UI)"
                                 )
-                            )
+                                val notes = json.optString(
+                                    "releaseNotes",
+                                    "• Pure TikTok 8K 120FPS & HDR+ Downloader\n• Upgraded Electric Midnight UI & Smooth Animations\n• Photo Carousel Slideshow Downloader\n• AI Viral TikTok Caption & Hashtag Studio"
+                                )
+                                val apk = json.optString(
+                                    "apkUrl",
+                                    "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v$vName/TikSave-Release.apk"
+                                )
+
+                                val hasNewer = isNewerVersion(currentVersion, vName) || vCode > currentVersionCode
+                                return@withContext Result.success(
+                                    AppUpdateInfo(
+                                        latestVersion = "v$vName",
+                                        releaseTitle = title,
+                                        releaseNotes = notes,
+                                        apkDownloadUrl = apk,
+                                        isUpdateAvailable = hasNewer,
+                                        versionCode = vCode
+                                    )
+                                )
+                            }
                         }
                     }
                 } catch (_: Exception) {
@@ -100,68 +114,74 @@ class UpdateManager(private val context: Context) {
 
             val response = try {
                 client.newCall(request).execute()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 null
             }
 
-            if (response != null && response.isSuccessful) {
-                val bodyStr = response.body?.string() ?: ""
-                val json = JSONObject(bodyStr)
-                val tagName = json.optString("tag_name", "v1.0.3")
-                val cleanTag = tagName.removePrefix("v").trim()
-                val releaseName = json.optString("name", "TikSave AI Studio & Photo Slides $tagName")
-                val body = json.optString("body", "• 8K HDR+ Ultra Photo Slides\n• AI Viral Creator Studio")
+            if (response != null) {
+                response.use { resp ->
+                    if (resp.isSuccessful) {
+                        val bodyStr = resp.body?.string() ?: ""
+                        val json = JSONObject(bodyStr)
+                        val tagName = json.optString("tag_name", "v${BuildConfig.VERSION_NAME}")
+                        val cleanTag = tagName.removePrefix("v").trim()
+                        val releaseName = json.optString("name", "TikSave $tagName")
+                        val body = json.optString(
+                            "body",
+                            "• Pure TikTok 8K 120FPS & HDR+ Downloader\n• Upgraded UI & Smooth Animations"
+                        )
 
-                var apkUrl = ""
-                val assets = json.optJSONArray("assets")
-                if (assets != null) {
-                    // Strict priority: Always choose Release APK over Debug APK
-                    for (i in 0 until assets.length()) {
-                        val asset = assets.getJSONObject(i)
-                        val name = asset.optString("name")
-                        if (name.contains("Release", ignoreCase = true) && name.endsWith(".apk", ignoreCase = true)) {
-                            apkUrl = asset.optString("browser_download_url")
-                            break
-                        }
-                    }
-                    if (apkUrl.isBlank()) {
-                        for (i in 0 until assets.length()) {
-                            val asset = assets.getJSONObject(i)
-                            val name = asset.optString("name")
-                            if (name.endsWith(".apk", ignoreCase = true) && !name.contains("Debug", ignoreCase = true)) {
-                                apkUrl = asset.optString("browser_download_url")
-                                break
+                        var apkUrl = ""
+                        val assets = json.optJSONArray("assets")
+                        if (assets != null) {
+                            for (i in 0 until assets.length()) {
+                                val asset = assets.getJSONObject(i)
+                                val name = asset.optString("name")
+                                if (name.contains("Release", ignoreCase = true) && name.endsWith(".apk", ignoreCase = true)) {
+                                    apkUrl = asset.optString("browser_download_url")
+                                    break
+                                }
+                            }
+                            if (apkUrl.isBlank()) {
+                                for (i in 0 until assets.length()) {
+                                    val asset = assets.getJSONObject(i)
+                                    val name = asset.optString("name")
+                                    if (name.endsWith(".apk", ignoreCase = true) && !name.contains("Debug", ignoreCase = true)) {
+                                        apkUrl = asset.optString("browser_download_url")
+                                        break
+                                    }
+                                }
                             }
                         }
+
+                        if (apkUrl.isBlank()) {
+                            apkUrl = "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/$tagName/TikSave-Release.apk"
+                        }
+
+                        val hasNewer = isNewerVersion(currentVersion, cleanTag)
+                        return@withContext Result.success(
+                            AppUpdateInfo(
+                                latestVersion = tagName,
+                                releaseTitle = releaseName,
+                                releaseNotes = body,
+                                apkDownloadUrl = apkUrl,
+                                isUpdateAvailable = hasNewer
+                            )
+                        )
                     }
                 }
-
-                if (apkUrl.isBlank()) {
-                    apkUrl = "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/$tagName/TikSave-Release.apk"
-                }
-
-                val hasNewer = isNewerVersion(currentVersion, cleanTag)
-                Result.success(
-                    AppUpdateInfo(
-                        latestVersion = tagName,
-                        releaseTitle = releaseName,
-                        releaseNotes = body,
-                        apkDownloadUrl = apkUrl,
-                        isUpdateAvailable = hasNewer
-                    )
-                )
-            } else {
-                // If offline or repo release pending, show current up-to-date state
-                Result.success(
-                    AppUpdateInfo(
-                        latestVersion = "v${com.example.BuildConfig.VERSION_NAME}",
-                        releaseTitle = "TikSave v${com.example.BuildConfig.VERSION_NAME}",
-                        releaseNotes = "• 8K Ultra 120FPS Extreme stream mode\n• TikTok Photo Slides (8K HDR+ Ultra)\n• AI Creator Studio\n• Direct device storage & Gallery sync",
-                        apkDownloadUrl = "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases",
-                        isUpdateAvailable = false
-                    )
-                )
             }
+
+            // Step 3: Up-to-date offline/fallback state
+            Result.success(
+                AppUpdateInfo(
+                    latestVersion = "v${BuildConfig.VERSION_NAME}",
+                    releaseTitle = "TikSave v${BuildConfig.VERSION_NAME}",
+                    releaseNotes = "• Pure TikTok 8K 120FPS & HDR+ Engine\n• TikTok Photo Carousel Downloader\n• AI Viral Creator Studio\n• Smooth Electric Midnight Theme",
+                    apkDownloadUrl = "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases",
+                    isUpdateAvailable = false
+                )
+            )
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -194,7 +214,7 @@ class UpdateManager(private val context: Context) {
             val notification = NotificationCompat.Builder(context, UPDATE_CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("TikSave Update: ${updateInfo.latestVersion}")
-                .setContentText("Tap to upgrade to 8K 120FPS ultra speeds and bug fixes.")
+                .setContentText("Tap to upgrade to v${updateInfo.latestVersion} with upgraded theme & smooth performance.")
                 .setStyle(
                     NotificationCompat.BigTextStyle()
                         .setBigContentTitle("New Update Available: ${updateInfo.releaseTitle}")
@@ -214,7 +234,7 @@ class UpdateManager(private val context: Context) {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = "TikSave App Updates"
-            val descriptionText = "Notifications for new TikSave releases and ultra feature updates"
+            val descriptionText = "Notifications for new TikSave releases and feature updates"
             val importance = NotificationManager.IMPORTANCE_HIGH
             val channel = NotificationChannel(UPDATE_CHANNEL_ID, name, importance).apply {
                 description = descriptionText
@@ -254,31 +274,31 @@ class UpdateManager(private val context: Context) {
                 .header("User-Agent", "TikSave-Updater")
                 .build()
 
-            val response = client.newCall(request).execute()
-            if (!response.isSuccessful) {
-                return@withContext Result.failure(Exception("Failed to download update: ${response.code}"))
-            }
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return@withContext Result.failure(Exception("Failed to download update: HTTP ${response.code}"))
+                }
 
-            val body = response.body ?: return@withContext Result.failure(Exception("Empty update response"))
-            val totalBytes = body.contentLength()
-            var downloaded = 0L
-            val buffer = ByteArray(64 * 1024)
-            var read: Int
+                val body = response.body ?: return@withContext Result.failure(Exception("Empty update response"))
+                val totalBytes = body.contentLength()
+                var downloaded = 0L
+                val buffer = ByteArray(64 * 1024)
+                var read: Int
 
-            body.byteStream().use { inputStream: InputStream ->
-                FileOutputStream(updateFile).use { outputStream ->
-                    while (inputStream.read(buffer).also { read = it } != -1) {
-                        outputStream.write(buffer, 0, read)
-                        downloaded += read
-                        if (totalBytes > 0) {
-                            onProgress(downloaded.toFloat() / totalBytes.toFloat())
+                body.byteStream().use { inputStream: InputStream ->
+                    FileOutputStream(updateFile).use { outputStream ->
+                        while (inputStream.read(buffer).also { read = it } != -1) {
+                            outputStream.write(buffer, 0, read)
+                            downloaded += read
+                            if (totalBytes > 0) {
+                                onProgress(downloaded.toFloat() / totalBytes.toFloat())
+                            }
                         }
+                        outputStream.flush()
                     }
-                    outputStream.flush()
                 }
             }
 
-            // Launch system package installer
             promptInstall(updateFile)
             Result.success(updateFile)
         } catch (e: Exception) {

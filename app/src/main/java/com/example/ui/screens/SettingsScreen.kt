@@ -1,5 +1,12 @@
 package com.example.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -17,29 +24,24 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.widget.Toast
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -47,19 +49,18 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.BuildConfig
 import com.example.ui.theme.HdrGold
 import com.example.ui.theme.NeonCyan
 import com.example.ui.theme.NeonMagenta
@@ -67,21 +68,23 @@ import com.example.ui.theme.ObsidianCardBorder
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceVariant
 
-import androidx.compose.material.icons.filled.SystemUpdate
-
 @Composable
 fun SettingsScreen(
+    ultra8k120FpsEnabled: Boolean,
+    onUltra8k120FpsChange: (Boolean) -> Unit,
+    hdrBoostEnabled: Boolean,
+    onHdrBoostChange: (Boolean) -> Unit,
+    turboSpeedEnabled: Boolean,
+    onTurboSpeedChange: (Boolean) -> Unit,
+    autoClipboardEnabled: Boolean,
+    onAutoClipboardChange: (Boolean) -> Unit,
+    wifiOnlyEnabled: Boolean,
+    onWifiOnlyChange: (Boolean) -> Unit,
     onClearCache: () -> Unit,
     onCheckForUpdates: () -> Unit,
     isCheckingForUpdates: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    var ultra8k120FpsEnabled by remember { mutableStateOf(true) }
-    var hdrBoostEnabled by remember { mutableStateOf(true) }
-    var highSpeedTurboEnabled by remember { mutableStateOf(true) }
-    var autoClipboardEnabled by remember { mutableStateOf(true) }
-    var wifiOnlyEnabled by remember { mutableStateOf(false) }
-
     val context = LocalContext.current
     val privacyPolicyUrl = "https://jeebanrai05-eng.github.io/TikTok-video-downloader-/privacy.html"
 
@@ -92,21 +95,21 @@ fun SettingsScreen(
         contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
+        item(key = "settings_header") {
             Text(
                 text = "Preferences & Engine",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
                 color = Color.White
             )
             Text(
-                text = "Configure 8K 120FPS stream processing and quality limits",
+                text = "Configure TikTok 8K 120FPS stream processing & app preferences",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.6f)
             )
         }
 
         // Processing & Quality Section
-        item {
+        item(key = "settings_processing") {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -116,9 +119,9 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "8K 120FPS & STREAM PROCESSING",
+                        text = "8K 120FPS & TIKTOK STREAM ENGINE",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF00E5FF),
+                        color = NeonCyan,
                         letterSpacing = 1.sp
                     )
 
@@ -126,11 +129,11 @@ fun SettingsScreen(
 
                     SettingToggleRow(
                         icon = Icons.Default.Bolt,
-                        iconTint = Color(0xFF00E5FF),
+                        iconTint = NeonCyan,
                         title = "8K 120FPS Extreme Stream Boost",
-                        subtitle = "Hardware-accelerated 120FPS ultra-smooth decode pipeline for maximum fidelity",
+                        subtitle = "Default to maximum resolution watermark-free TikTok stream",
                         checked = ultra8k120FpsEnabled,
-                        onCheckedChange = { ultra8k120FpsEnabled = it }
+                        onCheckedChange = onUltra8k120FpsChange
                     )
 
                     Spacer(modifier = Modifier.height(14.dp))
@@ -139,9 +142,9 @@ fun SettingsScreen(
                         icon = Icons.Default.HighQuality,
                         iconTint = HdrGold,
                         title = "HDR+ Ultra Bitrate Priority",
-                        subtitle = "Always request maximum bitrate 60FPS original stream from TikTok CDN",
+                        subtitle = "Request highest original bitrate from TikTok CDN",
                         checked = hdrBoostEnabled,
-                        onCheckedChange = { hdrBoostEnabled = it }
+                        onCheckedChange = onHdrBoostChange
                     )
 
                     Spacer(modifier = Modifier.height(14.dp))
@@ -150,9 +153,9 @@ fun SettingsScreen(
                         icon = Icons.Default.Speed,
                         iconTint = NeonCyan,
                         title = "Turbo Speed Engine",
-                        subtitle = "64KB multi-stage chunked downloader with real-time speed acceleration",
-                        checked = highSpeedTurboEnabled,
-                        onCheckedChange = { highSpeedTurboEnabled = it }
+                        subtitle = "Multi-stage CDN downloader with real-time speed telemetry",
+                        checked = turboSpeedEnabled,
+                        onCheckedChange = onTurboSpeedChange
                     )
 
                     Spacer(modifier = Modifier.height(14.dp))
@@ -161,9 +164,9 @@ fun SettingsScreen(
                         icon = Icons.Default.Bolt,
                         iconTint = NeonMagenta,
                         title = "Auto-Detect Clipboard Links",
-                        subtitle = "Instantly detect copied TikTok links when returning to the app",
+                        subtitle = "Automatically detect copied TikTok links when opening the app",
                         checked = autoClipboardEnabled,
-                        onCheckedChange = { autoClipboardEnabled = it }
+                        onCheckedChange = onAutoClipboardChange
                     )
 
                     Spacer(modifier = Modifier.height(14.dp))
@@ -171,17 +174,17 @@ fun SettingsScreen(
                     SettingToggleRow(
                         icon = Icons.Default.Wifi,
                         iconTint = Color.White,
-                        title = "Download on Wi-Fi Only",
-                        subtitle = "Pause high-bandwidth HDR streams when using mobile data",
+                        title = "Prefer Wi-Fi for Large Streams",
+                        subtitle = "Conserve mobile data during 8K / Photo Carousel downloads",
                         checked = wifiOnlyEnabled,
-                        onCheckedChange = { wifiOnlyEnabled = it }
+                        onCheckedChange = onWifiOnlyChange
                     )
                 }
             }
         }
 
         // Storage & Cache Section
-        item {
+        item(key = "settings_storage") {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -211,12 +214,12 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Save Destination",
+                                text = "Save Destinations",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                 color = Color.White
                             )
                             Text(
-                                text = "Device Storage > Movies > TikSave",
+                                text = "Videos: Movies/TikSave • Photos: Pictures/TikSave • MP3: Music/TikSave",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.White.copy(alpha = 0.6f)
                             )
@@ -231,6 +234,7 @@ fun SettingsScreen(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
+                            .height(48.dp)
                             .testTag("clear_cache_button")
                     ) {
                         Icon(Icons.Default.CleaningServices, contentDescription = null, modifier = Modifier.size(18.dp), tint = NeonCyan)
@@ -241,8 +245,8 @@ fun SettingsScreen(
             }
         }
 
-        // About & Privacy Section
-        item {
+        // About, Privacy & Self-Update Section
+        item(key = "settings_about") {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -252,7 +256,7 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "ABOUT & PRIVACY",
+                        text = "ABOUT, PRIVACY & UPDATES",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = Color.White.copy(alpha = 0.7f),
                         letterSpacing = 1.sp
@@ -270,7 +274,7 @@ fun SettingsScreen(
                                 color = Color.White
                             )
                             Text(
-                                text = "No login required, no account needed. All processing and downloads remain exclusively on your device.",
+                                text = "No login required, no account needed. All TikTok downloads stay exclusively on your device.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.White.copy(alpha = 0.6f)
                             )
@@ -284,12 +288,12 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "TikSave v${com.example.BuildConfig.VERSION_NAME}",
+                                text = "TikSave v${BuildConfig.VERSION_NAME}",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                 color = Color.White
                             )
                             Text(
-                                text = "Engine build: v${com.example.BuildConfig.VERSION_NAME} (Build ${com.example.BuildConfig.VERSION_CODE}) • 8K 120FPS & Audio Studio",
+                                text = "Build ${BuildConfig.VERSION_CODE} • Pure TikTok 8K 120FPS & AI Studio",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.White.copy(alpha = 0.6f)
                             )
@@ -298,13 +302,12 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Deployed Privacy Policy Web Card
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(14.dp))
                             .border(1.dp, NeonCyan.copy(alpha = 0.35f), RoundedCornerShape(14.dp)),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF0B1120))
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1020))
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Row(
@@ -347,9 +350,7 @@ fun SettingsScreen(
 
                             Text(
                                 text = privacyPolicyUrl,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                                ),
+                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                                 color = Color.White.copy(alpha = 0.65f),
                                 fontSize = 10.sp
                             )
@@ -380,7 +381,7 @@ fun SettingsScreen(
                                         .weight(1f)
                                         .testTag("privacy_policy_open_button")
                                 ) {
-                                    Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text("Open Web", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 }
@@ -393,6 +394,7 @@ fun SettingsScreen(
                                         Toast.makeText(context, "Privacy Policy URL Copied!", Toast.LENGTH_SHORT).show()
                                     },
                                     shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(1.dp, ObsidianCardBorder),
                                     modifier = Modifier.testTag("privacy_policy_copy_button")
                                 ) {
                                     Icon(Icons.Default.ContentCopy, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
@@ -409,16 +411,17 @@ fun SettingsScreen(
                         onClick = onCheckForUpdates,
                         enabled = !isCheckingForUpdates,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF00E5FF),
-                            contentColor = Color.Black
+                            containerColor = NeonCyan,
+                            contentColor = Color(0xFF041417)
                         ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
+                            .height(50.dp)
                             .testTag("check_for_updates_button")
                     ) {
                         if (isCheckingForUpdates) {
-                            androidx.compose.material3.CircularProgressIndicator(
+                            CircularProgressIndicator(
                                 modifier = Modifier.size(18.dp),
                                 color = Color.Black,
                                 strokeWidth = 2.dp
@@ -428,7 +431,7 @@ fun SettingsScreen(
                         } else {
                             Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Check for Updates", fontWeight = FontWeight.Bold)
+                            Text("Check for Updates (v${BuildConfig.VERSION_NAME})", fontWeight = FontWeight.Bold)
                         }
                     }
                 }

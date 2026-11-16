@@ -1,28 +1,24 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
-import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
-import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.BuildConfig
 import com.example.data.ai.AiContentTone
 import com.example.data.ai.AiGenerationState
 import com.example.data.ai.AiService
-import com.example.data.ai.AiViralResult
 import com.example.data.db.DownloadItem
 import com.example.data.model.ActiveDownload
-import com.example.data.model.ClipPreset
 import com.example.data.model.DownloadQuality
 import com.example.data.model.ExtractionState
-import com.example.data.model.MediaPlatform
 import com.example.data.model.VideoMetadata
 import com.example.data.repository.DownloadRepository
 import com.example.data.update.AppUpdateInfo
 import com.example.data.update.UpdateManager
 import com.example.ui.util.FormatUtils
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,15 +29,12 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.random.Random
 
-import com.example.data.video.RealVideoTrimmer
-import com.example.data.video.TrimResult
-
 enum class AppTab {
     DOWNLOADER,
-    EDITOR,
     AI_STUDIO,
     LIBRARY,
     SETTINGS
@@ -49,6 +42,7 @@ enum class AppTab {
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val prefs = application.getSharedPreferences("tiksave_prefs", Context.MODE_PRIVATE)
     private val repository = DownloadRepository(application)
     val updateManager = UpdateManager(application)
 
@@ -57,12 +51,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _clipboardDetectedUrl = MutableStateFlow<String?>(null)
     val clipboardDetectedUrl: StateFlow<String?> = _clipboardDetectedUrl.asStateFlow()
-
-    private val _selectedPlatform = MutableStateFlow(MediaPlatform.TIKTOK)
-    val selectedPlatform: StateFlow<MediaPlatform> = _selectedPlatform.asStateFlow()
-
-    private val _selectedClipPreset = MutableStateFlow(ClipPreset.SEC_30)
-    val selectedClipPreset: StateFlow<ClipPreset> = _selectedClipPreset.asStateFlow()
 
     private val _extractionState = MutableStateFlow<ExtractionState>(ExtractionState.Idle)
     val extractionState: StateFlow<ExtractionState> = _extractionState.asStateFlow()
@@ -82,7 +70,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _currentTab = MutableStateFlow(AppTab.DOWNLOADER)
     val currentTab: StateFlow<AppTab> = _currentTab.asStateFlow()
 
-    private val _previewingMedia = MutableStateFlow<Pair<String, String>?>(null) // (urlOrPath, title)
+    private val _previewingMedia = MutableStateFlow<Pair<String, String>?>(null)
     val previewingMedia: StateFlow<Pair<String, String>?> = _previewingMedia.asStateFlow()
 
     private val _updateInfo = MutableStateFlow<AppUpdateInfo?>(null)
@@ -100,26 +88,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _updateDownloadProgress = MutableStateFlow(0f)
     val updateDownloadProgress: StateFlow<Float> = _updateDownloadProgress.asStateFlow()
 
+    // Persisted Preferences
+    private val _ultra8k120FpsEnabled = MutableStateFlow(prefs.getBoolean("ultra_8k", true))
+    val ultra8k120FpsEnabled: StateFlow<Boolean> = _ultra8k120FpsEnabled.asStateFlow()
+
+    private val _hdrBoostEnabled = MutableStateFlow(prefs.getBoolean("hdr_boost", true))
+    val hdrBoostEnabled: StateFlow<Boolean> = _hdrBoostEnabled.asStateFlow()
+
+    private val _turboSpeedEnabled = MutableStateFlow(prefs.getBoolean("turbo_speed", true))
+    val turboSpeedEnabled: StateFlow<Boolean> = _turboSpeedEnabled.asStateFlow()
+
+    private val _autoClipboardEnabled = MutableStateFlow(prefs.getBoolean("auto_clipboard", true))
+    val autoClipboardEnabled: StateFlow<Boolean> = _autoClipboardEnabled.asStateFlow()
+
+    private val _wifiOnlyEnabled = MutableStateFlow(prefs.getBoolean("wifi_only", false))
+    val wifiOnlyEnabled: StateFlow<Boolean> = _wifiOnlyEnabled.asStateFlow()
+
     private val _toastEvents = MutableSharedFlow<String>()
     val toastEvents: SharedFlow<String> = _toastEvents.asSharedFlow()
-
-    // Professional Video Editor State
-    private val _editorSourceUriOrPath = MutableStateFlow<String?>(null)
-    val editorSourceUriOrPath: StateFlow<String?> = _editorSourceUriOrPath.asStateFlow()
-
-    private val _editorVideoTitle = MutableStateFlow("TikSave Video")
-    val editorVideoTitle: StateFlow<String> = _editorVideoTitle.asStateFlow()
-
-    private val _isExportingClip = MutableStateFlow(false)
-    val isExportingClip: StateFlow<Boolean> = _isExportingClip.asStateFlow()
-
-    private val _clipExportProgress = MutableStateFlow(0f)
-    val clipExportProgress: StateFlow<Float> = _clipExportProgress.asStateFlow()
-
-    private val _clipExportResult = MutableStateFlow<TrimResult?>(null)
-    val clipExportResult: StateFlow<TrimResult?> = _clipExportResult.asStateFlow()
-
-    private var clipExportJob: Job? = null
 
     // Download history & favorites
     val allDownloads: StateFlow<List<DownloadItem>> = repository.allDownloads
@@ -144,7 +130,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         checkClipboardForTikTokLink()
-        // Check for updates silently on startup
         checkForAppUpdates(silent = true)
     }
 
@@ -152,20 +137,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _currentTab.value = tab
     }
 
-    fun setSelectedPlatform(platform: MediaPlatform) {
-        _selectedPlatform.value = platform
+    fun setUltra8k120FpsEnabled(enabled: Boolean) {
+        _ultra8k120FpsEnabled.value = enabled
+        prefs.edit().putBoolean("ultra_8k", enabled).apply()
     }
 
-    fun setSelectedClipPreset(preset: ClipPreset) {
-        _selectedClipPreset.value = preset
+    fun setHdrBoostEnabled(enabled: Boolean) {
+        _hdrBoostEnabled.value = enabled
+        prefs.edit().putBoolean("hdr_boost", enabled).apply()
+    }
+
+    fun setTurboSpeedEnabled(enabled: Boolean) {
+        _turboSpeedEnabled.value = enabled
+        prefs.edit().putBoolean("turbo_speed", enabled).apply()
+    }
+
+    fun setAutoClipboardEnabled(enabled: Boolean) {
+        _autoClipboardEnabled.value = enabled
+        prefs.edit().putBoolean("auto_clipboard", enabled).apply()
+        if (!enabled) _clipboardDetectedUrl.value = null
+    }
+
+    fun setWifiOnlyEnabled(enabled: Boolean) {
+        _wifiOnlyEnabled.value = enabled
+        prefs.edit().putBoolean("wifi_only", enabled).apply()
     }
 
     fun onUrlChange(newUrl: String) {
         _urlInput.value = newUrl
-        // Auto-detect platform if input contains specific domains
-        val detected = DownloadRepository.detectPlatform(newUrl)
-        _selectedPlatform.value = detected
-
         if (_extractionState.value is ExtractionState.Error) {
             _extractionState.value = ExtractionState.Idle
         }
@@ -177,12 +176,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun checkClipboardForTikTokLink() {
+        if (!_autoClipboardEnabled.value) return
         try {
             val clipboard = getApplication<Application>().getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
             val clip = clipboard?.primaryClip
             if (clip != null && clip.itemCount > 0) {
                 val text = clip.getItemAt(0)?.text?.toString() ?: ""
-                val extracted = DownloadRepository.extractAnyUrl(text)
+                val extracted = DownloadRepository.extractTikTokUrl(text)
                 if (extracted != null && extracted != _urlInput.value) {
                     _clipboardDetectedUrl.value = extracted
                 }
@@ -209,7 +209,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val clip = clipboard?.primaryClip
             if (clip != null && clip.itemCount > 0) {
                 val text = clip.getItemAt(0)?.text?.toString() ?: ""
-                val extracted = DownloadRepository.extractAnyUrl(text) ?: text.trim()
+                val extracted = DownloadRepository.extractTikTokUrl(text) ?: text.trim()
                 _urlInput.value = extracted
                 startExtraction()
             } else {
@@ -221,7 +221,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun selectSample(sample: DownloadRepository.SampleItem) {
-        _selectedPlatform.value = sample.platform
         _urlInput.value = sample.url
         startExtraction()
     }
@@ -233,16 +232,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun startExtraction() {
         val input = _urlInput.value.trim()
         if (input.isBlank()) {
-            viewModelScope.launch { _toastEvents.emit("Please paste a link first (TikTok, YouTube, or Facebook)") }
+            viewModelScope.launch { _toastEvents.emit("Please paste a TikTok video or photo link first") }
             return
         }
 
-        val platform = DownloadRepository.detectPlatform(input)
-        _selectedPlatform.value = platform
-
         viewModelScope.launch {
-            _extractionState.value = ExtractionState.Analyzing("Connecting to ${platform.badge} stream engine...", 0.15f)
-            val result = repository.resolveMediaLink(input, platform) { step, progress ->
+            _extractionState.value = ExtractionState.Analyzing("Connecting to TikTok 8K CDN...", 0.15f)
+            val result = repository.resolveTikTokVideo(
+                rawInput = input,
+                hdPriority = _hdrBoostEnabled.value
+            ) { step, progress ->
                 _extractionState.value = ExtractionState.Analyzing(step, progress)
             }
             _extractionState.value = result
@@ -250,27 +249,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val meta = result.metadata
                 if (meta.isPhotoSlide) {
                     _selectedQuality.value = DownloadQuality.PHOTO_SLIDE_ULTRA
-                    _toastEvents.emit("📸 Photo Carousel detected (${meta.images.size} photos in 8K HDR+ Ultra)!")
+                    _toastEvents.emit("📸 Photo Carousel detected (${meta.images.size} photos in 8K HDR+)!")
                 } else {
-                    _selectedQuality.value = DownloadQuality.ULTRA_8K_120FPS
-                    when (meta.platform) {
-                        MediaPlatform.YOUTUBE_TO_REELS -> _toastEvents.emit("▶️ YouTube video extracted! Ready to clip for Facebook Reels.")
-                        MediaPlatform.FACEBOOK_TO_SHORTS -> _toastEvents.emit("👥 Facebook video extracted! Ready to clip for TikTok & Shorts.")
-                        MediaPlatform.TIKTOK -> _toastEvents.emit("🎵 TikTok video extracted without watermark!")
+                    _selectedQuality.value = if (_ultra8k120FpsEnabled.value) {
+                        DownloadQuality.ULTRA_8K_120FPS
+                    } else {
+                        DownloadQuality.HDR_ULTRA
                     }
+                    _toastEvents.emit("🎵 TikTok video extracted without watermark!")
                 }
             }
         }
     }
 
     fun startDownload(metadata: VideoMetadata, quality: DownloadQuality) {
-        // If it's a photo slide and quality is PHOTO_SLIDE_ULTRA with multiple images, download all photos
         if (metadata.isPhotoSlide && quality == DownloadQuality.PHOTO_SLIDE_ULTRA && metadata.images.size > 1) {
             downloadAllPhotoSlides(metadata)
             return
         }
 
-        // Prevent concurrent duplicate download clicks
         if (_isDownloading.value) {
             viewModelScope.launch { _toastEvents.emit("Download is already running in background") }
             _isDownloadModalVisible.value = true
@@ -287,19 +284,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val downloadUrl = when (quality) {
             DownloadQuality.ULTRA_8K_120FPS -> if (metadata.isPhotoSlide && metadata.ultra8kUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.ultra8kUrl
             DownloadQuality.HDR_ULTRA -> if (metadata.isPhotoSlide && metadata.ultraHdrUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.ultraHdrUrl
-            DownloadQuality.QHD_2K -> metadata.qhd2kUrl.ifEmpty { metadata.standardHdUrl }
             DownloadQuality.HD_STANDARD -> if (metadata.isPhotoSlide && metadata.standardHdUrl.isBlank()) (metadata.images.firstOrNull() ?: metadata.coverUrl) else metadata.standardHdUrl
             DownloadQuality.NORMAL_720P -> metadata.normal720pUrl.ifEmpty { metadata.standardHdUrl }
             DownloadQuality.LOW_480P -> metadata.low480pUrl.ifEmpty { metadata.standardHdUrl }
-            DownloadQuality.MOBILE_360P -> metadata.mobile360pUrl.ifEmpty { metadata.low480pUrl }
             DownloadQuality.AUDIO_ONLY, DownloadQuality.AUDIO_HIGH_SOUND, DownloadQuality.AUDIO_VFX_SOUND -> metadata.audioUrl
             DownloadQuality.COVER_IMAGE -> metadata.coverUrl
-            DownloadQuality.PHOTO_SLIDE_ULTRA -> metadata.ultraHdrUrl.ifBlank { metadata.images.firstOrNull() ?: metadata.coverUrl }
+            DownloadQuality.PHOTO_SLIDE_ULTRA -> metadata.images.firstOrNull() ?: metadata.ultraHdrUrl.ifBlank { metadata.coverUrl }
         }
 
         if (downloadUrl.isBlank()) {
             _isDownloading.value = false
-            viewModelScope.launch { _toastEvents.emit("Selected stream is unavailable for this video") }
+            viewModelScope.launch { _toastEvents.emit("Selected stream is unavailable for this post") }
             return
         }
 
@@ -317,12 +312,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val cleanTitle = metadata.title.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(24)
-        val clipSuffix = if (metadata.clipPreset == ClipPreset.CUSTOM && metadata.trimEndSeconds > metadata.trimStartSeconds) {
-            "_Clip_${metadata.trimStartSeconds}s_to_${metadata.trimEndSeconds}s"
-        } else if (metadata.clipPreset != ClipPreset.FULL) {
-            "_${metadata.clipPreset.name}"
-        } else ""
-        val filename = "TikSave_${cleanTitle}_${quality.name}${clipSuffix}${audioProfileSuffix}_${System.currentTimeMillis()}.$ext"
+        val filename = "TikSave_${cleanTitle}_${quality.name}${audioProfileSuffix}_${System.currentTimeMillis()}.$ext"
 
         _activeDownload.value = ActiveDownload(
             videoId = metadata.id,
@@ -333,11 +323,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             totalBytes = when (quality) {
                 DownloadQuality.ULTRA_8K_120FPS -> metadata.ultra8kSize
                 DownloadQuality.HDR_ULTRA -> metadata.ultraHdrSize
-                DownloadQuality.QHD_2K -> metadata.qhd2kSize
                 DownloadQuality.HD_STANDARD -> metadata.standardHdSize
                 DownloadQuality.NORMAL_720P -> metadata.normal720pSize
                 DownloadQuality.LOW_480P -> metadata.low480pSize
-                DownloadQuality.MOBILE_360P -> metadata.mobile360pSize
                 DownloadQuality.AUDIO_ONLY, DownloadQuality.AUDIO_HIGH_SOUND, DownloadQuality.AUDIO_VFX_SOUND -> 4_500_000L
                 DownloadQuality.COVER_IMAGE, DownloadQuality.PHOTO_SLIDE_ULTRA -> 2_500_000L
             },
@@ -430,15 +418,39 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun toggleFavorite(item: DownloadItem) {
-        toggleFavorite(item.id)
-    }
-
     fun clearAllHistory() {
         viewModelScope.launch {
             repository.clearHistory()
             _toastEvents.emit("Download library cleared")
         }
+    }
+
+    fun clearCache() {
+        viewModelScope.launch {
+            val freedBytes = withContext(Dispatchers.IO) {
+                var total = 0L
+                val cacheDir = getApplication<Application>().cacheDir
+                cacheDir.listFiles()?.forEach { file ->
+                    if (file.name != "TikSave-Update.apk") {
+                        total += dirSize(file)
+                        file.deleteRecursively()
+                    }
+                }
+                total
+            }
+            val msg = if (freedBytes > 0) {
+                "Cleaned ${FormatUtils.formatBytes(freedBytes)} of temporary cache"
+            } else {
+                "Stream cache is already clean"
+            }
+            _toastEvents.emit(msg)
+        }
+    }
+
+    private fun dirSize(file: File): Long {
+        if (!file.exists()) return 0L
+        if (file.isFile) return file.length()
+        return file.listFiles()?.sumOf { dirSize(it) } ?: 0L
     }
 
     // AI Studio methods
@@ -453,17 +465,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun generateAiViralPack() {
         val input = _aiInputText.value.trim().ifEmpty {
             when (_aiSelectedTone.value) {
-                AiContentTone.YOUTUBE_TO_REELS -> "YouTube Viral Podcast Clip to Facebook Reels"
-                AiContentTone.FACEBOOK_TO_SHORTS -> "Facebook Trending Video to TikTok & Shorts"
-                AiContentTone.NEPAL_POLITICS -> "Nepal Politics & Current Affairs Debate"
+                AiContentTone.NEPAL_POLITICS -> "Nepal Politics & Current Affairs"
                 AiContentTone.COMEDY_FUNNY -> "Funny Nepali Comedy Moments"
                 AiContentTone.AESTHETIC_VIBE -> "Aesthetic Calm Nature & Travel"
                 AiContentTone.MOTIVATION -> "Daily Nepali Success & Motivation"
-                else -> "Viral TikTok Content"
+                AiContentTone.VIRAL_TREND -> "Viral TikTok FYP Content"
             }
         }
         viewModelScope.launch {
-            _aiGenerationState.value = AiGenerationState.Generating("Analyzing content context & tone...", 0.2f)
+            _aiGenerationState.value = AiGenerationState.Generating("Analyzing TikTok content context & tone...", 0.2f)
             try {
                 val result = aiService.generateViralPack(
                     input = input,
@@ -482,9 +492,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun regenerateAiViralPack() {
         val currentTitle = (_aiGenerationState.value as? AiGenerationState.Success)?.result?.title
-            ?: _aiInputText.value.trim().ifEmpty { "Viral Social Media Content" }
+            ?: _aiInputText.value.trim().ifEmpty { "Viral TikTok Content" }
         viewModelScope.launch {
-            _aiGenerationState.value = AiGenerationState.Generating("Randomizing unlimited fresh captions & hashtags...", 0.25f)
+            _aiGenerationState.value = AiGenerationState.Generating("Randomizing fresh TikTok captions & hashtags...", 0.25f)
             try {
                 val newSeed = Random.nextInt(1000, 999999)
                 val result = aiService.generateViralPack(
@@ -505,14 +515,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun launchAiWithVideo(metadata: VideoMetadata) {
         _aiInputText.value = metadata.title
-        _aiSelectedTone.value = when (metadata.platform) {
-            MediaPlatform.YOUTUBE_TO_REELS -> AiContentTone.YOUTUBE_TO_REELS
-            MediaPlatform.FACEBOOK_TO_SHORTS -> AiContentTone.FACEBOOK_TO_SHORTS
-            MediaPlatform.TIKTOK -> AiContentTone.VIRAL_TREND
-        }
+        _aiSelectedTone.value = AiContentTone.VIRAL_TREND
         _currentTab.value = AppTab.AI_STUDIO
         viewModelScope.launch {
-            _aiGenerationState.value = AiGenerationState.Generating("Analyzing video & generating viral pack...", 0.25f)
+            _aiGenerationState.value = AiGenerationState.Generating("Analyzing TikTok video & crafting viral hooks...", 0.25f)
             try {
                 val result = aiService.generateViralPack(
                     input = metadata.title,
@@ -602,7 +608,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     isCompleted = true,
                     speedBytesPerSec = 0L
                 )
-                _toastEvents.emit("✅ Successfully saved all $successfulCount photos to Gallery (Pictures/TikSave)!")
+                _toastEvents.emit("✅ Saved all $successfulCount photos to Gallery (Pictures/TikSave)!")
             } catch (e: Exception) {
                 _toastEvents.emit("Download error: ${e.localizedMessage}")
             } finally {
@@ -623,64 +629,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _toastEvents.emit("📸 Saving Slide #$slideNumber in 8K HDR+ Ultra...")
         }
-    }
-
-    // Video Editor Actions
-    fun openInEditor(sourceUriOrPath: String, title: String) {
-        _editorSourceUriOrPath.value = sourceUriOrPath
-        _editorVideoTitle.value = title
-        _currentTab.value = AppTab.EDITOR
-    }
-
-    fun selectEditorVideo(sourceUriOrPath: String, title: String) {
-        _editorSourceUriOrPath.value = sourceUriOrPath
-        _editorVideoTitle.value = title
-    }
-
-    fun exportClip(startSec: Float, endSec: Float, clipTitle: String) {
-        val source = _editorSourceUriOrPath.value ?: return
-        if (_isExportingClip.value) return
-
-        clipExportJob = viewModelScope.launch {
-            _isExportingClip.value = true
-            _clipExportProgress.value = 0.05f
-            try {
-                val res = RealVideoTrimmer.trimVideo(
-                    context = getApplication(),
-                    sourceUriOrPath = source,
-                    startSeconds = startSec,
-                    endSeconds = endSec,
-                    exportTitle = clipTitle,
-                    onProgress = { p -> _clipExportProgress.value = p }
-                )
-                _isExportingClip.value = false
-                res.onSuccess { trimResult ->
-                    _clipExportResult.value = trimResult
-                    repository.saveTrimmedClipRecord(
-                        clipTitle = clipTitle,
-                        author = "TikSave Editor",
-                        localFile = trimResult.file,
-                        durationSeconds = trimResult.durationSeconds
-                    )
-                    _toastEvents.emit("Lossless MP4 clip exported to Movies/TikSave and Library!")
-                }.onFailure { err ->
-                    _toastEvents.emit("Export failed: ${err.localizedMessage}")
-                }
-            } catch (e: Exception) {
-                _isExportingClip.value = false
-                _toastEvents.emit("Export error: ${e.localizedMessage}")
-            }
-        }
-    }
-
-    fun cancelClipExport() {
-        clipExportJob?.cancel()
-        clipExportJob = null
-        _isExportingClip.value = false
-    }
-
-    fun dismissExportResult() {
-        _clipExportResult.value = null
     }
 
     fun renameDownloadItem(id: Long, newTitle: String) {
@@ -706,7 +654,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (update.isUpdateAvailable) {
                         _updateInfo.value = update
                     } else if (!silent) {
-                        _toastEvents.emit("TikSave is up to date! (v1.1.0)")
+                        _toastEvents.emit("TikSave is up to date! (v${BuildConfig.VERSION_NAME})")
                     }
                 }.onFailure { e ->
                     if (!silent) {
