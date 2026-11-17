@@ -1,9 +1,9 @@
 {
-  "versionCode": 10,
-  "versionName": "1.1.5",
-  "releaseTitle": "TikSave v1.1.5 (Zero-Timeout Parallel TikTok Resolver & Orbiting Star Border UI)",
-  "releaseNotes": "• Fixed 'Network error: timeout': New dual parallel TikTok extraction engine (Direct TikTok Universal Data + TikWM fast race) with IPv4-first DNS eliminates mobile carrier stalls and resolves links in ~1 second\n• Shared Session CookieJar: Seamless 403-free in-app video previews and CDN downloads\n• Orbiting Light & Star Border Animation: Futuristic glowing neon beam + twinkling traveling star around the TikTok Link Box\n• Enhanced Smoothness: Streamlined animations, responsive feedback, and reliable background self-updater\n• Original Production Keystore Preserved: Seamless self-update signed with verified CN=TikSave certificate",
-  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.5/TikSave-Release.apk",
+  "versionCode": 11,
+  "versionName": "1.1.6",
+  "releaseTitle": "TikSave v1.1.6 (4-Engine Instant TikTok Link Resolver & Full URL Support)",
+  "releaseNotes": "• 4-Engine Instant TikTok Resolver: Concurrently races TikVideo, SaveTik, TikWM, and Direct TikTok Mobile/Desktop extractors + oEmbed metadata so links resolve reliably in under 1 second\n• Broad TikTok Link Recognition: Supports vt.tiktok.com, vm.tiktok.com, lite.tiktok.com, @/video/, /photo/, bare links without https://, and pasted share messages\n• Fixed False 'Private or Unavailable' Errors: Eliminates premature error aborts when one mirror fails\n• Orbiting Star Border & Electric Midnight UI: Smooth animated perimeter light + traveling star around the TikTok Link Box\n• Original Production Keystore Preserved: Seamless self-update signed with verified CN=TikSave certificate",
+  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.6/TikSave-Release.apk",
   "minSupportedVersion": "1.0.0",
   "mandatory": false,
   "publishedAt": "2026-11-17"

@@ -24,20 +24,62 @@ class ExampleRobolectricTest {
   }
 
   @Test
-  fun `verify build version is updated to 1_1_5`() {
-    assertEquals("1.1.5", BuildConfig.VERSION_NAME)
-    assertEquals(10, BuildConfig.VERSION_CODE)
+  fun `verify build version is updated to 1_1_6`() {
+    assertEquals("1.1.6", BuildConfig.VERSION_NAME)
+    assertEquals(11, BuildConfig.VERSION_CODE)
   }
 
   @Test
-  fun `extractTikTokUrl accepts valid TikTok links and rejects non-TikTok platforms`() {
-    assertNotNull(DownloadRepository.extractTikTokUrl("https://www.tiktok.com/@creator/video/7321948192384729102"))
+  fun `extractTikTokUrl normalizes all TikTok link variants and rejects non-TikTok platforms`() {
+    assertEquals(
+      "https://www.tiktok.com/@creator/video/7321948192384729102",
+      DownloadRepository.extractTikTokUrl("https://www.tiktok.com/@creator/video/7321948192384729102")
+    )
+    assertEquals(
+      "https://www.tiktok.com/@/video/7321948192384729102",
+      DownloadRepository.extractTikTokUrl("https://www.tiktok.com/@/video/7321948192384729102")
+    )
+    assertEquals(
+      "https://lite.tiktok.com/t/ZSptD2ek8/",
+      DownloadRepository.extractTikTokUrl("Watch this video https://lite.tiktok.com/t/ZSptD2ek8/!")
+    )
+    assertEquals(
+      "https://vt.tiktok.com/ZSptD2ek8/",
+      DownloadRepository.extractTikTokUrl("vt.tiktok.com/ZSptD2ek8/")
+    )
     assertNotNull(DownloadRepository.extractTikTokUrl("https://www.tiktok.com/@nepal_travel/photo/7345678910111213141?is_from_webapp=1"))
-    assertNotNull(DownloadRepository.extractTikTokUrl("Check this https://vt.tiktok.com/ZSptD2ek8/"))
-    assertNotNull(DownloadRepository.extractTikTokUrl("https://www.tiktok.com/t/ZT8AbCdEf/"))
 
     assertNull(DownloadRepository.extractTikTokUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ"))
     assertNull(DownloadRepository.extractTikTokUrl("https://www.facebook.com/reel/1234567890"))
+  }
+
+  @Test
+  fun `parseAjaxSearchHtml extracts HD MP4, standard MP4, MP3, cover, and unescaped title`() {
+    val sampleAjaxHtml = """
+      <div class="thumbnail">
+        <div class="image-tik">
+          <img src="https://p16-common-sign.tiktokcdn-us.com/cover.webp?a=1&amp;b=2">
+        </div>
+        <div class="content">
+          <h3>Scrambled Eggs &#x1F95A; #streetfood</h3>
+        </div>
+      </div>
+      <div class="dl-action">
+        <p><a href="https://dl.snapcdn.app/get?token=abc_std" class="tik-button-dl">Download MP4 [1]</a></p>
+        <p><a href="https://v16m.tiktokcdn-us.com/vid.mp4?a=1&amp;b=2" class="tik-button-dl">Download MP4 [2]</a></p>
+        <p><a href="https://dl.snapcdn.app/get?token=abc_hd" class="tik-button-dl">Download MP4 HD</a></p>
+        <p><a href="https://dl.snapcdn.app/get?token=abc_mp3" class="tik-button-dl">Download MP3</a></p>
+      </div>
+    """.trimIndent()
+
+    val meta = DownloadRepository.parseAjaxSearchHtml(sampleAjaxHtml, "https://vt.tiktok.com/ZSptD2ek8/")
+    assertNotNull(meta)
+    assertEquals("Scrambled Eggs 🥚 #streetfood", meta!!.title)
+    assertEquals("https://p16-common-sign.tiktokcdn-us.com/cover.webp?a=1&b=2", meta.coverUrl)
+    assertEquals("https://dl.snapcdn.app/get?token=abc_hd", meta.ultra8kUrl)
+    assertEquals("https://dl.snapcdn.app/get?token=abc_std", meta.standardHdUrl)
+    assertEquals("https://v16m.tiktokcdn-us.com/vid.mp4?a=1&b=2", meta.normal720pUrl)
+    assertEquals("https://dl.snapcdn.app/get?token=abc_mp3", meta.audioUrl)
   }
 
   @Test
