@@ -137,7 +137,18 @@ fun VideoPlayerDialog(
                                 val mediaController = MediaController(ctx)
                                 mediaController.setAnchorView(this)
                                 setMediaController(mediaController)
-                                setVideoURI(uri)
+                                if (mediaUrlOrPath.startsWith("http://") || mediaUrlOrPath.startsWith("https://")) {
+                                    val headers = mutableMapOf(
+                                        "User-Agent" to com.example.data.api.TikTokNetworkClient.DESKTOP_USER_AGENT,
+                                        "Referer" to "https://www.tiktok.com/"
+                                    )
+                                    com.example.data.api.TikTokNetworkClient.cookieHeaderFor(mediaUrlOrPath)?.let { cookie ->
+                                        headers["Cookie"] = cookie
+                                    }
+                                    setVideoURI(uri, headers)
+                                } else {
+                                    setVideoURI(uri)
+                                }
 
                                 setOnPreparedListener { mp ->
                                     isBuffering = false

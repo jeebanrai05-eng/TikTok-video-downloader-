@@ -2,6 +2,7 @@ package com.example.data.repository
 
 import android.content.Context
 import com.example.data.api.TikTokApiService
+import com.example.data.api.TikTokNetworkClient
 import com.example.data.db.AppDatabase
 import com.example.data.db.DownloadDao
 import com.example.data.db.DownloadItem
@@ -10,13 +11,19 @@ import com.example.data.model.DownloadQuality
 import com.example.data.model.ExtractionState
 import com.example.data.model.TikWmData
 import com.example.data.model.VideoMetadata
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.Request
+import org.json.JSONObject
 import java.io.File
-import java.util.concurrent.TimeUnit
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.regex.Pattern
 
 class DownloadRepository(private val context: Context) {
@@ -42,16 +49,19 @@ class DownloadRepository(private val context: Context) {
         val isPhotoSlide: Boolean = false
     )
 
-    private val redirectClient = OkHttpClient.Builder()
-        .followRedirects(true)
-        .followSslRedirects(true)
-        .connectTimeout(12, TimeUnit.SECONDS)
-        .readTimeout(12, TimeUnit.SECONDS)
-        .build()
-
     companion object {
         private val TIKTOK_URL_REGEX = Pattern.compile(
             "https?://(?:(?:www|m|vt|vm|t)\\.)?tiktok\\.com/(?:@[a-zA-Z0-9_.-]+/(?:video|photo)/[0-9]+|t/[A-Za-z0-9_-]+|[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+|[A-Za-z0-9_-]+)(?:[/?#][^\\s]*)?"
+        )
+
+        private val UNIVERSAL_DATA_PATTERN = Pattern.compile(
+            "<script[^>]*id=\"__UNIVERSAL_DATA_FOR_REHYDRATION__\"[^>]*>(.*?)</script>",
+            Pattern.DOTALL
+        )
+
+        private val SIGI_STATE_PATTERN = Pattern.compile(
+            "<script[^>]*id=\"SIGI_STATE\"[^>]*>(.*?)</script>",
+            Pattern.DOTALL
         )
 
         val ALL_SAMPLES = listOf(
@@ -103,36 +113,210 @@ class DownloadRepository(private val context: Context) {
         fun isValidTikTokUrl(input: String): Boolean {
             return extractTikTokUrl(input) != null
         }
+
+        /**
+         * Parses TikTok's __UNIVERSAL_DATA_FOR_REHYDRATION__ (or SIGI_STATE) JSON directly from page HTML.
+         * Extracts watermark-free playAddr/bitrateInfo streams and Photo Carousel imagePost slides.
+         */
+        fun parseUniversalDataFromHtml(html: String, canonicalUrl: String): VideoMetadata? {
+            try {
+                val universalMatcher = UNIVERSAL_DATA_PATTERN.matcher(html)
+                if (universalMatcher.find()) {
+                    val jsonRaw = universalMatcher.group(1)?.trim() ?: return null
+                    val root = JSONObject(jsonRaw)
+                    val scope = root.optJSONObject("__DEFAULT_SCOPE__") ?: return null
+                    val detailObj = scope.optJSONObject("webapp.video-detail")
+                        ?: scope.optJSONObject("webapp.reflow.video.detail")
+                        ?: return null
+                    val itemStruct = detailObj.optJSONObject("itemInfo")?.optJSONObject("itemStruct")
+                        ?: return null
+                    return parseItemStruct(itemStruct, canonicalUrl)
+                }
+
+                val sigiMatcher = SIGI_STATE_PATTERN.matcher(html)
+                if (sigiMatcher.find()) {
+                    val jsonRaw = sigiMatcher.group(1)?.trim() ?: return null
+                    val root = JSONObject(jsonRaw)
+                    val itemModule = root.optJSONObject("ItemModule") ?: return null
+                    val keys = itemModule.keys()
+                    if (keys.hasNext()) {
+                        val firstKey = keys.next()
+                        val itemStruct = itemModule.optJSONObject(firstKey) ?: return null
+                        return parseItemStruct(itemStruct, canonicalUrl)
+                    }
+                }
+            } catch (_: Exception) {
+            }
+            return null
+        }
+
+        private fun parseItemStruct(item: JSONObject, canonicalUrl: String): VideoMetadata? {
+            val id = item.optString("id").ifBlank { System.currentTimeMillis().toString() }
+            val authorObj = item.optJSONObject("author")
+            val uniqueId = authorObj?.optString("uniqueId")?.ifBlank { "user" } ?: "user"
+            val nickname = authorObj?.optString("nickname")?.ifBlank { "TikTok Creator" } ?: "TikTok Creator"
+            val avatar = authorObj?.optString("avatarLarger")
+                ?.ifBlank { authorObj.optString("avatarMedium") }
+                ?.ifBlank { authorObj.optString("avatarThumb") }
+                .orEmpty()
+
+            val desc = item.optString("desc").ifBlank { "TikTok Video by $nickname" }
+            val stats = item.optJSONObject("stats")
+            val playCount = stats?.optLong("playCount", 0L) ?: 0L
+            val likeCount = stats?.optLong("diggCount", 0L) ?: 0L
+            val commentCount = stats?.optLong("commentCount", 0L) ?: 0L
+            val shareCount = stats?.optLong("shareCount", 0L) ?: 0L
+
+            val musicObj = item.optJSONObject("music")
+            val musicTitle = musicObj?.optString("title")?.ifBlank { "Original Sound" } ?: "Original Sound"
+            val musicAuthor = musicObj?.optString("authorName")?.ifBlank { nickname } ?: nickname
+            val audioUrl = musicObj?.optString("playUrl").orEmpty()
+
+            // Photo Carousel Slides (if present)
+            val imageList = mutableListOf<String>()
+            val imagePost = item.optJSONObject("imagePost")
+            val imagesArr = imagePost?.optJSONArray("images")
+            if (imagesArr != null) {
+                for (i in 0 until imagesArr.length()) {
+                    val imgEntry = imagesArr.optJSONObject(i) ?: continue
+                    val urlList = imgEntry.optJSONObject("imageURL")?.optJSONArray("urlList")
+                    if (urlList != null && urlList.length() > 0) {
+                        val imgUrl = urlList.optString(0)
+                        if (imgUrl.startsWith("http")) {
+                            imageList.add(imgUrl)
+                        }
+                    }
+                }
+            }
+
+            val videoObj = item.optJSONObject("video")
+            val duration = videoObj?.optInt("duration", 15) ?: 15
+            val coverUrl = videoObj?.optString("originCover")
+                ?.ifBlank { videoObj.optString("cover") }
+                ?.ifBlank { imageList.firstOrNull().orEmpty() }
+                .orEmpty()
+
+            // Collect clean non-watermarked bitrate streams sorted highest -> lowest
+            data class StreamCandidate(val bitrate: Long, val url: String, val size: Long)
+            val candidates = mutableListOf<StreamCandidate>()
+
+            val bitrateInfo = videoObj?.optJSONArray("bitrateInfo")
+            if (bitrateInfo != null) {
+                for (i in 0 until bitrateInfo.length()) {
+                    val entry = bitrateInfo.optJSONObject(i) ?: continue
+                    val bitrate = entry.optLong("Bitrate", 0L)
+                    val playAddrObj = entry.optJSONObject("PlayAddr") ?: continue
+                    val dataSize = playAddrObj.optString("DataSize").toLongOrNull()
+                        ?: playAddrObj.optLong("DataSize", 0L)
+                    val urlList = playAddrObj.optJSONArray("UrlList") ?: continue
+                    var chosenUrl = ""
+                    for (j in 0 until urlList.length()) {
+                        val candidateUrl = urlList.optString(j)
+                        if (candidateUrl.startsWith("http")) {
+                            chosenUrl = candidateUrl
+                            break
+                        }
+                    }
+                    if (chosenUrl.isNotBlank()) {
+                        candidates.add(StreamCandidate(bitrate, chosenUrl, dataSize))
+                    }
+                }
+            }
+
+            val sortedCandidates = candidates.sortedByDescending { it.bitrate }
+            val fallbackPlayAddr = videoObj?.optString("playAddr").orEmpty()
+                .ifBlank { videoObj?.optString("PlayAddrStruct")?.orEmpty() ?: "" }
+
+            val bestCandidate = sortedCandidates.firstOrNull()
+            val midCandidate = sortedCandidates.getOrNull(sortedCandidates.size / 2) ?: bestCandidate
+            val lowCandidate = sortedCandidates.lastOrNull() ?: bestCandidate
+
+            val bestUrl = bestCandidate?.url?.ifBlank { fallbackPlayAddr } ?: fallbackPlayAddr
+            val midUrl = midCandidate?.url?.ifBlank { bestUrl } ?: bestUrl
+            val lowUrl = lowCandidate?.url?.ifBlank { midUrl } ?: midUrl
+
+            if (bestUrl.isBlank() && imageList.isEmpty()) {
+                return null
+            }
+
+            val bestSize = (bestCandidate?.size ?: 0L).takeIf { it > 0L } ?: 14_500_000L
+            val midSize = (midCandidate?.size ?: 0L).takeIf { it > 0L } ?: (bestSize * 0.65).toLong()
+            val lowSize = (lowCandidate?.size ?: 0L).takeIf { it > 0L } ?: (bestSize * 0.40).toLong()
+
+            return VideoMetadata(
+                id = id,
+                title = desc,
+                authorNickname = nickname,
+                authorUsername = "@$uniqueId",
+                authorAvatar = avatar,
+                coverUrl = coverUrl,
+                durationSeconds = duration,
+                playCount = playCount,
+                likeCount = likeCount,
+                commentCount = commentCount,
+                shareCount = shareCount,
+                ultra8kUrl = bestUrl,
+                ultra8kSize = bestSize,
+                ultraHdrUrl = bestUrl,
+                ultraHdrSize = bestSize,
+                standardHdUrl = midUrl,
+                standardHdSize = midSize,
+                normal720pUrl = midUrl,
+                normal720pSize = midSize,
+                low480pUrl = lowUrl,
+                low480pSize = lowSize,
+                audioUrl = audioUrl.ifBlank { bestUrl },
+                musicTitle = musicTitle,
+                musicAuthor = musicAuthor,
+                originalTikTokUrl = canonicalUrl,
+                images = imageList
+            )
+        }
     }
 
     fun extractTikTokUrl(input: String): String? = Companion.extractTikTokUrl(input)
 
-    private fun expandShortTikTokUrlIfNeeded(url: String): String {
-        val lower = url.lowercase()
-        val isShortLink = lower.contains("vt.tiktok.com") ||
-                lower.contains("vm.tiktok.com") ||
-                lower.contains("tiktok.com/t/")
-        if (!isShortLink) return url
+    private sealed class ResolverOutcome {
+        data class Success(val source: String, val metadata: VideoMetadata) : ResolverOutcome()
+        data class Failure(val source: String, val error: Throwable) : ResolverOutcome()
+    }
 
-        return try {
-            val req = Request.Builder()
-                .url(url)
-                .header(
-                    "User-Agent",
-                    "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
-                )
-                .build()
-            redirectClient.newCall(req).execute().use { resp ->
-                val resolved = resp.request.url.toString()
-                if (resolved.contains("tiktok.com/@") || resolved.contains("/video/") || resolved.contains("/photo/")) {
-                    resolved
-                } else {
-                    url
-                }
+    private suspend fun extractDirectlyFromTikTokWeb(targetUrl: String): VideoMetadata {
+        val request = Request.Builder()
+            .url(targetUrl)
+            .header("User-Agent", TikTokNetworkClient.DESKTOP_USER_AGENT)
+            .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+            .header("Accept-Language", "en-US,en;q=0.9")
+            .header("Referer", "https://www.tiktok.com/")
+            .build()
+
+        TikTokNetworkClient.fastApiClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw IllegalStateException("TikTok HTTP ${response.code}")
             }
-        } catch (_: Exception) {
-            url
+            val finalUrl = response.request.url.toString()
+            val html = response.body?.string().orEmpty()
+            return parseUniversalDataFromHtml(html, finalUrl)
+                ?: throw IllegalStateException("This TikTok video may be private, age-restricted, or unavailable.")
         }
+    }
+
+    private suspend fun extractFromTikWm(targetUrl: String, hdParam: Int): VideoMetadata {
+        val response = try {
+            apiService.extractWithGet(targetUrl, hd = hdParam)
+        } catch (getErr: Exception) {
+            if (getErr is CancellationException) throw getErr
+            // Only fall back to POST if GET did not time out
+            if (getErr is SocketTimeoutException) throw getErr
+            apiService.extractWithPost(targetUrl, hd = hdParam)
+        }
+
+        if (response.code == 0 && response.data != null) {
+            return mapDataToMetadata(response.data, targetUrl)
+        }
+        val errMsg = response.msg?.takeIf { it.isNotBlank() }
+            ?: "Could not extract video stream."
+        throw IllegalStateException(errMsg)
     }
 
     suspend fun resolveTikTokVideo(
@@ -189,41 +373,87 @@ class DownloadRepository(private val context: Context) {
             return@withContext ExtractionState.Success(meta)
         }
 
-        onProgress("Analyzing TikTok link & resolving redirects...", 0.25f)
-        val expandedUrl = expandShortTikTokUrlIfNeeded(targetUrl)
         val hdParam = if (hdPriority) 1 else 0
+        onProgress("Racing fast TikTok CDN & stream resolvers...", 0.35f)
 
         try {
-            onProgress("Extracting watermark-free TikTok stream...", 0.55f)
-            var response = try {
-                apiService.extractWithGet(expandedUrl, hd = hdParam)
-            } catch (_: Exception) {
-                apiService.extractWithPost(expandedUrl, hd = hdParam)
-            }
+            val winnerMeta: VideoMetadata = coroutineScope {
+                val outcomes = Channel<ResolverOutcome>(capacity = 2)
 
-            // If expanded URL wasn't accepted, retry once with original short URL
-            if ((response.code != 0 || response.data == null) && expandedUrl != targetUrl) {
-                response = try {
-                    apiService.extractWithGet(targetUrl, hd = hdParam)
-                } catch (_: Exception) {
-                    apiService.extractWithPost(targetUrl, hd = hdParam)
+                val directJob = async {
+                    try {
+                        val meta = extractDirectlyFromTikTokWeb(targetUrl)
+                        outcomes.send(ResolverOutcome.Success("direct", meta))
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        outcomes.send(ResolverOutcome.Failure("direct", e))
+                    }
                 }
+
+                val tikWmJob = async {
+                    try {
+                        val meta = extractFromTikWm(targetUrl, hdParam)
+                        outcomes.send(ResolverOutcome.Success("tikwm", meta))
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        outcomes.send(ResolverOutcome.Failure("tikwm", e))
+                    }
+                }
+
+                var directMeta: VideoMetadata? = null
+                var tikWmMeta: VideoMetadata? = null
+                val errors = mutableListOf<Throwable>()
+                var completedCount = 0
+
+                while (completedCount < 2) {
+                    val outcome = outcomes.receive()
+                    completedCount++
+                    when (outcome) {
+                        is ResolverOutcome.Success -> {
+                            if (outcome.source == "tikwm") {
+                                tikWmMeta = outcome.metadata
+                                directJob.cancel()
+                                break
+                            } else {
+                                directMeta = outcome.metadata
+                                onProgress("Clean TikTok stream locked! Checking HD mirror...", 0.78f)
+                                // Give TikWM a tiny 350ms grace window in case it has hdplay ready; never stall!
+                                if (completedCount < 2) {
+                                    val second = withTimeoutOrNull(350L) { outcomes.receive() }
+                                    if (second != null) {
+                                        completedCount++
+                                        if (second is ResolverOutcome.Success && second.source == "tikwm") {
+                                            tikWmMeta = second.metadata
+                                        }
+                                    }
+                                }
+                                tikWmJob.cancel()
+                                break
+                            }
+                        }
+                        is ResolverOutcome.Failure -> {
+                            errors.add(outcome.error)
+                        }
+                    }
+                }
+
+                tikWmMeta ?: directMeta ?: throw (errors.firstOrNull() ?: IllegalStateException("Extraction failed"))
             }
 
-            if (response.code == 0 && response.data != null) {
-                onProgress("Processing 8K 120FPS, HDR+ & audio tracks...", 0.88f)
-                val metadata = mapDataToMetadata(response.data, expandedUrl)
-                onProgress("Ready to download!", 1.0f)
-                ExtractionState.Success(metadata)
-            } else {
-                val errMsg = response.msg?.takeIf { it.isNotBlank() }
-                    ?: "Could not extract video. This TikTok post may be private, deleted, or region-locked."
-                ExtractionState.Error("TikTok extraction failed: $errMsg")
-            }
+            onProgress("Ready to download!", 1.0f)
+            ExtractionState.Success(winnerMeta)
         } catch (e: Exception) {
-            ExtractionState.Error(
-                "Network error: ${e.localizedMessage ?: "Failed to reach TikTok CDN. Please check your internet connection."}"
-            )
+            val friendly = when {
+                e is UnknownHostException ->
+                    "No internet connection or DNS unreachable. Please check your Wi-Fi or mobile data."
+                e is SocketTimeoutException || (e.message?.contains("timeout", ignoreCase = true) == true) ->
+                    "TikTok servers took too long to respond. Please tap Fetch Video to retry."
+                else ->
+                    e.localizedMessage ?: "Could not extract video. This TikTok post may be private or deleted."
+            }
+            ExtractionState.Error(friendly)
         }
     }
 

@@ -71,6 +71,7 @@ import com.example.data.model.ExtractionState
 import com.example.data.model.VideoMetadata
 import com.example.data.repository.DownloadRepository
 import com.example.ui.components.ActiveDownloadCard
+import com.example.ui.components.AnimatedStarBorderCard
 import com.example.ui.components.HeroSpeedBanner
 import com.example.ui.components.ResultVideoCard
 import com.example.ui.theme.ErrorRed
@@ -205,20 +206,9 @@ fun DownloaderScreen(
             }
         }
 
-        // Main TikTok Link Input Card
+        // Main TikTok Link Input Card with Orbiting Neon Beam & Traveling Star Animation
         item(key = "url_input_card") {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(22.dp))
-                    .border(
-                        1.dp,
-                        Brush.verticalGradient(listOf(ObsidianCardBorder, ObsidianCardBorder.copy(alpha = 0.4f))),
-                        RoundedCornerShape(22.dp)
-                    ),
-                colors = CardDefaults.cardColors(containerColor = ObsidianSurface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
+            AnimatedStarBorderCard(cornerRadius = 22.dp) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

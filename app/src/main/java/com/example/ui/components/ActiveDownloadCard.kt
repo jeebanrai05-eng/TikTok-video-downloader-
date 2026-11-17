@@ -294,7 +294,7 @@ fun ActiveDownloadCard(
                             FormatUtils.shareFile(
                                 context = context,
                                 filePath = download.localFilePath,
-                                mimeType = if (download.quality.name == "AUDIO_ONLY") "audio/mp3" else "video/mp4"
+                                mimeType = FormatUtils.detectMimeType(download.localFilePath, download.quality.name)
                             )
                         },
                         modifier = Modifier

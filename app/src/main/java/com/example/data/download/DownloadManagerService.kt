@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import com.example.data.api.TikTokNetworkClient
 import com.example.data.model.DownloadQuality
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
@@ -29,13 +30,7 @@ data class DownloadResult(
 
 class DownloadManagerService(private val context: Context) {
 
-    private val client = OkHttpClient.Builder()
-        .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .followRedirects(true)
-        .followSslRedirects(true)
-        .build()
+    private val client = TikTokNetworkClient.downloadClient
 
     suspend fun download(
         url: String,
@@ -82,33 +77,27 @@ class DownloadManagerService(private val context: Context) {
                 when (attempt) {
                     0 -> {
                         if (isTikTokCdn) {
-                            reqBuilder.header(
-                                "User-Agent",
-                                "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
-                            )
+                            reqBuilder.header("User-Agent", com.example.data.api.TikTokNetworkClient.DESKTOP_USER_AGENT)
                             reqBuilder.header("Referer", "https://www.tiktok.com/")
                             reqBuilder.header("Origin", "https://www.tiktok.com")
                         } else {
-                            reqBuilder.header(
-                                "User-Agent",
-                                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-                            )
+                            reqBuilder.header("User-Agent", com.example.data.api.TikTokNetworkClient.DESKTOP_USER_AGENT)
                         }
                         reqBuilder.header("Accept", "*/*")
                         reqBuilder.header("Connection", "keep-alive")
                     }
                     1 -> {
-                        // Stage 2: Desktop Chrome without Referer/Origin for strict CDN hotlink checks
-                        reqBuilder.header(
-                            "User-Agent",
-                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-                        )
+                        // Stage 2: Mobile Chrome + Range for strict CDN hotlink checks
+                        reqBuilder.header("User-Agent", com.example.data.api.TikTokNetworkClient.MOBILE_USER_AGENT)
+                        if (isTikTokCdn) {
+                            reqBuilder.header("Referer", "https://www.tiktok.com/")
+                        }
                         reqBuilder.header("Accept", "*/*")
                         reqBuilder.header("Range", "bytes=0-")
                         reqBuilder.header("Connection", "keep-alive")
                     }
                     else -> {
-                        // Stage 3: Media player UA
+                        // Stage 3: Media player UA without Referer
                         reqBuilder.header("User-Agent", "ExoPlayer/2.19.1 (Linux;Android 14) AndroidXMedia3/1.2.0")
                         reqBuilder.header("Accept", "*/*")
                         reqBuilder.header("Connection", "keep-alive")

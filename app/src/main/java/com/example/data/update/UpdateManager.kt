@@ -36,10 +36,9 @@ data class AppUpdateInfo(
 
 class UpdateManager(private val context: Context) {
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
+    private val client = com.example.data.api.TikTokNetworkClient.downloadClient.newBuilder()
+        .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
-        .followRedirects(true)
         .build()
 
     companion object {
@@ -214,7 +213,7 @@ class UpdateManager(private val context: Context) {
             val notification = NotificationCompat.Builder(context, UPDATE_CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("TikSave Update: ${updateInfo.latestVersion}")
-                .setContentText("Tap to upgrade to v${updateInfo.latestVersion} with upgraded theme & smooth performance.")
+                .setContentText("Tap to upgrade to ${updateInfo.latestVersion} with upgraded theme & smooth performance.")
                 .setStyle(
                     NotificationCompat.BigTextStyle()
                         .setBigContentTitle("New Update Available: ${updateInfo.releaseTitle}")

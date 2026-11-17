@@ -1,7 +1,6 @@
 package com.example.data.api
 
 import com.example.data.model.TikWmResponse
-import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
@@ -10,7 +9,6 @@ import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
-import java.util.concurrent.TimeUnit
 
 interface TikTokApiService {
 
@@ -35,20 +33,15 @@ interface TikTokApiService {
                 level = HttpLoggingInterceptor.Level.BASIC
             }
 
-            val client = OkHttpClient.Builder()
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(20, TimeUnit.SECONDS)
-                .writeTimeout(20, TimeUnit.SECONDS)
+            val client = TikTokNetworkClient.fastApiClient.newBuilder()
                 .addInterceptor(logging)
                 .addInterceptor { chain ->
                     val request = chain.request().newBuilder()
-                        .header("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120.0 Mobile Safari/537.36")
+                        .header("User-Agent", TikTokNetworkClient.MOBILE_USER_AGENT)
                         .header("Accept", "application/json")
                         .build()
                     chain.proceed(request)
                 }
-                .followRedirects(true)
-                .followSslRedirects(true)
                 .build()
 
             val retrofit = Retrofit.Builder()
