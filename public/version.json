@@ -1,10 +1,10 @@
 {
-  "versionCode": 11,
-  "versionName": "1.1.6",
-  "releaseTitle": "TikSave v1.1.6 (4-Engine Instant TikTok Link Resolver & Full URL Support)",
-  "releaseNotes": "• 4-Engine Instant TikTok Resolver: Concurrently races TikVideo, SaveTik, TikWM, and Direct TikTok Mobile/Desktop extractors + oEmbed metadata so links resolve reliably in under 1 second\n• Broad TikTok Link Recognition: Supports vt.tiktok.com, vm.tiktok.com, lite.tiktok.com, @/video/, /photo/, bare links without https://, and pasted share messages\n• Fixed False 'Private or Unavailable' Errors: Eliminates premature error aborts when one mirror fails\n• Orbiting Star Border & Electric Midnight UI: Smooth animated perimeter light + traveling star around the TikTok Link Box\n• Original Production Keystore Preserved: Seamless self-update signed with verified CN=TikSave certificate",
-  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.6/TikSave-Release.apk",
+  "versionCode": 12,
+  "versionName": "1.1.7",
+  "releaseTitle": "TikSave v1.1.7 (Futuristic Neon UI, Orbiting Star Border & 4-Engine Fast Resolver)",
+  "releaseNotes": "• Futuristic Neon UI Redesign: Immersive dark obsidian theme with running neon border light beams, glowing gradient cards, and smooth micro-interactions matching reference design\n• Orbiting Star Border Animation: Continuous traveling star and energy light beam orbiting around card perimeters in Jetpack Compose and Web UI\n• 4-Engine Instant TikTok Resolver: Blazing fast parallel extraction (TikVideo, SaveTik, TikWM, Direct Web) with IPv4-first DNS and shared CookieJar for sub-second downloads\n• Original Production Keystore Preserved: Seamless in-app self-update signed with verified CN=TikSave certificate",
+  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.7/TikSave-Release.apk",
   "minSupportedVersion": "1.0.0",
   "mandatory": false,
-  "publishedAt": "2026-11-17"
+  "publishedAt": "2026-11-24"
 }

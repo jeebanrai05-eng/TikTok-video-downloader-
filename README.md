@@ -1,7 +1,7 @@
 # TikSave - Ultra HDR TikTok Downloader & AI Viral Studio
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v1.1.6-ff0050.svg)](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases)
+[![Release](https://img.shields.io/badge/Release-v1.1.7-ff0050.svg)](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-00C853?style=flat-square)](https://jeebanrai05-eng.github.io/TikTok-video-downloader-/)
 
 TikSave is a streamlined, high-speed TikTok media downloader and AI creator companion. Download TikTok videos without watermarks in pristine 8K 120FPS, HDR+ Ultra, HD 1080p, Photo Carousel Slides, and 320 kbps MP3 audio—all wrapped in an **Electric Midnight** Material 3 interface with fluid animations.
@@ -16,13 +16,13 @@ TikSave is a streamlined, high-speed TikTok media downloader and AI creator comp
 
 ---
 
-## 📱 Android App (APK v1.1.6 Production Release)
+## 📱 Android App (APK v1.1.7 Production Release)
 
-- **Download Official Release APK:** [TikSave-Release.apk v1.1.6](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.6/TikSave-Release.apk)
+- **Download Official Release APK:** [TikSave-Release.apk v1.1.7](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.7/TikSave-Release.apk)
 
 ### ✨ Core Features
-- ⚡ **4-Engine Instant TikTok Resolver**: Races TikVideo, SaveTik, TikWM, and Direct TikTok Mobile/Desktop extractors with IPv4-first DNS and oEmbed enrichment for sub-second link resolution.
-- ⭐ **Orbiting Neon Beam & Star Border UI**: Futuristic Compose perimeter light + twinkling star animation around the Link Input Box in the **Electric Midnight** theme.
+- ⚡ **Futuristic Neon UI Redesign**: Immersive dark obsidian theme with running neon border light beams, glowing gradient cards, and smooth micro-interactions matching reference design.
+- ⭐ **Orbiting Star Border Animation**: Continuous traveling star and energy light beam orbiting around card perimeters in Jetpack Compose and Web UI.
 - 🎬 **8K 120FPS & HDR+ No-Watermark Downloads**: Resilient multi-header CDN streaming with automatic retry fallback recovery.
 - 📸 **TikTok Photo Slide Mode**: Interactive horizontal photo slide gallery with 1-tap individual and batch HD image saves.
 - 🎵 **TikTok Audio Extractor (320 kbps MP3)**: Specialized sound profiles (Original Sound, High Sound Boost +6dB, and VFX & Dialogue Isolation).

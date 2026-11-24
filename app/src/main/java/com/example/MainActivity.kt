@@ -41,6 +41,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Star
+import com.example.ui.theme.HdrGold
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.outlined.AutoAwesome
@@ -250,6 +252,28 @@ fun TikSaveApp(viewModel: MainViewModel) {
                                 fontSize = 9.sp
                             )
                         }
+                    }
+                },
+                actions = {
+                    androidx.compose.material3.IconButton(
+                        onClick = { viewModel.showToast("TikSave PRO ULTRA Active ⭐") },
+                        modifier = Modifier.testTag("btn_pro_crown")
+                    ) {
+                        androidx.compose.material3.Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "PRO ULTRA",
+                            tint = HdrGold
+                        )
+                    }
+                    androidx.compose.material3.IconButton(
+                        onClick = { viewModel.setTab(AppTab.SETTINGS) },
+                        modifier = Modifier.testTag("btn_top_settings")
+                    ) {
+                        androidx.compose.material3.Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            tint = NeonCyan
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

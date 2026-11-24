@@ -170,14 +170,42 @@ fun HeroSpeedBanner(modifier: Modifier = Modifier) {
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            Text(
-                text = "TikTok No-Watermark Saver",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-0.5).sp
-                ),
-                color = Color.White
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "TikTok No-Watermark Saver",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (-0.5).sp
+                        ),
+                        color = Color.White
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .scale(beaconScale)
+                        .background(
+                            Brush.radialGradient(listOf(NeonMagenta.copy(alpha = 0.5f), Color.Transparent)),
+                            CircleShape
+                        )
+                        .border(
+                            1.5.dp,
+                            Brush.linearGradient(listOf(NeonCyan, NeonMagenta)),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "🎵",
+                        fontSize = 20.sp
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(6.dp))
 

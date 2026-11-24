@@ -1985,3 +1985,65 @@ input:checked + .slider:before {
   color: #000;
 }
 
+/* ==========================================================================
+   TikSave Web - Ultra HDR TikTok Downloader (v1.1.7 Futuristic Neon & Orbiting Star Borders)
+   ========================================================================== */
+
+@keyframes borderOrbitLight {
+  0% {
+    border-image-source: linear-gradient(0deg, var(--neon-cyan), var(--ultra-purple), var(--neon-magenta), var(--hdr-gold));
+  }
+  50% {
+    border-image-source: linear-gradient(180deg, var(--hdr-gold), var(--neon-cyan), var(--ultra-purple), var(--neon-magenta));
+  }
+  100% {
+    border-image-source: linear-gradient(360deg, var(--neon-cyan), var(--ultra-purple), var(--neon-magenta), var(--hdr-gold));
+  }
+}
+
+/* Glowing running light beam effect for cards and input boxes */
+.hero-banner, .input-card, .result-card, .batch-container, .settings-card, .apk-card {
+  position: relative;
+  border-radius: 22px;
+  background: var(--surface-obsidian);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7), inset 0 0 25px rgba(0, 242, 254, 0.08);
+  isolation: isolate;
+}
+
+.hero-banner::before, .input-card::before, .result-card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 24px;
+  background: linear-gradient(60deg, var(--neon-cyan), var(--ultra-purple), var(--neon-magenta), var(--hdr-gold), var(--neon-cyan));
+  background-size: 300% 300%;
+  z-index: -1;
+  animation: glowingBorderBeam 6s linear infinite;
+  opacity: 0.85;
+}
+
+@keyframes glowingBorderBeam {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.hero-banner::after, .input-card::after, .result-card::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: 21px;
+  background: var(--surface-obsidian);
+  z-index: -1;
+}
+
+/* Floating twinkle star effect on headers */
+.brand-badge::after {
+  content: ' ✨';
+  animation: twinkleStar 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes twinkleStar {
+  0% { opacity: 0.4; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1.1); }
+}

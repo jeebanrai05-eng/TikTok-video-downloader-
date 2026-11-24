@@ -170,6 +170,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun showToast(message: String) {
+        viewModelScope.launch {
+            _toastEvents.emit(message)
+        }
+    }
+
     fun clearInput() {
         _urlInput.value = ""
         _extractionState.value = ExtractionState.Idle

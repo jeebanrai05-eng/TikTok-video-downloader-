@@ -15,13 +15,13 @@ on:
         type: boolean
         default: true
       tag_name:
-        description: 'Release Tag (e.g. v1.1.6)'
+        description: 'Release Tag (e.g. v1.1.7)'
         required: false
-        default: 'v1.1.6'
+        default: 'v1.1.7'
       release_title:
         description: 'Release Title'
         required: false
-        default: 'TikSave v1.1.6 (4-Engine Instant TikTok Link Resolver & Full URL Support)'
+        default: 'TikSave v1.1.7 (Futuristic Neon UI, Orbiting Star Border & 4-Engine Fast Resolver)'
 
 permissions:
   contents: write
@@ -117,7 +117,7 @@ jobs:
         shell: bash
         run: |
           # Extract version from version.json or fallback
-          VER_NAME="1.1.6"
+          VER_NAME="1.1.7"
           if [ -f "version.json" ]; then
             PARSED_VER=$(grep -o '"versionName"[[:space:]]*:[[:space:]]*"[^"]*"' version.json | head -n 1 | cut -d'"' -f4)
             if [ -n "$PARSED_VER" ]; then
@@ -157,16 +157,16 @@ jobs:
         shell: bash
         run: |
           cat << 'EOF' > release_body.md
-          ## 🚀 TikSave Ultra (v1.1.6 Release)
+          ## 🚀 TikSave Ultra (v1.1.7 Release)
 
-          ### ✨ Major Updates in v1.1.6:
-          - **4-Engine Instant TikTok Resolver**: Concurrently races TikVideo, SaveTik, TikWM, and Direct TikTok Mobile/Desktop extractors + oEmbed metadata so links resolve reliably in under 1 second.
-          - **Broad TikTok Link Recognition**: Supports `vt.tiktok.com`, `vm.tiktok.com`, `lite.tiktok.com`, `@/video/`, `/photo/`, bare links without `https://`, and pasted share text.
-          - **Orbiting Neon Beam & Traveling Star ⭐ Border**: Custom Jetpack Compose Canvas animation around the TikTok Link Input card.
+          ### ✨ Major Updates in v1.1.7:
+          - **Futuristic Neon UI Redesign**: Immersive dark obsidian theme with running neon border light beams, glowing gradient cards, and smooth micro-interactions matching reference design.
+          - **Orbiting Star Border Animation**: Continuous traveling star and energy light beam orbiting around card perimeters in Jetpack Compose and Web UI.
+          - **4-Engine Instant TikTok Resolver**: Blazing fast parallel extraction (TikVideo, SaveTik, TikWM, Direct Web) with IPv4-first DNS and shared CookieJar for sub-second downloads.
           - **Original Production Keystore Preserved**: Signed with official certificate (`CN=TikSave, SHA-256: 83d53182b915648bea5c4ecba64317f56e97a90e91bcc0cec278dcead88352a1`).
 
           ### 📦 Download Links
-          - **[TikSave-Release.apk](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.6/TikSave-Release.apk)** (Official Production Release)
+          - **[TikSave-Release.apk](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.7/TikSave-Release.apk)** (Official Production Release)
           EOF
 
       - name: Publish GitHub Release
