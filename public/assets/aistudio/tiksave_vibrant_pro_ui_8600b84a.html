@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>TikSave — v1.1.7 ULTRA</title>
+<!-- Tailwind CSS v3 with Forms & Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            obsidian: '#050814',
+            surface: '#0B1224',
+            'surface-elevated': '#121D36',
+            cyanGlow: '#00F5E0',
+            magentaGlow: '#FF1F7A',
+          },
+          boxShadow: {
+            'cyan-glow': '0 0 28px -2px rgba(0, 245, 224, 0.55)',
+            'magenta-glow': '0 0 24px -3px rgba(255, 31, 122, 0.5)',
+            'glass-inset': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.14)',
+          }
+        }
+      }
+    };
+  </script>
+<!-- Custom Styles: Glassmorphism & Surfaces -->
+<style data-purpose="glassmorphism-and-surfaces">
+    body {
+      background-color: #03050D;
+      color: #F8FAFC;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .glass-panel {
+      background: linear-gradient(165deg, rgba(16, 26, 50, 0.84) 0%, rgba(8, 13, 28, 0.94) 100%);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid rgba(0, 245, 224, 0.16);
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 0 18px 36px -12px rgba(0, 0, 0, 0.75);
+    }
+
+    .hero-mesh-bg {
+      background-color: #0B1228;
+      background-image:
+        radial-gradient(at 88% 12%, rgba(0, 245, 224, 0.34) 0px, transparent 52%),
+        radial-gradient(at 12% 88%, rgba(255, 31, 122, 0.32) 0px, transparent 55%),
+        radial-gradient(at 52% 48%, rgba(139, 92, 246, 0.24) 0px, transparent 60%),
+        linear-gradient(135deg, rgba(15, 24, 52, 0.96) 0%, rgba(8, 12, 28, 0.98) 100%);
+    }
+
+    .hero-grid-overlay {
+      background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+  </style>
+<!-- Custom Styles: Scrollbar & Utilities -->
+<style data-purpose="utilities-and-scrollbars">
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex justify-center bg-[#02040A] selection:bg-cyanGlow/30 selection:text-cyanGlow">
+<!-- Mobile iOS App Shell -->
+<div class="relative w-full max-w-[430px] min-h-screen bg-obsidian flex flex-col justify-between overflow-x-hidden shadow-2xl border-x border-cyanGlow/10">
+<!-- Subtle Ambient Top Glow -->
+<div class="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[360px] h-[220px] bg-cyanGlow/20 blur-[85px] rounded-full"></div>
+<div class="pointer-events-none absolute top-44 -right-24 w-[240px] h-[240px] bg-magentaGlow/15 blur-[90px] rounded-full"></div>
+<div class="pointer-events-none absolute bottom-24 -left-24 w-[240px] h-[240px] bg-emerald-400/10 blur-[90px] rounded-full"></div>
+<!-- BEGIN: MainHeader -->
+<header class="sticky top-0 z-30 px-5 pt-4 pb-3 bg-obsidian/85 backdrop-blur-xl border-b border-cyanGlow/15 flex items-center justify-between">
+<!-- Brand Identity -->
+<div class="flex items-center gap-2.5" data-purpose="brand-logo">
+<!-- Custom TikSave Neon Ring Icon -->
+<div class="relative w-9 h-9 rounded-full p-[2px] bg-gradient-to-tr from-magentaGlow via-cyanGlow to-emerald-400 shadow-cyan-glow">
+<div class="w-full h-full rounded-full bg-obsidian flex items-center justify-center">
+<span class="w-2.5 h-2.5 rounded-full bg-gradient-to-tr from-magentaGlow to-rose-400 shadow-[0_0_12px_#FF1F7A]"></span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<h1 class="text-[19px] font-bold tracking-tight text-white">TikSave</h1>
+<span class="px-2 py-0.5 text-[10px] font-mono font-semibold tracking-wider uppercase rounded-full bg-cyanGlow/15 text-cyanGlow border border-cyanGlow/50 shadow-[0_0_12px_rgba(0,245,224,0.25)]">
+            v1.1.7 ULTRA
+          </span>
+</div>
+</div>
+<!-- Header Actions -->
+<div class="flex items-center gap-2" data-purpose="header-actions">
+<button aria-label="Favorites" class="w-9 h-9 rounded-full bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/35 flex items-center justify-center text-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.2)] transition active:scale-95" type="button">
+<svg class="w-4 h-4 fill-current" viewbox="0 0 24 24">
+<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+</svg>
+</button>
+<button aria-label="Settings" class="w-9 h-9 rounded-full bg-cyanGlow/10 hover:bg-cyanGlow/20 border border-cyanGlow/35 flex items-center justify-center text-cyanGlow shadow-[0_0_12px_rgba(0,245,224,0.2)] transition active:scale-95" type="button">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: MainContent -->
+<main class="flex-1 px-4 pt-4 pb-28 space-y-6">
+<!-- BEGIN: HeroFeatureBanner -->
+<section class="relative rounded-2xl overflow-hidden hero-mesh-bg border border-cyanGlow/25 shadow-glass-inset shadow-[0_12px_36px_-10px_rgba(0,245,224,0.22)] p-4" data-purpose="hero-banner">
+<!-- Subtle Tech Grid Overlay -->
+<div class="pointer-events-none absolute inset-0 hero-grid-overlay opacity-70"></div>
+<!-- Top Badges Row -->
+<div class="relative z-10 flex items-center justify-between gap-2 mb-5">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/15 border border-amber-400/60 text-amber-300 text-[10px] font-mono font-semibold tracking-wider uppercase shadow-[0_0_14px_rgba(251,191,36,0.28)]">
+<span class="px-1 py-0.2 rounded bg-amber-400/30 text-amber-200 text-[9px] font-bold">HD</span>
+            8K 120FPS ENGINE
+          </span>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyanGlow/15 border border-cyanGlow/55 text-cyanGlow text-[10px] font-medium shadow-[0_0_14px_rgba(0,245,224,0.28)]">
+<span class="w-1.5 h-1.5 rounded-full bg-cyanGlow shadow-[0_0_8px_#00F5E0] animate-pulse"></span>
+            Turbo TikTok CDN
+          </span>
+</div>
+<!-- Main Title & Music Badge -->
+<div class="relative z-10 flex items-center justify-between gap-3 mb-4">
+<h2 class="text-[20px] font-bold tracking-tight text-white leading-snug drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]">
+            TikTok No-Watermark Saver
+          </h2>
+<div class="shrink-0 w-10 h-10 rounded-full bg-magentaGlow/15 border border-magentaGlow/70 flex items-center justify-center text-magentaGlow shadow-magenta-glow">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<!-- Feature Highlights Row -->
+<div class="relative z-10 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11.5px] font-medium text-slate-200 pt-2 border-t border-white/[0.1]">
+<span class="inline-flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5 text-cyanGlow" fill="currentColor" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" fill-rule="evenodd"></path>
+</svg>
+            Zero Logo
+          </span>
+<span class="inline-flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5 text-magentaGlow" fill="currentColor" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" fill-rule="evenodd"></path>
+</svg>
+            Photo Slides
+          </span>
+<span class="inline-flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+            320kbps MP3
+          </span>
+</div>
+</section>
+<!-- END: HeroFeatureBanner -->
+<!-- BEGIN: UrlInputCard -->
+<section class="relative glass-panel rounded-2xl p-4" data-purpose="url-input-card">
+<!-- Subtle Top Accent Line -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[1.5px] bg-gradient-to-r from-transparent via-cyanGlow to-transparent shadow-[0_0_10px_#00F5E0]"></div>
+<!-- Card Header -->
+<div class="flex items-center justify-between gap-2 mb-3.5">
+<label class="text-[11px] font-bold tracking-wider uppercase text-cyanGlow" for="tiktok-url-input">
+            PASTE TIKTOK VIDEO OR PHOTO LINK
+          </label>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-magentaGlow/15 border border-magentaGlow/45 text-rose-200 text-[10px] font-semibold shadow-[0_0_10px_rgba(255,31,122,0.2)]">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M9 19V6l12-3v13" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+            TikTok Only
+          </span>
+</div>
+<!-- URL Input Field -->
+<div class="relative mb-3.5">
+<div class="pointer-events-none absolute inset-y-0 left-0 pl-3.5 flex items-center text-cyanGlow">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<input class="w-full pl-10 pr-3.5 py-3.5 rounded-xl bg-[#050914] border border-cyanGlow/20 text-[13px] text-white placeholder-slate-400 focus:outline-none focus:border-cyanGlow focus:ring-1 focus:ring-cyanGlow/60 transition" id="tiktok-url-input" placeholder="https://www.tiktok.com/@user/video/... or vt.tiktok.com/..." type="url"/>
+</div>
+<!-- Action Buttons -->
+<div class="grid grid-cols-2 gap-2.5">
+<button class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white/[0.06] hover:bg-magentaGlow/15 border border-magentaGlow/70 text-white text-[13px] font-semibold shadow-[0_0_14px_rgba(255,31,122,0.22)] transition active:scale-[0.98]" id="paste-link-btn" type="button">
+<svg class="w-4 h-4 text-cyanGlow" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+            Paste Link
+          </button>
+<button class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-cyanGlow via-teal-300 to-emerald-400 text-obsidian text-[13px] font-bold shadow-[0_0_26px_rgba(0,245,224,0.55)] hover:brightness-110 transition active:scale-[0.98]" id="fetch-video-btn" type="button">
+<svg class="w-4 h-4" fill="currentColor" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" fill-rule="evenodd"></path>
+</svg>
+            Fetch Video
+          </button>
+</div>
+</section>
+<!-- END: UrlInputCard -->
+<!-- BEGIN: QuickDemosSection -->
+<section class="space-y-3" data-purpose="quick-demos">
+<!-- Section Header -->
+<div class="flex items-center justify-between px-0.5">
+<div class="flex items-center gap-1.5">
+<span aria-hidden="true" class="text-sm">🔥</span>
+<h3 class="text-[11px] font-bold tracking-wider uppercase text-amber-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]">
+              QUICK TIKTOK DEMOS (1-TAP TEST)
+            </h3>
+</div>
+<span class="text-[11px] font-semibold text-cyanGlow/90">8K / Photo Slides</span>
+</div>
+<!-- Horizontal Scrollable Demo Cards -->
+<div class="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+<!-- Demo Card 1 -->
+<button class="demo-card shrink-0 w-[235px] text-left glass-panel rounded-xl p-3.5 border-magentaGlow/30 hover:border-magentaGlow/70 hover:shadow-[0_0_18px_rgba(255,31,122,0.25)] transition active:scale-[0.98]" data-demo-url="https://www.tiktok.com/@cyberwave/video/7391029481" type="button">
+<div class="flex items-start gap-2.5">
+<span class="mt-1.5 shrink-0 w-2.5 h-2.5 rounded-full bg-magentaGlow shadow-[0_0_12px_#FF1F7A]"></span>
+<div class="min-w-0">
+<p class="text-[13px] font-semibold text-white truncate">
+                  HDR+ Ultra 60fps Neon Odyssey
+                </p>
+<p class="text-[11px] text-slate-300 mt-0.5 truncate">
+                  8K HDR+ Video • @cyberwave
+                </p>
+</div>
+</div>
+</button>
+<!-- Demo Card 2 -->
+<button class="demo-card shrink-0 w-[250px] text-left glass-panel rounded-xl p-3.5 border-amber-400/30 hover:border-amber-400/70 hover:shadow-[0_0_18px_rgba(251,191,36,0.25)] transition active:scale-[0.98]" data-demo-url="https://www.tiktok.com/@nepal_travel/photo/7391088412" type="button">
+<div class="flex items-start gap-2.5">
+<span class="mt-1.5 shrink-0 w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_#FBBF24]"></span>
+<div class="min-w-0">
+<p class="text-[13px] font-semibold text-white truncate">
+                  Himalayan Sunrise Photo Slides (8K HDR+)
+                </p>
+<p class="text-[11px] text-slate-300 mt-0.5 truncate">
+                  Photo Slides • @nepal_travel
+                </p>
+</div>
+</div>
+</button>
+</div>
+</section>
+<!-- END: QuickDemosSection -->
+</main>
+<!-- END: MainContent -->
+<!-- BEGIN: BottomNavigation -->
+<nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-40 bg-obsidian/92 backdrop-blur-2xl border-t border-cyanGlow/15 px-3 pt-2 pb-5">
+<div class="grid grid-cols-4 items-center gap-1" data-purpose="bottom-nav-tabs">
+<!-- Tab 1: Downloader (Active) -->
+<button class="nav-tab active flex flex-col items-center gap-1 py-1 text-cyanGlow transition" data-tab="downloader" type="button">
+<div class="px-4 py-1 rounded-full bg-gradient-to-r from-cyanGlow to-emerald-400 text-obsidian shadow-[0_0_20px_rgba(0,245,224,0.6)]">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24">
+<path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[11px] font-semibold">Downloader</span>
+</button>
+<!-- Tab 2: AI Studio -->
+<button class="nav-tab flex flex-col items-center gap-1 py-1 text-slate-400 hover:text-slate-200 transition" data-tab="ai-studio" type="button">
+<div class="px-4 py-1 rounded-full">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[11px] font-medium">AI Studio</span>
+</button>
+<!-- Tab 3: Library -->
+<button class="nav-tab flex flex-col items-center gap-1 py-1 text-slate-400 hover:text-slate-200 transition" data-tab="library" type="button">
+<div class="px-4 py-1 rounded-full">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[11px] font-medium">Library</span>
+</button>
+<!-- Tab 4: Settings -->
+<button class="nav-tab flex flex-col items-center gap-1 py-1 text-slate-400 hover:text-slate-200 transition" data-tab="settings" type="button">
+<div class="px-4 py-1 rounded-full">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[11px] font-medium">Settings</span>
+</button>
+</div>
+<!-- iOS Home Indicator -->
+<div class="mt-2.5 flex justify-center">
+<div class="w-32 h-1 rounded-full bg-white/25"></div>
+</div>
+</nav>
+<!-- END: BottomNavigation -->
+</div>
+<!-- Interactive App Behavior -->
+<script data-purpose="app-interactivity">
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlInput = document.getElementById('tiktok-url-input');
+      const pasteBtn = document.getElementById('paste-link-btn');
+      const fetchBtn = document.getElementById('fetch-video-btn');
+      const demoCards = document.querySelectorAll('.demo-card');
+
+      // 1-Tap Demo Card Fill
+      demoCards.forEach((card) => {
+        card.addEventListener('click', () => {
+          const demoUrl = card.getAttribute('data-demo-url');
+          if (demoUrl) {
+            urlInput.value = demoUrl;
+            urlInput.focus();
+          }
+        });
+      });
+
+      // Paste Link Button
+      pasteBtn.addEventListener('click', async () => {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (text) {
+            urlInput.value = text;
+          }
+        } catch {
+          urlInput.value = 'https://www.tiktok.com/@cyberwave/video/7391029481';
+        }
+      });
+
+      // Fetch Video Feedback
+      fetchBtn.addEventListener('click', () => {
+        const originalText = fetchBtn.innerHTML;
+        fetchBtn.innerHTML = '<span class="animate-pulse">Fetching 8K Stream...</span>';
+        setTimeout(() => {
+          fetchBtn.innerHTML = originalText;
+        }, 1200);
+      });
+    });
+  </script>
+</body></html>

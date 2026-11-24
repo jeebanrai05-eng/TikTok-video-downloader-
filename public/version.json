@@ -1,9 +1,9 @@
 {
-  "versionCode": 12,
-  "versionName": "1.1.7",
-  "releaseTitle": "TikSave v1.1.7 (Futuristic Neon UI, Orbiting Star Border & 4-Engine Fast Resolver)",
-  "releaseNotes": "• Futuristic Neon UI Redesign: Immersive dark obsidian theme with running neon border light beams, glowing gradient cards, and smooth micro-interactions matching reference design\n• Orbiting Star Border Animation: Continuous traveling star and energy light beam orbiting around card perimeters in Jetpack Compose and Web UI\n• 4-Engine Instant TikTok Resolver: Blazing fast parallel extraction (TikVideo, SaveTik, TikWM, Direct Web) with IPv4-first DNS and shared CookieJar for sub-second downloads\n• Original Production Keystore Preserved: Seamless in-app self-update signed with verified CN=TikSave certificate",
-  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.7/TikSave-Release.apk",
+  "versionCode": 13,
+  "versionName": "1.1.8",
+  "releaseTitle": "TikSave v1.1.8 (Vibrant Pro UI, Running Side Neon Borders & AMOLED Contrast)",
+  "releaseNotes": "• Vibrant Pro UI Theme Redesign: Immersive dark AMOLED theme with running neon side border light beams, blinking glows, and smooth low-end optimized animations\n• High Contrast AMOLED Optimization: Refined deep dark surfaces with ultra-crisp white typography ensuring perfect legibility and aesthetic brilliance\n• 4-Engine Instant TikTok Resolver: Blazing fast parallel extraction (TikVideo, SaveTik, TikWM, Direct Web) with IPv4-first DNS and zero timeouts\n• Original Production Keystore Preserved: Seamless in-app self-update signed with verified CN=TikSave certificate",
+  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.8/TikSave-Release.apk",
   "minSupportedVersion": "1.0.0",
   "mandatory": false,
   "publishedAt": "2026-11-24"

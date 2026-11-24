@@ -15,13 +15,13 @@ on:
         type: boolean
         default: true
       tag_name:
-        description: 'Release Tag (e.g. v1.1.7)'
+        description: 'Release Tag (e.g. v1.1.8)'
         required: false
-        default: 'v1.1.7'
+        default: 'v1.1.8'
       release_title:
         description: 'Release Title'
         required: false
-        default: 'TikSave v1.1.7 (Futuristic Neon UI, Orbiting Star Border & 4-Engine Fast Resolver)'
+        default: 'TikSave v1.1.8 (Vibrant Pro UI, Running Side Neon Borders & AMOLED Contrast)'
 
 permissions:
   contents: write
@@ -157,16 +157,16 @@ jobs:
         shell: bash
         run: |
           cat << 'EOF' > release_body.md
-          ## 🚀 TikSave Ultra (v1.1.7 Release)
+          ## 🚀 TikSave Ultra (v1.1.8 Release)
 
-          ### ✨ Major Updates in v1.1.7:
-          - **Futuristic Neon UI Redesign**: Immersive dark obsidian theme with running neon border light beams, glowing gradient cards, and smooth micro-interactions matching reference design.
-          - **Orbiting Star Border Animation**: Continuous traveling star and energy light beam orbiting around card perimeters in Jetpack Compose and Web UI.
+          ### ✨ Major Updates in v1.1.8:
+          - **Vibrant Pro UI Theme Redesign**: Immersive AMOLED dark theme with running neon side border light beams, blinking glows, and smooth low-end optimized animations.
+          - **High Contrast AMOLED Optimization**: Refined deep dark surfaces with ultra-crisp white typography ensuring perfect legibility and aesthetic brilliance.
           - **4-Engine Instant TikTok Resolver**: Blazing fast parallel extraction (TikVideo, SaveTik, TikWM, Direct Web) with IPv4-first DNS and shared CookieJar for sub-second downloads.
           - **Original Production Keystore Preserved**: Signed with official certificate (`CN=TikSave, SHA-256: 83d53182b915648bea5c4ecba64317f56e97a90e91bcc0cec278dcead88352a1`).
 
           ### 📦 Download Links
-          - **[TikSave-Release.apk](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.7/TikSave-Release.apk)** (Official Production Release)
+          - **[TikSave-Release.apk](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.8/TikSave-Release.apk)** (Official Production Release)
           EOF
 
       - name: Publish GitHub Release
