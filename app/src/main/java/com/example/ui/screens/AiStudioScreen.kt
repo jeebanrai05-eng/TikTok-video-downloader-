@@ -87,6 +87,8 @@ import com.example.ui.theme.NeonMagenta
 import com.example.ui.theme.ObsidianCardBorder
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceVariant
+import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.TextTertiary
 import com.example.ui.theme.UltraPurple
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -219,7 +221,7 @@ fun AiStudioScreen(
                             Text(
                                 "Enter any TikTok topic (e.g., Nepali comedy, travel vlog, dance, motivation, tech)...",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.4f)
+                                color = TextTertiary
                             )
                         },
                         trailingIcon = {

@@ -33,34 +33,38 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.ui.theme.ElectricBlue
 import com.example.ui.theme.HdrGold
 import com.example.ui.theme.HdrGoldLight
 import com.example.ui.theme.NeonCyan
+import com.example.ui.theme.NeonCyanLight
 import com.example.ui.theme.NeonMagenta
 import com.example.ui.theme.ObsidianCardBorder
 import com.example.ui.theme.ObsidianSurface
-import com.example.ui.theme.UltraPurple
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Futuristic card frame featuring an orbiting neon energy light beam and a twinkling
- * multi-point Star traveling smoothly around the rounded border perimeter.
+ * High-performance AMOLED card frame featuring a continuous 5-second slow-motion 360°
+ * electric blue/cyan running light beam with a layered inner backdrop mask so text and inputs
+ * remain crisp without distortion even on low-end Android devices.
  */
 @Composable
 fun AnimatedStarBorderCard(
     modifier: Modifier = Modifier,
     cornerRadius: Dp = 22.dp,
+    highlightGoldMode: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "star_border_orbit")
+    val infiniteTransition = rememberInfiniteTransition(label = "slow_beam_orbit")
 
+    // Smooth 5-second continuous 360-degree loop
     val orbitProgress by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 4200, easing = LinearEasing),
+            animation = tween(durationMillis = 5000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "orbit_progress"
@@ -70,20 +74,20 @@ fun AnimatedStarBorderCard(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3600, easing = LinearEasing),
+            animation = tween(durationMillis = 5000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "star_spin"
     )
 
-    val starTwinkle by infiniteTransition.animateFloat(
+    val twinklePulse by infiniteTransition.animateFloat(
         initialValue = 0.78f,
-        targetValue = 1.18f,
+        targetValue = 1.15f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 950, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "star_twinkle"
+        label = "twinkle_pulse"
     )
 
     val borderPath = remember { Path() }
@@ -92,13 +96,17 @@ fun AnimatedStarBorderCard(
     val pathMeasure = remember { PathMeasure() }
     val starPath = remember { Path() }
 
-    // Outer padding gives space for the glowing star & halo so it never clips at card edges
+    val primaryLeadColor = if (highlightGoldMode) HdrGoldLight else NeonCyan
+    val primaryMidColor = if (highlightGoldMode) NeonMagenta else NeonCyanLight
+    val primaryTailColor = if (highlightGoldMode) NeonCyan else ElectricBlue
+    val counterColor = if (highlightGoldMode) HdrGold else ElectricBlue
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(2.dp)
     ) {
-        // Card body
+        // Layered dark AMOLED backdrop mask (keeps text sharp at high contrast)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -107,14 +115,14 @@ fun AnimatedStarBorderCard(
                     Brush.verticalGradient(
                         listOf(
                             ObsidianSurface,
-                            Color(0xFF0A0E1B)
+                            Color(0xFF040710)
                         )
                     )
                 ),
             content = content
         )
 
-        // Perimeter Neon Beam + Traveling Star overlay
+        // Lightweight hardware-accelerated Canvas perimeter beam overlay
         Canvas(modifier = Modifier.matchParentSize()) {
             val strokeInset = 1.5.dp.toPx()
             val radiusPx = cornerRadius.toPx()
@@ -133,16 +141,16 @@ fun AnimatedStarBorderCard(
             val totalLen = pathMeasure.length
             if (totalLen <= 0f) return@Canvas
 
-            // 1. Base ambient border
+            // 1. Crisp ambient border hairline
             drawPath(
                 path = borderPath,
-                color = ObsidianCardBorder.copy(alpha = 0.65f),
+                color = if (highlightGoldMode) HdrGold.copy(alpha = 0.42f) else ObsidianCardBorder.copy(alpha = 0.85f),
                 style = Stroke(width = 1.2.dp.toPx())
             )
 
-            // 2. Counter-phase secondary subtle aura beam (opposite side of perimeter)
+            // 2. Opposite-phase secondary cyan/blue aura beam (5-second synchronized)
             val secondaryEnd = ((orbitProgress + 0.5f) % 1f) * totalLen
-            val secondaryLen = totalLen * 0.14f
+            val secondaryLen = totalLen * 0.20f
             extractWrappedSegment(pathMeasure, totalLen, secondaryEnd - secondaryLen, secondaryEnd, secondaryTailPath)
             val secHead = pathMeasure.getPosition(secondaryEnd)
             val secTail = pathMeasure.getPosition(wrapDistance(secondaryEnd - secondaryLen, totalLen))
@@ -152,8 +160,8 @@ fun AnimatedStarBorderCard(
                     brush = Brush.linearGradient(
                         colors = listOf(
                             Color.Transparent,
-                            UltraPurple.copy(alpha = 0.55f),
-                            NeonMagenta.copy(alpha = 0.85f)
+                            counterColor.copy(alpha = 0.45f),
+                            NeonCyan.copy(alpha = 0.80f)
                         ),
                         start = secTail,
                         end = secHead
@@ -162,109 +170,102 @@ fun AnimatedStarBorderCard(
                 )
             }
 
-            // 3. Primary high-energy light comet beam behind the star
+            // 3. Primary slow-motion 360-degree traveling cyan/blue light beam
             val headDist = orbitProgress * totalLen
-            val tailLen = totalLen * 0.24f
+            val tailLen = totalLen * 0.30f
             extractWrappedSegment(pathMeasure, totalLen, headDist - tailLen, headDist, primaryTailPath)
 
             val headPos = pathMeasure.getPosition(headDist)
             val tailPos = pathMeasure.getPosition(wrapDistance(headDist - tailLen, totalLen))
 
             if (headPos != Offset.Unspecified && tailPos != Offset.Unspecified) {
-                // Soft outer neon bloom
+                // Soft low-cost outer neon bloom
                 drawPath(
                     path = primaryTailPath,
                     brush = Brush.linearGradient(
                         colors = listOf(
                             Color.Transparent,
-                            UltraPurple.copy(alpha = 0.16f),
-                            NeonMagenta.copy(alpha = 0.24f),
-                            NeonCyan.copy(alpha = 0.34f),
-                            HdrGold.copy(alpha = 0.45f)
+                            primaryTailColor.copy(alpha = 0.16f),
+                            primaryMidColor.copy(alpha = 0.28f),
+                            primaryLeadColor.copy(alpha = 0.42f)
                         ),
                         start = tailPos,
                         end = headPos
                     ),
-                    style = Stroke(width = 7.dp.toPx(), cap = StrokeCap.Round)
+                    style = Stroke(width = 6.5.dp.toPx(), cap = StrokeCap.Round)
                 )
 
-                // Mid laser beam
+                // Sharp core beam
                 drawPath(
                     path = primaryTailPath,
                     brush = Brush.linearGradient(
                         colors = listOf(
                             Color.Transparent,
-                            UltraPurple.copy(alpha = 0.65f),
-                            NeonMagenta.copy(alpha = 0.85f),
-                            NeonCyan,
-                            HdrGoldLight
+                            primaryTailColor.copy(alpha = 0.65f),
+                            primaryMidColor.copy(alpha = 0.90f),
+                            primaryLeadColor,
+                            Color.White
                         ),
                         start = tailPos,
                         end = headPos
                     ),
-                    style = Stroke(width = 2.6.dp.toPx(), cap = StrokeCap.Round)
+                    style = Stroke(width = 2.4.dp.toPx(), cap = StrokeCap.Round)
                 )
 
-                // Trailing sparkle micro-stars along the light comet tail
-                val sparkleOffsets = floatArrayOf(0.035f, 0.075f, 0.125f)
+                // Subtle trailing sparkle dots along the beam
+                val sparkleOffsets = floatArrayOf(0.04f, 0.09f)
                 sparkleOffsets.forEachIndexed { idx, frac ->
                     val spDist = wrapDistance(headDist - totalLen * frac, totalLen)
                     val spPos = pathMeasure.getPosition(spDist)
                     if (spPos != Offset.Unspecified) {
-                        val spAlpha = (0.9f - idx * 0.24f).coerceIn(0.2f, 1f)
-                        val spRadius = (3.4f - idx * 0.7f).dp.toPx() * (if (idx % 2 == 0) starTwinkle else 2f - starTwinkle)
+                        val spAlpha = (0.85f - idx * 0.25f).coerceIn(0.2f, 1f)
+                        val spRadius = (2.8f - idx * 0.7f).dp.toPx() * twinklePulse
                         drawFourPointSparkle(
                             center = spPos,
                             outerRadius = spRadius,
-                            color = if (idx == 0) HdrGoldLight.copy(alpha = spAlpha) else NeonCyan.copy(alpha = spAlpha),
+                            color = primaryLeadColor.copy(alpha = spAlpha),
                             path = starPath
                         )
                     }
                 }
 
-                // 4. Main glowing aura + rotating 5-point Star at lead position
+                // Lead star halo & rotating star glint
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            HdrGoldLight.copy(alpha = 0.72f),
-                            NeonCyan.copy(alpha = 0.38f),
-                            NeonMagenta.copy(alpha = 0.14f),
+                            Color.White.copy(alpha = 0.72f),
+                            primaryLeadColor.copy(alpha = 0.42f),
+                            primaryTailColor.copy(alpha = 0.14f),
                             Color.Transparent
                         ),
                         center = headPos,
-                        radius = 16.dp.toPx() * starTwinkle
+                        radius = 13.dp.toPx() * twinklePulse
                     ),
-                    radius = 16.dp.toPx() * starTwinkle,
+                    radius = 13.dp.toPx() * twinklePulse,
                     center = headPos
                 )
 
-                val starRadius = 7.2.dp.toPx() * starTwinkle
+                val starRadius = 6.0.dp.toPx() * twinklePulse
                 rotate(degrees = starSpin, pivot = headPos) {
                     buildFivePointStarPath(
                         center = headPos,
                         outerRadius = starRadius,
-                        innerRadius = starRadius * 0.44f,
+                        innerRadius = starRadius * 0.45f,
                         outPath = starPath
                     )
                     drawPath(
                         path = starPath,
                         brush = Brush.radialGradient(
-                            colors = listOf(Color.White, HdrGoldLight, HdrGold),
+                            colors = listOf(Color.White, primaryLeadColor, primaryTailColor),
                             center = headPos,
                             radius = starRadius
                         )
                     )
-                    drawPath(
-                        path = starPath,
-                        color = Color.White.copy(alpha = 0.9f),
-                        style = Stroke(width = 0.8.dp.toPx())
-                    )
                 }
 
-                // Crisp bright center glint
                 drawCircle(
                     color = Color.White,
-                    radius = 1.9.dp.toPx(),
+                    radius = 1.6.dp.toPx(),
                     center = headPos
                 )
             }

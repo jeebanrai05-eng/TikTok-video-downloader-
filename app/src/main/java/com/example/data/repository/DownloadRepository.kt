@@ -144,6 +144,26 @@ class DownloadRepository(private val context: Context) {
             return null
         }
 
+        fun extractAllTikTokUrls(input: String): List<String> {
+            val trimmed = input.trim()
+            if (trimmed.isEmpty()) return emptyList()
+            val matcher = TIKTOK_URL_REGEX.matcher(trimmed)
+            val results = LinkedHashSet<String>()
+            while (matcher.find()) {
+                var matched = matcher.group(0) ?: continue
+                matched = matched.trimEnd('.', ',', '!', '?', ';', ':', ')', ']', '"', '\'')
+                if (!matched.startsWith("http://", ignoreCase = true) &&
+                    !matched.startsWith("https://", ignoreCase = true)
+                ) {
+                    matched = "https://$matched"
+                }
+                if (matched.isNotBlank()) {
+                    results.add(matched)
+                }
+            }
+            return results.toList()
+        }
+
         fun isValidTikTokUrl(input: String): Boolean {
             return extractTikTokUrl(input) != null
         }

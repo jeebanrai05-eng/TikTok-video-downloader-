@@ -8,9 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-private val ElectricMidnightColorScheme = darkColorScheme(
+private val AmoledVibrantProColorScheme = darkColorScheme(
     primary = NeonCyan,
-    onPrimary = Color(0xFF031214),
+    onPrimary = Color(0xFF021114),
     primaryContainer = ObsidianSurfaceVariant,
     onPrimaryContainer = NeonCyan,
     secondary = NeonMagenta,
@@ -26,7 +26,7 @@ private val ElectricMidnightColorScheme = darkColorScheme(
     surfaceVariant = ObsidianSurfaceVariant,
     onSurfaceVariant = TextSecondary,
     outline = ObsidianCardBorder,
-    outlineVariant = Color(0xFF1D2640),
+    outlineVariant = Color(0xFF16223A),
     error = ErrorRed,
     onError = Color.White
 )
@@ -46,7 +46,7 @@ fun MyApplicationTheme(
     content: @Composable () -> Unit,
 ) {
     MaterialTheme(
-        colorScheme = ElectricMidnightColorScheme,
+        colorScheme = AmoledVibrantProColorScheme,
         typography = Typography,
         shapes = TikSaveShapes,
         content = content

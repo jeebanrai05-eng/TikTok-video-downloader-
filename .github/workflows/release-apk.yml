@@ -15,13 +15,13 @@ on:
         type: boolean
         default: true
       tag_name:
-        description: 'Release Tag (e.g. v1.1.8)'
+        description: 'Release Tag (e.g. v1.1.9)'
         required: false
-        default: 'v1.1.8'
+        default: 'v1.1.9'
       release_title:
         description: 'Release Title'
         required: false
-        default: 'TikSave v1.1.8 (Vibrant Pro UI, Running Side Neon Borders & AMOLED Contrast)'
+        default: 'TikSave v1.1.9 (360° Running Border Beam, Multi-Link Batch Saver & AMOLED Pro)'
 
 permissions:
   contents: write
@@ -117,7 +117,7 @@ jobs:
         shell: bash
         run: |
           # Extract version from version.json or fallback
-          VER_NAME="1.1.7"
+          VER_NAME="1.1.9"
           if [ -f "version.json" ]; then
             PARSED_VER=$(grep -o '"versionName"[[:space:]]*:[[:space:]]*"[^"]*"' version.json | head -n 1 | cut -d'"' -f4)
             if [ -n "$PARSED_VER" ]; then
@@ -157,16 +157,16 @@ jobs:
         shell: bash
         run: |
           cat << 'EOF' > release_body.md
-          ## 🚀 TikSave Ultra (v1.1.8 Release)
+          ## 🚀 TikSave Ultra (v1.1.9 Release)
 
-          ### ✨ Major Updates in v1.1.8:
-          - **Vibrant Pro UI Theme Redesign**: Immersive AMOLED dark theme with running neon side border light beams, blinking glows, and smooth low-end optimized animations.
-          - **High Contrast AMOLED Optimization**: Refined deep dark surfaces with ultra-crisp white typography ensuring perfect legibility and aesthetic brilliance.
-          - **4-Engine Instant TikTok Resolver**: Blazing fast parallel extraction (TikVideo, SaveTik, TikWM, Direct Web) with IPv4-first DNS and shared CookieJar for sub-second downloads.
+          ### ✨ What's New in v1.1.9:
+          - **NEW Feature (48H Highlight Spotlight) — Multi-Link Batch Queue Saver**: Paste multiple TikTok links at once and auto-save all videos, photo slides, or 320kbps MP3s without watermarks directly to your Library & Gallery.
+          - **Continuous 360° Running Border Light**: Smooth 5-second slow-motion electric cyan/blue perimeter beam with layered glassmorphic backdrop mask and 60fps low-end device optimization.
+          - **Refined AMOLED Vibrant Pro UI**: Deep obsidian surfaces (`#020409`), high-contrast white typography, and glowing gradient action buttons matching Web and Android.
           - **Original Production Keystore Preserved**: Signed with official certificate (`CN=TikSave, SHA-256: 83d53182b915648bea5c4ecba64317f56e97a90e91bcc0cec278dcead88352a1`).
 
           ### 📦 Download Links
-          - **[TikSave-Release.apk](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.8/TikSave-Release.apk)** (Official Production Release)
+          - **[TikSave-Release.apk](https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.9/TikSave-Release.apk)** (Official Production Release)
           EOF
 
       - name: Publish GitHub Release

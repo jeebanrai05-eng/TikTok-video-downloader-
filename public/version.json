@@ -1,10 +1,10 @@
 {
-  "versionCode": 13,
-  "versionName": "1.1.8",
-  "releaseTitle": "TikSave v1.1.8 (Vibrant Pro UI, Running Side Neon Borders & AMOLED Contrast)",
-  "releaseNotes": "• Vibrant Pro UI Theme Redesign: Immersive dark AMOLED theme with running neon side border light beams, blinking glows, and smooth low-end optimized animations\n• High Contrast AMOLED Optimization: Refined deep dark surfaces with ultra-crisp white typography ensuring perfect legibility and aesthetic brilliance\n• 4-Engine Instant TikTok Resolver: Blazing fast parallel extraction (TikVideo, SaveTik, TikWM, Direct Web) with IPv4-first DNS and zero timeouts\n• Original Production Keystore Preserved: Seamless in-app self-update signed with verified CN=TikSave certificate",
-  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.8/TikSave-Release.apk",
+  "versionCode": 14,
+  "versionName": "1.1.9",
+  "releaseTitle": "TikSave v1.1.9 (360° Running Border Beam, Multi-Link Batch Saver & AMOLED Pro)",
+  "releaseNotes": "• NEW FEATURE (48H Spotlight): Multi-Link Batch Queue Saver — paste multiple TikTok links at once and auto-save all videos, photo slides, or 320kbps MP3s without watermarks\n• Continuous 360° Running Border Light: Slow-motion 5-second electric cyan/blue perimeter beam with layered glassmorphic backdrop mask and crisp 60fps performance\n• Refined High-Contrast AMOLED UI: Deep obsidian surfaces (#020409), vibrant gradient CTAs, and razor-sharp white typography optimized for low-end devices\n• Original Production Keystore Preserved: Seamless in-app self-update signed with verified CN=TikSave certificate",
+  "apkUrl": "https://github.com/jeebanrai05-eng/TikTok-video-downloader-/releases/download/v1.1.9/TikSave-Release.apk",
   "minSupportedVersion": "1.0.0",
   "mandatory": false,
-  "publishedAt": "2026-11-24"
+  "publishedAt": "2026-11-25"
 }

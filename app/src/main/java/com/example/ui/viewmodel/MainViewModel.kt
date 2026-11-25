@@ -40,6 +40,19 @@ enum class AppTab {
     SETTINGS
 }
 
+data class BatchDownloadState(
+    val isRunning: Boolean = false,
+    val totalCount: Int = 0,
+    val currentIndex: Int = 0,
+    val currentStatus: String = "",
+    val completedCount: Int = 0,
+    val failedCount: Int = 0,
+    val isFinished: Boolean = false
+) {
+    val progressFraction: Float
+        get() = if (totalCount <= 0) 0f else ((completedCount + failedCount).toFloat() / totalCount.toFloat()).coerceIn(0f, 1f)
+}
+
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val prefs = application.getSharedPreferences("tiksave_prefs", Context.MODE_PRIVATE)
@@ -127,10 +140,48 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val aiGenerationState: StateFlow<AiGenerationState> = _aiGenerationState.asStateFlow()
 
     private var currentDownloadJob: Job? = null
+    private var batchDownloadJob: Job? = null
+
+    // v1.1.9 New Feature: Multi-Link Batch Queue Saver + 48h (1-2 Day) Highlight Window
+    private val _batchInputText = MutableStateFlow("")
+    val batchInputText: StateFlow<String> = _batchInputText.asStateFlow()
+
+    private val _batchSelectedQuality = MutableStateFlow(DownloadQuality.ULTRA_8K_120FPS)
+    val batchSelectedQuality: StateFlow<DownloadQuality> = _batchSelectedQuality.asStateFlow()
+
+    private val _batchState = MutableStateFlow<BatchDownloadState?>(null)
+    val batchState: StateFlow<BatchDownloadState?> = _batchState.asStateFlow()
+
+    private val _isBatchFeatureHighlighted = MutableStateFlow(true)
+    val isBatchFeatureHighlighted: StateFlow<Boolean> = _isBatchFeatureHighlighted.asStateFlow()
+
+    private val _highlightRemainingLabel = MutableStateFlow("NEW ✨ • 48H SPOTLIGHT")
+    val highlightRemainingLabel: StateFlow<String> = _highlightRemainingLabel.asStateFlow()
 
     init {
+        initFeatureHighlightWindow()
         checkClipboardForTikTokLink()
         checkForAppUpdates(silent = true)
+    }
+
+    private fun initFeatureHighlightWindow() {
+        val key = "v119_batch_highlight_start_ms"
+        val now = System.currentTimeMillis()
+        var firstSeen = prefs.getLong(key, 0L)
+        if (firstSeen == 0L) {
+            firstSeen = now
+            prefs.edit().putLong(key, firstSeen).apply()
+        }
+        val highlightDurationMs = 48L * 60L * 60L * 1000L // 48 hours (1.5 - 2 days spotlight)
+        val remainingMs = (firstSeen + highlightDurationMs) - now
+        if (remainingMs > 0L) {
+            val hoursLeft = ((remainingMs / (60L * 60L * 1000L)) + 1L).coerceAtMost(48L)
+            _isBatchFeatureHighlighted.value = true
+            _highlightRemainingLabel.value = "NEW ✨ • ${hoursLeft}H SPOTLIGHT"
+        } else {
+            _isBatchFeatureHighlighted.value = false
+            _highlightRemainingLabel.value = "v1.1.9 FEATURE"
+        }
     }
 
     fun setTab(tab: AppTab) {
@@ -709,5 +760,166 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isCheckingForUpdates.value = false
         _isDownloadingUpdate.value = false
         _isInstallingUpdate.value = false
+    }
+
+    // ==================== v1.1.9 Multi-Link Batch Queue Saver ====================
+
+    fun onBatchInputChange(text: String) {
+        _batchInputText.value = text
+    }
+
+    fun setBatchQuality(quality: DownloadQuality) {
+        _batchSelectedQuality.value = quality
+    }
+
+    fun pasteBatchFromClipboard() {
+        try {
+            val clipboard = getApplication<Application>().getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+            val clip = clipboard?.primaryClip
+            if (clip != null && clip.itemCount > 0) {
+                val text = clip.getItemAt(0)?.text?.toString() ?: ""
+                val links = DownloadRepository.extractAllTikTokUrls(text)
+                if (links.isNotEmpty()) {
+                    val existing = _batchInputText.value.trim()
+                    val merged = if (existing.isEmpty()) {
+                        links.joinToString("\n")
+                    } else {
+                        (DownloadRepository.extractAllTikTokUrls(existing) + links).distinct().joinToString("\n")
+                    }
+                    _batchInputText.value = merged
+                    showToast("Added ${links.size} TikTok link(s) to Batch Queue")
+                } else {
+                    showToast("No valid TikTok links found in clipboard")
+                }
+            } else {
+                showToast("Clipboard is empty")
+            }
+        } catch (_: Exception) {
+            showToast("Could not access clipboard")
+        }
+    }
+
+    fun startBatchDownload() {
+        val urls = DownloadRepository.extractAllTikTokUrls(_batchInputText.value)
+        if (urls.isEmpty()) {
+            showToast("Paste at least 1 TikTok link in the Batch Queue first")
+            return
+        }
+        if (_batchState.value?.isRunning == true) {
+            showToast("Batch Queue is already running")
+            return
+        }
+
+        val targetQuality = _batchSelectedQuality.value
+        batchDownloadJob?.cancel()
+        batchDownloadJob = viewModelScope.launch {
+            var completed = 0
+            var failed = 0
+            _batchState.value = BatchDownloadState(
+                isRunning = true,
+                totalCount = urls.size,
+                currentIndex = 1,
+                currentStatus = "Resolving link 1 of ${urls.size}...",
+                completedCount = 0,
+                failedCount = 0
+            )
+
+            try {
+                urls.forEachIndexed { index, rawUrl ->
+                    val itemNumber = index + 1
+                    _batchState.value = _batchState.value?.copy(
+                        currentIndex = itemNumber,
+                        currentStatus = "Resolving #$itemNumber/${urls.size}..."
+                    )
+
+                    val extraction = repository.resolveTikTokVideo(
+                        rawInput = rawUrl,
+                        hdPriority = _hdrBoostEnabled.value
+                    ) { _, _ -> }
+
+                    if (extraction is ExtractionState.Success) {
+                        val meta = extraction.metadata
+                        val isAudio = targetQuality == DownloadQuality.AUDIO_ONLY ||
+                                targetQuality == DownloadQuality.AUDIO_HIGH_SOUND ||
+                                targetQuality == DownloadQuality.AUDIO_VFX_SOUND
+
+                        val downloadUrl = when {
+                            meta.isPhotoSlide && !isAudio -> meta.images.firstOrNull() ?: meta.coverUrl
+                            targetQuality == DownloadQuality.ULTRA_8K_120FPS -> meta.ultra8kUrl.ifBlank { meta.ultraHdrUrl }
+                            targetQuality == DownloadQuality.HDR_ULTRA -> meta.ultraHdrUrl.ifBlank { meta.standardHdUrl }
+                            targetQuality == DownloadQuality.HD_STANDARD -> meta.standardHdUrl
+                            isAudio -> meta.audioUrl.ifBlank { meta.standardHdUrl }
+                            else -> meta.ultraHdrUrl.ifBlank { meta.standardHdUrl }
+                        }
+
+                        if (downloadUrl.isNotBlank()) {
+                            val ext = when {
+                                isAudio -> "mp3"
+                                meta.isPhotoSlide -> "jpg"
+                                else -> "mp4"
+                            }
+                            val cleanTitle = meta.title.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(20)
+                            val filename = "TikSave_Batch_${itemNumber}_${cleanTitle}_${System.currentTimeMillis()}.$ext"
+
+                            _batchState.value = _batchState.value?.copy(
+                                currentStatus = "Downloading #$itemNumber: ${meta.title.take(28)}..."
+                            )
+
+                            val dlRes = repository.downloadManager.download(
+                                url = downloadUrl,
+                                targetFilename = filename,
+                                quality = if (meta.isPhotoSlide && !isAudio) DownloadQuality.PHOTO_SLIDE_ULTRA else targetQuality
+                            ) { _, _, _, _, _ -> }
+
+                            if (dlRes.isSuccess) {
+                                val file = dlRes.getOrNull()?.file
+                                if (file != null) {
+                                    repository.saveDownloadRecord(
+                                        meta,
+                                        if (meta.isPhotoSlide && !isAudio) DownloadQuality.PHOTO_SLIDE_ULTRA else targetQuality,
+                                        file
+                                    )
+                                }
+                                completed++
+                            } else {
+                                failed++
+                            }
+                        } else {
+                            failed++
+                        }
+                    } else {
+                        failed++
+                    }
+
+                    _batchState.value = _batchState.value?.copy(
+                        completedCount = completed,
+                        failedCount = failed
+                    )
+                }
+
+                _batchState.value = BatchDownloadState(
+                    isRunning = false,
+                    totalCount = urls.size,
+                    currentIndex = urls.size,
+                    currentStatus = "Completed: $completed saved" + if (failed > 0) " ($failed failed)" else "!",
+                    completedCount = completed,
+                    failedCount = failed,
+                    isFinished = true
+                )
+                showToast("✅ Batch Queue finished: $completed of ${urls.size} saved to Library!")
+            } catch (_: kotlinx.coroutines.CancellationException) {
+                _batchState.value = null
+            }
+        }
+    }
+
+    fun cancelBatchDownload() {
+        batchDownloadJob?.cancel()
+        _batchState.value = null
+        showToast("Batch Queue cancelled")
+    }
+
+    fun dismissBatchState() {
+        _batchState.value = null
     }
 }

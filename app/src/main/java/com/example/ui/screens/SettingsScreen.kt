@@ -67,6 +67,7 @@ import com.example.ui.theme.NeonMagenta
 import com.example.ui.theme.ObsidianCardBorder
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceVariant
+import com.example.ui.theme.TextSecondary
 
 @Composable
 fun SettingsScreen(
@@ -104,7 +105,7 @@ fun SettingsScreen(
             Text(
                 text = "Configure TikTok 8K 120FPS stream processing & app preferences",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.6f)
+                color = TextSecondary
             )
         }
 
@@ -221,7 +222,7 @@ fun SettingsScreen(
                             Text(
                                 text = "Videos: Movies/TikSave • Photos: Pictures/TikSave • MP3: Music/TikSave",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.6f)
+                                color = TextSecondary
                             )
                         }
                     }
@@ -276,7 +277,7 @@ fun SettingsScreen(
                             Text(
                                 text = "No login required, no account needed. All TikTok downloads stay exclusively on your device.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.6f)
+                                color = TextSecondary
                             )
                         }
                     }
@@ -295,7 +296,7 @@ fun SettingsScreen(
                             Text(
                                 text = "Build ${BuildConfig.VERSION_CODE} • Pure TikTok 8K 120FPS & AI Studio",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.6f)
+                                color = TextSecondary
                             )
                         }
                     }
@@ -476,7 +477,7 @@ private fun SettingToggleRow(
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.6f),
+                    color = TextSecondary,
                     fontSize = 11.sp
                 )
             }

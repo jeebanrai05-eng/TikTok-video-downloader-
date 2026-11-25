@@ -88,12 +88,15 @@ import com.example.ui.screens.AiStudioScreen
 import com.example.ui.screens.DownloaderScreen
 import com.example.ui.screens.LibraryScreen
 import com.example.ui.screens.SettingsScreen
+import androidx.compose.material3.HorizontalDivider
 import com.example.ui.theme.ElectricIndigo
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.NeonCyan
 import com.example.ui.theme.NeonMagenta
 import com.example.ui.theme.ObsidianBg
 import com.example.ui.theme.ObsidianSurface
+import com.example.ui.theme.SuccessGreen
+import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.UltraPurple
 import com.example.ui.viewmodel.AppTab
 import com.example.ui.viewmodel.MainViewModel
@@ -167,6 +170,12 @@ fun TikSaveApp(viewModel: MainViewModel) {
     val autoClipboardEnabled by viewModel.autoClipboardEnabled.collectAsStateWithLifecycle()
     val wifiOnlyEnabled by viewModel.wifiOnlyEnabled.collectAsStateWithLifecycle()
 
+    val batchInputText by viewModel.batchInputText.collectAsStateWithLifecycle()
+    val batchSelectedQuality by viewModel.batchSelectedQuality.collectAsStateWithLifecycle()
+    val batchState by viewModel.batchState.collectAsStateWithLifecycle()
+    val isBatchFeatureHighlighted by viewModel.isBatchFeatureHighlighted.collectAsStateWithLifecycle()
+    val highlightRemainingLabel by viewModel.highlightRemainingLabel.collectAsStateWithLifecycle()
+
     val logoTransition = rememberInfiniteTransition(label = "logo_pulse")
     val logoScale by logoTransition.animateFloat(
         initialValue = 0.92f,
@@ -209,22 +218,19 @@ fun TikSaveApp(viewModel: MainViewModel) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(30.dp)
+                                .size(34.dp)
                                 .scale(logoScale)
-                                .background(
-                                    Brush.radialGradient(listOf(NeonCyan.copy(alpha = 0.28f), Color.Transparent)),
-                                    CircleShape
-                                )
+                                .background(ObsidianSurface, CircleShape)
                                 .border(
-                                    1.5.dp,
-                                    Brush.linearGradient(listOf(NeonCyan, NeonMagenta)),
+                                    2.dp,
+                                    Brush.sweepGradient(listOf(NeonCyan, NeonMagenta, SuccessGreen, NeonCyan)),
                                     CircleShape
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(10.dp)
+                                    .size(11.dp)
                                     .background(NeonMagenta, CircleShape)
                             )
                         }
@@ -240,13 +246,13 @@ fun TikSaveApp(viewModel: MainViewModel) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(7.dp))
-                                .background(NeonCyan.copy(alpha = 0.16f))
-                                .border(1.dp, NeonCyan.copy(alpha = 0.65f), RoundedCornerShape(7.dp))
-                                .padding(horizontal = 7.dp, vertical = 2.dp)
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(NeonCyan.copy(alpha = 0.14f))
+                                .border(1.dp, NeonCyan.copy(alpha = 0.7f), RoundedCornerShape(999.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
                             Text(
-                                text = "v${BuildConfig.VERSION_NAME} ULTRA",
+                                text = "V${BuildConfig.VERSION_NAME} ULTRA",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
                                 color = NeonCyan,
                                 fontSize = 9.sp
@@ -256,24 +262,42 @@ fun TikSaveApp(viewModel: MainViewModel) {
                 },
                 actions = {
                     androidx.compose.material3.IconButton(
-                        onClick = { viewModel.showToast("TikSave PRO ULTRA Active ⭐") },
+                        onClick = { viewModel.showToast("TikSave v${BuildConfig.VERSION_NAME} • Batch Saver Spotlight Active ⭐") },
                         modifier = Modifier.testTag("btn_pro_crown")
                     ) {
-                        androidx.compose.material3.Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "PRO ULTRA",
-                            tint = HdrGold
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(HdrGold.copy(alpha = 0.14f), CircleShape)
+                                .border(1.dp, HdrGold.copy(alpha = 0.65f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = "PRO ULTRA",
+                                tint = HdrGold,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                     androidx.compose.material3.IconButton(
                         onClick = { viewModel.setTab(AppTab.SETTINGS) },
                         modifier = Modifier.testTag("btn_top_settings")
                     ) {
-                        androidx.compose.material3.Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings",
-                            tint = NeonCyan
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(NeonCyan.copy(alpha = 0.14f), CircleShape)
+                                .border(1.dp, NeonCyan.copy(alpha = 0.65f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings",
+                                tint = NeonCyan,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -283,102 +307,107 @@ fun TikSaveApp(viewModel: MainViewModel) {
             )
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = ObsidianSurface,
+            androidx.compose.foundation.layout.Column(
                 modifier = Modifier
+                    .background(Color(0xFF040710))
                     .windowInsetsPadding(WindowInsets.navigationBars)
-                    .testTag("main_bottom_nav"),
-                tonalElevation = 8.dp
             ) {
-                NavigationBarItem(
-                    selected = currentTab == AppTab.DOWNLOADER,
-                    onClick = { viewModel.setTab(AppTab.DOWNLOADER) },
-                    icon = {
-                        Icon(
-                            imageVector = if (currentTab == AppTab.DOWNLOADER) Icons.Filled.Download else Icons.Outlined.Download,
-                            contentDescription = "Downloader"
-                        )
-                    },
-                    label = { Text("Downloader") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Black,
-                        selectedTextColor = NeonCyan,
-                        indicatorColor = NeonCyan,
-                        unselectedIconColor = Color.White.copy(alpha = 0.6f),
-                        unselectedTextColor = Color.White.copy(alpha = 0.6f)
-                    ),
-                    modifier = Modifier.testTag("nav_tab_downloader")
-                )
+                HorizontalDivider(color = NeonCyan.copy(alpha = 0.18f), thickness = 1.dp)
+                NavigationBar(
+                    containerColor = Color(0xFF040710),
+                    modifier = Modifier.testTag("main_bottom_nav"),
+                    tonalElevation = 0.dp
+                ) {
+                    NavigationBarItem(
+                        selected = currentTab == AppTab.DOWNLOADER,
+                        onClick = { viewModel.setTab(AppTab.DOWNLOADER) },
+                        icon = {
+                            Icon(
+                                imageVector = if (currentTab == AppTab.DOWNLOADER) Icons.Filled.Download else Icons.Outlined.Download,
+                                contentDescription = "Downloader"
+                            )
+                        },
+                        label = { Text("Downloader") },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color(0xFF021114),
+                            selectedTextColor = NeonCyan,
+                            indicatorColor = NeonCyan,
+                            unselectedIconColor = TextSecondary,
+                            unselectedTextColor = TextSecondary
+                        ),
+                        modifier = Modifier.testTag("nav_tab_downloader")
+                    )
 
-                NavigationBarItem(
-                    selected = currentTab == AppTab.AI_STUDIO,
-                    onClick = { viewModel.setTab(AppTab.AI_STUDIO) },
-                    icon = {
-                        Icon(
-                            imageVector = if (currentTab == AppTab.AI_STUDIO) Icons.Filled.AutoAwesome else Icons.Outlined.AutoAwesome,
-                            contentDescription = "AI Studio"
-                        )
-                    },
-                    label = { Text("AI Studio") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.White,
-                        selectedTextColor = UltraPurple,
-                        indicatorColor = ElectricIndigo,
-                        unselectedIconColor = Color.White.copy(alpha = 0.6f),
-                        unselectedTextColor = Color.White.copy(alpha = 0.6f)
-                    ),
-                    modifier = Modifier.testTag("nav_tab_ai_studio")
-                )
+                    NavigationBarItem(
+                        selected = currentTab == AppTab.AI_STUDIO,
+                        onClick = { viewModel.setTab(AppTab.AI_STUDIO) },
+                        icon = {
+                            Icon(
+                                imageVector = if (currentTab == AppTab.AI_STUDIO) Icons.Filled.AutoAwesome else Icons.Outlined.AutoAwesome,
+                                contentDescription = "AI Studio"
+                            )
+                        },
+                        label = { Text("AI Studio") },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color.White,
+                            selectedTextColor = UltraPurple,
+                            indicatorColor = ElectricIndigo,
+                            unselectedIconColor = TextSecondary,
+                            unselectedTextColor = TextSecondary
+                        ),
+                        modifier = Modifier.testTag("nav_tab_ai_studio")
+                    )
 
-                NavigationBarItem(
-                    selected = currentTab == AppTab.LIBRARY,
-                    onClick = { viewModel.setTab(AppTab.LIBRARY) },
-                    icon = {
-                        BadgedBox(
-                            badge = {
-                                if (allDownloads.isNotEmpty()) {
-                                    Badge(containerColor = NeonMagenta, contentColor = Color.White) {
-                                        Text("${allDownloads.size}")
+                    NavigationBarItem(
+                        selected = currentTab == AppTab.LIBRARY,
+                        onClick = { viewModel.setTab(AppTab.LIBRARY) },
+                        icon = {
+                            BadgedBox(
+                                badge = {
+                                    if (allDownloads.isNotEmpty()) {
+                                        Badge(containerColor = NeonMagenta, contentColor = Color.White) {
+                                            Text("${allDownloads.size}")
+                                        }
                                     }
                                 }
+                            ) {
+                                Icon(
+                                    imageVector = if (currentTab == AppTab.LIBRARY) Icons.Filled.VideoLibrary else Icons.Outlined.VideoLibrary,
+                                    contentDescription = "Library"
+                                )
                             }
-                        ) {
-                            Icon(
-                                imageVector = if (currentTab == AppTab.LIBRARY) Icons.Filled.VideoLibrary else Icons.Outlined.VideoLibrary,
-                                contentDescription = "Library"
-                            )
-                        }
-                    },
-                    label = { Text("Library") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Black,
-                        selectedTextColor = NeonCyan,
-                        indicatorColor = NeonCyan,
-                        unselectedIconColor = Color.White.copy(alpha = 0.6f),
-                        unselectedTextColor = Color.White.copy(alpha = 0.6f)
-                    ),
-                    modifier = Modifier.testTag("nav_tab_library")
-                )
+                        },
+                        label = { Text("Library") },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color(0xFF021114),
+                            selectedTextColor = NeonCyan,
+                            indicatorColor = NeonCyan,
+                            unselectedIconColor = TextSecondary,
+                            unselectedTextColor = TextSecondary
+                        ),
+                        modifier = Modifier.testTag("nav_tab_library")
+                    )
 
-                NavigationBarItem(
-                    selected = currentTab == AppTab.SETTINGS,
-                    onClick = { viewModel.setTab(AppTab.SETTINGS) },
-                    icon = {
-                        Icon(
-                            imageVector = if (currentTab == AppTab.SETTINGS) Icons.Filled.Settings else Icons.Outlined.Settings,
-                            contentDescription = "Settings"
-                        )
-                    },
-                    label = { Text("Settings") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Black,
-                        selectedTextColor = NeonCyan,
-                        indicatorColor = NeonCyan,
-                        unselectedIconColor = Color.White.copy(alpha = 0.6f),
-                        unselectedTextColor = Color.White.copy(alpha = 0.6f)
-                    ),
-                    modifier = Modifier.testTag("nav_tab_settings")
-                )
+                    NavigationBarItem(
+                        selected = currentTab == AppTab.SETTINGS,
+                        onClick = { viewModel.setTab(AppTab.SETTINGS) },
+                        icon = {
+                            Icon(
+                                imageVector = if (currentTab == AppTab.SETTINGS) Icons.Filled.Settings else Icons.Outlined.Settings,
+                                contentDescription = "Settings"
+                            )
+                        },
+                        label = { Text("Settings") },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color(0xFF021114),
+                            selectedTextColor = NeonCyan,
+                            indicatorColor = NeonCyan,
+                            unselectedIconColor = TextSecondary,
+                            unselectedTextColor = TextSecondary
+                        ),
+                        modifier = Modifier.testTag("nav_tab_settings")
+                    )
+                }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -420,7 +449,18 @@ fun TikSaveApp(viewModel: MainViewModel) {
                     },
                     activeDownload = activeDownload,
                     onCancelDownload = viewModel::cancelActiveDownload,
-                    onDismissActiveDownload = viewModel::dismissActiveDownload
+                    onDismissActiveDownload = viewModel::dismissActiveDownload,
+                    batchInputText = batchInputText,
+                    onBatchInputChange = viewModel::onBatchInputChange,
+                    batchSelectedQuality = batchSelectedQuality,
+                    onBatchQualitySelected = viewModel::setBatchQuality,
+                    batchState = batchState,
+                    onPasteBatchClick = viewModel::pasteBatchFromClipboard,
+                    onStartBatchDownload = viewModel::startBatchDownload,
+                    onCancelBatchDownload = viewModel::cancelBatchDownload,
+                    onDismissBatchState = viewModel::dismissBatchState,
+                    isBatchFeatureHighlighted = isBatchFeatureHighlighted,
+                    highlightRemainingLabel = highlightRemainingLabel
                 )
 
                 AppTab.AI_STUDIO -> AiStudioScreen(

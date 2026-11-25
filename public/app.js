@@ -1,5 +1,5 @@
 /**
- * TikSave Web - Application Logic (v1.0.3)
+ * TikSave Web - Application Logic (v1.1.9)
  * Matches com.example.ui.screens and com.example.data.repository
  */
 
@@ -95,7 +95,49 @@ document.addEventListener('DOMContentLoaded', () => {
   setupClipboardListener();
   handleInputStateChange();
   initAiStudio();
+  initV119FeatureSpotlight();
 });
+
+// v1.1.9 New Feature Spotlight (Highlighted for 1-2 days / 48 hours)
+function initV119FeatureSpotlight() {
+  const STORAGE_KEY = 'tiksave_v119_batch_spotlight_start';
+  const DURATION_MS = 48 * 60 * 60 * 1000;
+  let startMs = Date.now();
+
+  try {
+    const saved = Number(localStorage.getItem(STORAGE_KEY));
+    if (saved && !isNaN(saved) && saved > 0) {
+      startMs = saved;
+    } else {
+      localStorage.setItem(STORAGE_KEY, String(startMs));
+    }
+  } catch (e) {}
+
+  const remainingMs = Math.max(0, DURATION_MS - Math.max(0, Date.now() - startMs));
+  const isHighlighted = remainingMs > 0;
+  const hoursLeft = Math.max(1, Math.min(48, Math.ceil(remainingMs / 3600000)));
+
+  const card = document.getElementById('spotlight-batch-card');
+  const badge = document.getElementById('spotlight-badge');
+  const tabPill = document.getElementById('batch-tab-new-pill');
+
+  if (card) {
+    if (isHighlighted) card.classList.add('spotlight-active');
+    else card.classList.remove('spotlight-active');
+  }
+  if (badge) {
+    if (isHighlighted) {
+      badge.classList.remove('settled');
+      badge.textContent = `NEW ✨ • ${hoursLeft}H SPOTLIGHT`;
+    } else {
+      badge.classList.add('settled');
+      badge.textContent = 'v1.1.9 FEATURE';
+    }
+  }
+  if (tabPill) {
+    tabPill.style.display = isHighlighted ? 'inline-block' : 'none';
+  }
+}
 
 // Tab Switching
 function switchTab(tabName) {
@@ -561,7 +603,6 @@ function openDownloadModal(meta, filename, totalBytes, targetUrl) {
   // Multi-step animated download simulation
   let progress = 0;
   let downloadedBytes = 0;
-  const startTime = Date.now();
 
   if (state.downloadInterval) clearInterval(state.downloadInterval);
 
@@ -699,50 +740,143 @@ function copyDirectStreamLink() {
   }
 }
 
-// Batch Downloader Processing
+// Batch Downloader Processing (v1.1.9 Multi-Link Queue Saver)
+window.__batchResolved = [];
+
+async function resolveTikTokMetaForUrl(rawUrl) {
+  const sampleMatch = SAMPLE_VIDEOS.find(s => rawUrl.includes(s.url) || rawUrl.includes(s.title));
+  if (sampleMatch) {
+    return {
+      id: "sample_" + Date.now(),
+      title: sampleMatch.title,
+      authorNickname: sampleMatch.nickname,
+      authorUsername: sampleMatch.author,
+      coverUrl: sampleMatch.cover,
+      stream8k: sampleMatch.videoUrl,
+      streamHdr: sampleMatch.videoUrl,
+      streamHd: sampleMatch.videoUrl
+    };
+  }
+
+  let data = null;
+  let errorMsg = null;
+
+  try {
+    const res = await fetch(`/api/extract?url=${encodeURIComponent(rawUrl)}&hd=1`);
+    if (res.ok) {
+      const json = await res.json();
+      if (json.code === 0 && json.data) data = json.data;
+      else errorMsg = json.msg || "Could not resolve stream";
+    }
+  } catch (e) {}
+
+  if (!data) {
+    try {
+      const directRes = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(rawUrl)}&hd=1`);
+      if (directRes.ok) {
+        const directJson = await directRes.json();
+        if (directJson.code === 0 && directJson.data) data = directJson.data;
+        else errorMsg = directJson.msg || errorMsg;
+      }
+    } catch (err) {}
+  }
+
+  if (!data) {
+    throw new Error(errorMsg || "Unable to extract video");
+  }
+
+  const playUrl = fixUrl(data.play);
+  const hdPlayUrl = fixUrl(data.hdplay) || playUrl;
+  return {
+    id: data.id || Date.now().toString(),
+    title: data.title || `TikTok Video by ${data.author ? data.author.nickname : "Creator"}`,
+    authorNickname: data.author ? data.author.nickname : "TikTok User",
+    authorUsername: `@${data.author ? data.author.unique_id : "user"}`,
+    coverUrl: fixUrl(data.cover) || "https://picsum.photos/seed/vid/600/400",
+    stream8k: hdPlayUrl,
+    streamHdr: hdPlayUrl,
+    streamHd: playUrl
+  };
+}
+
+function saveBatchItem(index) {
+  const meta = window.__batchResolved && window.__batchResolved[index];
+  if (!meta) return;
+  const targetUrl = meta.stream8k || meta.streamHdr || meta.streamHd;
+  if (!targetUrl) return;
+  saveFileToDevice(targetUrl, `tiksave_batch_${meta.id}.mp4`);
+  saveToHistory(meta);
+  showToast(`Saving "${meta.title.substring(0, 28)}..."`);
+}
+
 async function startBatchProcessing() {
   const textarea = document.getElementById('batch-textarea');
   const container = document.getElementById('batch-list-container');
-  const lines = textarea.value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const lines = textarea.value
+    .split(/[\n,\s]+/)
+    .map(l => l.trim())
+    .filter(l => l.length > 0 && isTikTokUrl(l));
 
   if (lines.length === 0) {
-    alert("Please enter at least 1 TikTok link to batch download.");
+    showToast("Please paste at least 1 valid TikTok link to batch download.");
     return;
   }
 
+  const uniqueLinks = [...new Set(lines)].slice(0, 15);
+  window.__batchResolved = new Array(uniqueLinks.length).fill(null);
   container.innerHTML = '';
 
-  for (let i = 0; i < lines.length; i++) {
-    const url = lines[i];
+  for (let i = 0; i < uniqueLinks.length; i++) {
+    const url = uniqueLinks[i];
     const itemEl = document.createElement('div');
     itemEl.className = 'batch-item';
     itemEl.id = `batch-item-${i}`;
     itemEl.innerHTML = `
       <div style="flex: 1; overflow: hidden; margin-right: 12px;">
-        <div style="font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${url}</div>
-        <div id="batch-status-${i}" style="font-size: 11px; color: var(--neon-cyan);">Analyzing stream...</div>
+        <div id="batch-title-${i}" style="font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+        <div id="batch-status-${i}" style="font-size: 11px; color: var(--neon-cyan);">Resolving no-watermark stream...</div>
       </div>
       <div id="batch-action-${i}">
         <div class="spinner-ring" style="width: 20px; height: 20px; border-width: 2px;"></div>
       </div>
     `;
     container.appendChild(itemEl);
+    const titleEl = document.getElementById(`batch-title-${i}`);
+    if (titleEl) titleEl.textContent = url;
 
-    // Simulate batch download sequentially
-    await delay(600);
     const statusEl = document.getElementById(`batch-status-${i}`);
     const actionEl = document.getElementById(`batch-action-${i}`);
-    
-    statusEl.textContent = "Ready • Clean HD (No Watermark)";
-    actionEl.innerHTML = `
-      <button class="btn-sec-action" style="padding: 4px 10px; height: 32px; font-size: 11px;" onclick="window.open('${url}', '_blank')">
-        Download
-      </button>
-    `;
+
+    try {
+      const meta = await resolveTikTokMetaForUrl(url);
+      window.__batchResolved[i] = meta;
+      if (titleEl) titleEl.textContent = meta.title;
+      if (statusEl) {
+        statusEl.textContent = `Ready • ${meta.authorUsername} • Clean HD`;
+        statusEl.style.color = 'var(--success-green)';
+      }
+      if (actionEl) {
+        actionEl.innerHTML = `
+          <button class="btn-sec-action" style="padding: 4px 12px; height: 34px; font-size: 11px; border-color: var(--neon-cyan); color: var(--neon-cyan);" onclick="saveBatchItem(${i})">
+            Download
+          </button>
+        `;
+      }
+      saveToHistory(meta);
+    } catch (err) {
+      if (statusEl) {
+        statusEl.textContent = err.message || "Failed to resolve link";
+        statusEl.style.color = 'var(--neon-magenta)';
+      }
+      if (actionEl) {
+        actionEl.innerHTML = `<span style="font-size: 11px; color: var(--neon-magenta); font-weight: 700;">Failed</span>`;
+      }
+    }
   }
 }
 
 function clearBatch() {
+  window.__batchResolved = [];
   document.getElementById('batch-textarea').value = '';
   document.getElementById('batch-list-container').innerHTML = '';
 }
@@ -1033,9 +1167,29 @@ function renderAiStudio() {
   }
 }
 
+async function pasteToAiInput() {
+  try {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      const text = await navigator.clipboard.readText();
+      if (text && text.trim()) {
+        const input = document.getElementById("ai-topic-input");
+        if (input) input.value = text.trim();
+        state.aiInputText = text.trim();
+        return;
+      }
+    }
+  } catch (e) {}
+  const manual = prompt("Paste your video topic or title:");
+  if (manual && manual.trim()) {
+    const input = document.getElementById("ai-topic-input");
+    if (input) input.value = manual.trim();
+    state.aiInputText = manual.trim();
+  }
+}
+
 function selectAiTone(tone, element) {
   state.aiSelectedTone = tone;
-  document.querySelectorAll(".tone-pill").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".ai-tone-pill, .tone-pill").forEach(p => p.classList.remove("active"));
   if (element) element.classList.add("active");
   if (state.aiActiveResult) {
     runAiViralGeneration();
@@ -1073,7 +1227,7 @@ async function runAiViralGeneration() {
     fbTitle = `🔥 तपाईंले विश्वास नै गर्न सक्नुहुन्न! "${query}" को सबैभन्दा भाइरल क्लिप! 😱`;
     fbBody = `यस भिडियोले टिकटकमा तहल्का मच्चाएको छ! पूरै भिडियो हेर्नुहोस् र तपाईंको प्रतिक्रिया कमेन्ट गर्नुहोस्। साथीहरुलाई पनि शेयर गरेर देखाउनुहोस्!`;
     viralScore = 97;
-  } else if (tone === "humorous") {
+  } else if (tone === "humorous" || tone === "comedy") {
     hooks = [
       `😂 I was not supposed to laugh this hard, but wait for the 5-second mark!`,
       `Tell me you do this too without actually telling me 💀🤣`,
@@ -1082,7 +1236,7 @@ async function runAiViralGeneration() {
     fbTitle = `😂 हाँसेर पेट मिचिमिचि रुनुहुनेछ! "${query}" 🤣`;
     fbBody = `दिनभरिको तनाव भगाउन यो भिडियो एकपटक हेर्नैपर्छ! तपाईंको हाँसो रोकिने छैन। साथीहरुलाई मेन्सन गर्नुहोस्!`;
     viralScore = 94;
-  } else if (tone === "curiosity") {
+  } else if (tone === "curiosity" || tone === "aesthetic") {
     hooks = [
       `👀 The secret truth nobody talks about when it comes to this...`,
       `Ever wondered what actually happens behind the scenes? Watch closely:`,
@@ -1091,7 +1245,7 @@ async function runAiViralGeneration() {
     fbTitle = `👀 यसको पछाडिको वास्तविक सत्य के हो? "${query}" बारे गोप्य रहस्य!`;
     fbBody = `धेरैलाई थाहा नभएको अनौठो र रोचक जानकारी। के तपाईंलाई यो कुरा पहिल्यै थाहा थियो? आफ्नो विचार अवश्य लेख्नुहोस्।`;
     viralScore = 98;
-  } else if (tone === "inspirational") {
+  } else if (tone === "inspirational" || tone === "motivation") {
     hooks = [
       `🌟 If you needed a sign to never give up today, this is it.`,
       `Proof that passion and relentless dedication conquer all obstacles 💪`,
@@ -1101,7 +1255,7 @@ async function runAiViralGeneration() {
     fbBody = `मेहनत र आत्मविश्वास भए असम्भव केही छैन। यो प्रेरणादायी भिडियो हेरेर आफ्नो लक्ष्यतर्फ अघि बढ्नुहोस्। अरुलाई पनि प्रेरणा दिन शेयर गर्नुहोस्!`;
     viralScore = 95;
   } else {
-    // Controversial / Debate
+    // News & Politics / Debate
     hooks = [
       `⚠️ Unpopular opinion: most people have completely misunderstood this.`,
       `Are you team Agree or Disagree? Watch before answering in the comments! ⚡`,
@@ -1129,7 +1283,9 @@ async function runAiViralGeneration() {
     viralScore
   };
 
-  // Render into AI Studio elements
+  // Render into AI Studio elements (supports both new and legacy IDs)
+  const scoreLabel = document.getElementById("ai-score-label");
+  if (scoreLabel) scoreLabel.textContent = `${viralScore}% High Engagement`;
   const scoreBadge = document.getElementById("viral-score-number");
   if (scoreBadge) scoreBadge.textContent = `${viralScore}%`;
 
@@ -1148,29 +1304,30 @@ async function runAiViralGeneration() {
   }
 
   // Render Facebook Post
+  const fbPostText = document.getElementById("ai-fb-post-text");
+  if (fbPostText) fbPostText.textContent = fullFacebookPost;
   const fbPreview = document.getElementById("ai-fb-preview-content");
-  if (fbPreview) {
-    fbPreview.textContent = fullFacebookPost;
-  }
+  if (fbPreview) fbPreview.textContent = fullFacebookPost;
 
   // Render Hashtags Cloud
+  const tagsHtml = hashtags.map(tag => `
+    <span class="hashtag-chip" onclick="copySingleHashtag('${tag}')">${tag}</span>
+  `).join("");
+  const tagsContainer = document.getElementById("ai-tags-container");
+  if (tagsContainer) tagsContainer.innerHTML = tagsHtml;
   const hashCloud = document.getElementById("ai-hashtags-cloud");
-  if (hashCloud) {
-    hashCloud.innerHTML = hashtags.map(tag => `
-      <span class="hashtag-chip" onclick="copySingleHashtag('${tag}')">${tag}</span>
-    `).join("");
-  }
+  if (hashCloud) hashCloud.innerHTML = tagsHtml;
 
-  const resultsBox = document.getElementById("ai-results-box");
-  if (resultsBox) {
-    resultsBox.style.display = "flex";
-    resultsBox.classList.add("visible");
-    resultsBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  const resultPanel = document.getElementById("ai-result-panel") || document.getElementById("ai-results-box");
+  if (resultPanel) {
+    resultPanel.style.display = "flex";
+    resultPanel.classList.add("visible");
+    resultPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   if (btn) {
     btn.disabled = false;
-    btn.innerHTML = `<span>✨</span> Generate Viral Hooks &amp; Facebook Post`;
+    btn.innerHTML = `<span>✨</span> Generate Viral Hooks &amp; Captions`;
   }
 
   showToast(`🎉 Generated 3 Hooks & Facebook Ready Post (${viralScore}% Potential)!`);
@@ -1213,6 +1370,39 @@ function copyAiHashtags() {
   });
 }
 
+function closeFacebookModal() {
+  const modal = document.getElementById('modal-fb-post');
+  if (modal) modal.classList.remove('visible');
+}
+
+function copyFieldText(fieldId) {
+  const el = document.getElementById(fieldId);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value || '').then(() => {
+    showToast("Copied to clipboard!");
+  }).catch(() => {});
+}
+
+function postToFacebookFromModal() {
+  copyFullPost();
+  window.open("https://www.facebook.com/", "_blank");
+}
+
+function downloadFromFbModal() {
+  closeFacebookModal();
+  triggerDownload();
+}
+
+function copyFullPost() {
+  const title = (document.getElementById('fb-input-title') || {}).value || '';
+  const body = (document.getElementById('fb-input-body') || {}).value || '';
+  const tags = (document.getElementById('fb-input-tags') || {}).value || '';
+  const full = [title, body, tags].filter(Boolean).join('\n\n');
+  navigator.clipboard.writeText(full).then(() => {
+    showToast("📋 Copied entire Facebook post!");
+  }).catch(() => {});
+}
+
 function copySingleHashtag(tag) {
   navigator.clipboard.writeText(tag).then(() => {
     showToast(`Copied ${tag}`);
@@ -1253,4 +1443,3 @@ function showToast(msg) {
     toast.style.transform = 'translateX(-50%) translateY(10px)';
   }, 2500);
 }
-

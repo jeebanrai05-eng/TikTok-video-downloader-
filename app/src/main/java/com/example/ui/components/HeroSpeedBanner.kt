@@ -6,7 +6,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -24,8 +24,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.HighQuality
-import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -36,20 +37,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.R
+import com.example.ui.theme.ElectricBlue
 import com.example.ui.theme.HdrGold
 import com.example.ui.theme.NeonCyan
 import com.example.ui.theme.NeonMagenta
-import com.example.ui.theme.ObsidianSurface
+import com.example.ui.theme.SuccessGreen
 import com.example.ui.theme.UltraPurple
 
+/**
+ * Lightweight, AMOLED-optimized Hero Banner matching the Vibrant Pro dashboard layout.
+ * Uses simple gradients and Canvas grid lines without expensive blur passes for smooth 60fps on low-end devices.
+ */
 @Composable
 fun HeroSpeedBanner(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "hero_pulse")
@@ -57,16 +61,16 @@ fun HeroSpeedBanner(modifier: Modifier = Modifier) {
         initialValue = 0.85f,
         targetValue = 1.25f,
         animationSpec = infiniteRepeatable(
-            animation = tween(900, easing = FastOutSlowInEasing),
+            animation = tween(1000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "beacon_scale"
     )
     val borderGlow by infiniteTransition.animateFloat(
-        initialValue = 0.45f,
-        targetValue = 0.90f,
+        initialValue = 0.40f,
+        targetValue = 0.85f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1600, easing = FastOutSlowInEasing),
+            animation = tween(1800, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "border_glow"
@@ -77,47 +81,77 @@ fun HeroSpeedBanner(modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
             .border(
-                1.2.dp,
-                Brush.horizontalGradient(
+                width = 1.2.dp,
+                brush = Brush.horizontalGradient(
                     listOf(
                         NeonCyan.copy(alpha = borderGlow),
-                        UltraPurple.copy(alpha = borderGlow * 0.8f),
-                        NeonMagenta.copy(alpha = borderGlow)
+                        ElectricBlue.copy(alpha = borderGlow * 0.85f),
+                        NeonMagenta.copy(alpha = borderGlow * 0.75f)
                     )
                 ),
-                RoundedCornerShape(22.dp)
+                shape = RoundedCornerShape(22.dp)
             )
-            .background(ObsidianSurface)
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.hero_speed_download_1793123031118),
-            contentDescription = "High Speed TikTok Engine",
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp),
-            contentScale = ContentScale.Crop,
-            alpha = 0.38f
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            ObsidianSurface.copy(alpha = 0.96f)
-                        )
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF0A1429),
+                        Color(0xFF070C1A),
+                        Color(0xFF140A20)
                     )
                 )
-        )
+            )
+    ) {
+        // Lightweight Canvas tech grid + soft corner glows (zero heavy blur overdraw)
+        Canvas(modifier = Modifier.matchParentSize()) {
+            val step = 24.dp.toPx()
+            val gridColor = Color.White.copy(alpha = 0.045f)
+            var x = 0f
+            while (x < size.width) {
+                drawLine(gridColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = 1f)
+                x += step
+            }
+            var y = 0f
+            while (y < size.height) {
+                drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
+                y += step
+            }
+
+            // Subtle ambient corner highlights
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(NeonCyan.copy(alpha = 0.20f), Color.Transparent),
+                    center = Offset(size.width * 0.90f, size.height * 0.14f),
+                    radius = size.width * 0.45f
+                ),
+                radius = size.width * 0.45f,
+                center = Offset(size.width * 0.90f, size.height * 0.14f)
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(NeonMagenta.copy(alpha = 0.18f), Color.Transparent),
+                    center = Offset(size.width * 0.12f, size.height * 0.88f),
+                    radius = size.width * 0.45f
+                ),
+                radius = size.width * 0.45f,
+                center = Offset(size.width * 0.12f, size.height * 0.88f)
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(UltraPurple.copy(alpha = 0.14f), Color.Transparent),
+                    center = Offset(size.width * 0.52f, size.height * 0.48f),
+                    radius = size.width * 0.40f
+                ),
+                radius = size.width * 0.40f,
+                center = Offset(size.width * 0.52f, size.height * 0.48f)
+            )
+        }
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
+            // Top badges row
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -126,35 +160,42 @@ fun HeroSpeedBanner(modifier: Modifier = Modifier) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .background(HdrGold.copy(alpha = 0.18f), RoundedCornerShape(8.dp))
-                        .border(1.dp, HdrGold.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .background(HdrGold.copy(alpha = 0.14f), RoundedCornerShape(50))
+                        .border(1.dp, HdrGold.copy(alpha = 0.65f), RoundedCornerShape(50))
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.HighQuality,
-                        contentDescription = "HDR+",
-                        tint = HdrGold,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .background(HdrGold.copy(alpha = 0.25f), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            text = "HD",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
+                            color = HdrGold,
+                            fontSize = 9.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "8K 120FPS ENGINE",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = HdrGold,
-                        letterSpacing = 0.8.sp
+                        letterSpacing = 0.6.sp,
+                        fontSize = 10.sp
                     )
                 }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .background(NeonCyan.copy(alpha = 0.15f), CircleShape)
-                        .border(1.dp, NeonCyan.copy(alpha = 0.35f), CircleShape)
+                        .background(NeonCyan.copy(alpha = 0.14f), CircleShape)
+                        .border(1.dp, NeonCyan.copy(alpha = 0.55f), CircleShape)
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(8.dp)
+                            .size(7.dp)
                             .scale(beaconScale)
                             .alpha(borderGlow)
                             .background(NeonCyan, CircleShape)
@@ -163,70 +204,69 @@ fun HeroSpeedBanner(modifier: Modifier = Modifier) {
                     Text(
                         text = "Turbo TikTok CDN",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = NeonCyan
+                        color = NeonCyan,
+                        fontSize = 10.sp
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
+            // Main Title + Neon Music Circle
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "TikTok No-Watermark Saver",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = Color.White
-                    )
-                }
+                Text(
+                    text = "TikTok No-Watermark Saver",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-0.4).sp
+                    ),
+                    color = Color.White,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .scale(beaconScale)
-                        .background(
-                            Brush.radialGradient(listOf(NeonMagenta.copy(alpha = 0.5f), Color.Transparent)),
-                            CircleShape
-                        )
-                        .border(
-                            1.5.dp,
-                            Brush.linearGradient(listOf(NeonCyan, NeonMagenta)),
-                            CircleShape
-                        ),
+                        .size(42.dp)
+                        .background(NeonMagenta.copy(alpha = 0.18f), CircleShape)
+                        .border(1.3.dp, NeonMagenta.copy(alpha = 0.8f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "🎵",
-                        fontSize = 20.sp
+                    Icon(
+                        imageVector = Icons.Default.MusicNote,
+                        contentDescription = "TikTok Audio",
+                        tint = NeonMagenta,
+                        modifier = Modifier.size(21.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(14.dp))
+            HorizontalDivider(color = Color.White.copy(alpha = 0.10f))
+            Spacer(modifier = Modifier.height(10.dp))
 
+            // Feature highlights strip
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = NeonCyan, modifier = Modifier.size(14.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Zero Logo", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.85f))
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text("Zero Logo", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.92f), fontWeight = FontWeight.Medium)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Bolt, contentDescription = null, tint = NeonMagenta, modifier = Modifier.size(14.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Photo Slides", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.85f))
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text("Photo Slides", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.92f), fontWeight = FontWeight.Medium)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Speed, contentDescription = null, tint = HdrGold, modifier = Modifier.size(14.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("320kbps MP3", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.85f))
+                    Icon(Icons.Default.Schedule, contentDescription = null, tint = HdrGold, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text("320kbps MP3", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.92f), fontWeight = FontWeight.Medium)
                 }
             }
         }

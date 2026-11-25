@@ -76,6 +76,8 @@ import com.example.ui.theme.ObsidianCardBorder
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceVariant
 import com.example.ui.theme.SuccessGreen
+import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.TextTertiary
 import com.example.ui.util.FormatUtils
 
 enum class LibraryFilter {
@@ -144,7 +146,7 @@ fun LibraryScreen(
                 Text(
                     text = "${downloads.size} TikTok items saved without watermark",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.6f)
+                    color = TextSecondary
                 )
             }
 
@@ -170,7 +172,7 @@ fun LibraryScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("library_search_input"),
-            placeholder = { Text("Search by title or @creator...", color = Color.White.copy(alpha = 0.4f), fontSize = 13.sp) },
+            placeholder = { Text("Search by title or @creator...", color = TextTertiary, fontSize = 13.sp) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = NeonCyan) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
@@ -271,7 +273,7 @@ fun LibraryScreen(
                     Text(
                         text = "Paste any TikTok link to download 8K HDR+ videos, photo slides, or 320kbps MP3 audio without any watermark.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.6f),
+                        color = TextSecondary,
                         textAlign = TextAlign.Center
                     )
 
@@ -594,7 +596,7 @@ private fun LibraryDownloadCard(
                 Text(
                     text = "${FormatUtils.formatBytes(item.fileSizeBytes)} • ${FormatUtils.formatDate(item.downloadedAtMillis)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.5f),
+                    color = TextSecondary,
                     fontSize = 11.sp
                 )
             }
